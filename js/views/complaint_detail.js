@@ -2,7 +2,9 @@
 import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, dateDM } from '../fmt.js';
-import { can } from '../store.js';
+import { can, store } from '../store.js';
+import { plotChip } from '../ui.js';
+import { videosCard } from '../video.js';
 import { compressPhoto } from '../photo.js';
 import { STAGES, STAGE_KIND, STAGE_KEY, titleOf, whereChip } from './complaints.js';
 
@@ -27,12 +29,15 @@ export default async function render(ctx) {
       root.replaceChildren(back(),
         card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
-          h('p', { class: 'small muted' }, t('cmp.raisedOn', { date: dateShort(c.raised_at), name: c.raised_by_name }))),
+          h('p', { class: 'small muted' }, t('cmp.raisedOn', { date: dateShort(c.raised_at), name: c.raised_by_name })),
+          h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
+            store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null)),
         card(t('cmp.progress'), 'timeline', tracker,
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, ${dateDM(x.at)}`))),
           h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { n: days }) : t('cmp.timeSoFar', { n: days })),
-          can('complaint_stage', 'u') && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', onClick: () => stageSheet(ctx, c, next, load) }) : null),
+          (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', onClick: () => stageSheet(ctx, c, next, load) }) : null),
         photos.length ? card(t('cmp.photosTitle'), 'image', h('div', { class: 'photo-grid' }, photos.map((m) => thumb(ctx, m.id)))) : null,
+        videosCard(ctx, { videos: d.media.filter((m) => m.kind === 'video' && m.parent_type === 'complaint'), parentType: 'complaint', parentId: c.id, canAdd: can('complaints', 'c'), done: load }),
         card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
           ...(d.comments.length ? d.comments.map((m) => m.hidden ? h('div', { class: 'queue-item small muted', style: 'opacity:.7' }, icon('visibility_off', 'sm'), ' ', t('cmp.hiddenByCommittee'), ` · ${dateShort(m.at)}`) : h('div', { class: 'stack-sm queue-item' },
             h('div', { class: 'row' }, avatar(m.author_name), h('div', { class: 'grow' }, h('strong', {}, m.author_name), h('div', { class: 'small muted' }, dateShort(m.at))),
@@ -71,6 +76,30 @@ function commentBox(ctx, complaintId, done) {
       done();
     } catch (e) { toast(friendly(e, t)); }
   } }));
+}
+
+// The President picks who looks after a complaint (from the members list, by name or plot), or keeps it with themself.
+function assignSheet(ctx, c, done) {
+  const { t } = ctx;
+  let all = [];
+  const q = h('input', { type: 'search', class: 'map-q', placeholder: t('com.membersSearch'), 'aria-label': t('com.membersSearch'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
+  const list = h('div', { class: 'stack-sm' });
+  const norm = (v) => String(v).toLowerCase().replace(/[\s-]/g, '');
+  const pick = async (payload, close) => {
+    try { await ctx.api.call('complaints.assign', { id: c.id, ...payload }); close(); toast(t('cmp.assigned')); done(); } catch (e) { toast(friendly(e, t)); }
+  };
+  let closeSheet = () => {};
+  function draw() {
+    const f = norm(q.value.trim());
+    const rows = all.filter((m) => m.plot_keys?.length && (!f || norm(`${m.name},${m.plot_keys.join(',')}`).includes(f)));
+    list.replaceChildren(...rows.map((m) => h('button', { type: 'button', class: 'list-row map-row', style: 'width:100%;text-align:start', onClick: () => pick({ plotKey: m.plot_keys[0] }, closeSheet) },
+      avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'row small' }, m.plot_keys.map((k) => plotChip(String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2'))))))));
+  }
+  q.addEventListener('input', draw);
+  ctx.api.swr('members.directory', {}, (r) => { all = r.items; draw(); }).catch((e) => toast(friendly(e, t)));
+  const dlg = openSheet({ title: t('cmp.assignTitle'), body: h('div', { class: 'stack' }, q, list), actions: [
+    { label: t('cmp.assignPresident'), keepOpen: true, onClick: (close) => pick({ toPresident: true }, close) }, { label: t('common.cancel') }] });
+  closeSheet = () => dlg.close();
 }
 
 function stageSheet(ctx, c, next, done) {

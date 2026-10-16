@@ -4,6 +4,7 @@ import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
 import { photoImg, uploadPhotos } from './events.js';
+import { videosCard } from '../video.js';
 
 export default async function render(ctx) {
   const { t } = ctx;
@@ -29,7 +30,8 @@ export default async function render(ctx) {
             can('events', 'd') ? button(t('cmp.hide'), { kind: 'danger', onClick: () => hideSheet(ctx, e.id) }) : null)),
         card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
           photos.length ? h('div', { class: 'photo-grid' }, photos.map((m) => h('button', { type: 'button', class: 'photo-btn', 'aria-label': t('cmp.photo'), onClick: () => viewer(ctx, m.id) }, photoImg(ctx, m.id)))) : h('p', { class: 'muted' }, t('evt.noPhotos')),
-          can('media', 'c') ? h('div', {}, files, h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null));
+          can('media', 'c') ? h('div', {}, files, h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null),
+        videosCard(ctx, { videos: media.filter((m) => m.kind === 'video'), parentType: 'event', parentId: e.id, canAdd: can('media', 'c'), done: load }));
       });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }
   }
