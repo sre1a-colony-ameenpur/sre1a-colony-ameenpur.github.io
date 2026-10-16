@@ -6,6 +6,7 @@
  "common.confirm": "Confirm",
  "common.retry": "Try again",
  "common.saved": "Saved",
+ "common.loadingBar": "Loading",
  "common.refreshing": "Refreshing…",
  "common.working": "Working, please wait…",
  "pwa.updateReady": "A new version of the app is available.",

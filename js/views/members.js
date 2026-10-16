@@ -22,11 +22,10 @@ export default function render(ctx) {
   const editable = can('members', 'u') || can('members', 'd');
 
   async function load() {
-    list.replaceChildren(loadingRegion(2));
+    if (!items.length) list.replaceChildren(loadingRegion(2));
     try {
-      [{ items }] = await Promise.all([ctx.api.call('members.list'), loadRoles(ctx.api)]);
-      role.replaceChildren(h('option', { value: 'all' }, t('mem.allRoles')), ...ROLES.map((r) => h('option', { value: r }, r)));
-      draw();
+      loadRoles(ctx.api).then(() => role.replaceChildren(h('option', { value: 'all' }, t('mem.allRoles')), ...ROLES.map((r) => h('option', { value: r, selected: r === roleF }, r))));
+      await ctx.api.swr('members.list', {}, (r) => { items = r.items; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   function draw() {

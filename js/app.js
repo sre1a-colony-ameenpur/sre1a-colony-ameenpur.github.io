@@ -65,12 +65,13 @@ if (mock) {
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
 const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory)$/;
-// A small spinner in the corner while data is refreshed in the background (stored answers are shown first, see swr.js).
-const syncDot = h('div', { class: 'sync-dot', role: 'status', hidden: true }, h('span', { class: 'spinner', 'aria-hidden': 'true' }));
+// A floating "Loading" bar just under the header while data is fetched in the background (stored answers are shown first, see swr.js).
+const syncText = h('span', {});
+const syncDot = h('div', { class: 'sync-bar', role: 'status', hidden: true }, syncText, h('span', { class: 'spinner', 'aria-hidden': 'true' }));
 document.body.append(syncDot);
 const lsOrNull = (() => { try { return globalThis.localStorage || null; } catch { return null; } })();
 const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, userKey: () => store.get().session?.email,
-  onSync: (n) => { syncDot.hidden = n <= 0; syncDot.setAttribute('aria-label', t('common.refreshing')); } });
+  onSync: (n) => { syncDot.hidden = n <= 0; if (n > 0) syncText.textContent = t('common.loadingBar'); } });
 const api = {
   swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
   swrMany: (specs, cb) => swrCache.many(specs, cb),
