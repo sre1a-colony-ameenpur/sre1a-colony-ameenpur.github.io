@@ -2,7 +2,7 @@
 import { h, button, field, plotChip, openSheet, toast, icon, emptyState } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 
 const dash = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 const keysOf = (m) => String(m.plot_keys || '').split(',').filter(Boolean);
@@ -90,7 +90,7 @@ export async function transferSheet(ctx, { plot, done }) {
       p.removedMembers.forEach((m) => lines.push(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('person_remove'), t('tr.removed', { name: m.name }))));
       p.keptMembers.forEach((m) => lines.push(h('div', { class: 'banner ok', style: 'border-radius:12px' }, icon('verified_user'), t('tr.kept', { name: m.name }))));
       if (p.unpaidMaintenance_paise) lines.push(h('p', { class: 'banner info', style: 'border-radius:12px' }, icon('info'), t('tr.unpaid', { name: p.movesFrom.name, amount: money(p.unpaidMaintenance_paise) })));
-      if (st.kind === 'new') lines.push(h('p', {}, p.feeAmount_paise != null ? t('tr.fee', { amount: money(p.feeAmount_paise), name: p.movesTo.name }) : t('tr.noFeeRate')));
+      if (st.kind === 'new' && hasModule('fees')) lines.push(h('p', {}, p.feeAmount_paise != null ? t('tr.fee', { amount: money(p.feeAmount_paise), name: p.movesTo.name }) : t('tr.noFeeRate')));
       if (st.kind === 'existing') lines.push(h('p', {}, t('tr.noFee', { name: p.movesTo.name })));
       if (st.step === 4) lines.push(h('p', { class: 'small muted' }, t('tr.confirmText')));
       return h('div', { class: 'stack' }, ...lines);
@@ -98,7 +98,7 @@ export async function transferSheet(ctx, { plot, done }) {
     const r = st.result;
     return h('div', { class: 'stack' }, h('div', { class: 'state ok' }, icon('check_circle', 'lg'), h('p', {}, t('tr.success'))),
       ...(r.removed || []).map((m) => h('p', {}, t('tr.removed', { name: m.name }))), r.added ? h('p', {}, t('tr.added', { name: r.added.name })) : null,
-      r.feeId ? h('p', {}, t('tr.feeRaised')) : r.fee_skipped ? h('p', { class: 'small muted' }, t('tr.noFeeRate')) : null,
+      r.feeId ? h('p', {}, t('tr.feeRaised')) : r.fee_skipped && hasModule('fees') ? h('p', { class: 'small muted' }, t('tr.noFeeRate')) : null,
       r.feeId && can('fee_requests', 'r') ? button(t('tr.viewFee'), { icon: 'badge', onClick: async () => {
         dlg.close(); (await import('./money.js')).setMoneyTab('fees'); (await import('./fees.js')).setFeesTab('membership');
         location.hash = '#/money';

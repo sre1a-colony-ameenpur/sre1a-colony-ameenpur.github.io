@@ -20,6 +20,11 @@ export const store = {
 export function can(entity, verb, s = state) {
   return !!s.session?.caps?.[entity]?.includes(verb);
 }
+// Is a feature module switched on? (The developer sets MODULES on the backend; the session lists what is on. No list, e.g. the mock: all on.)
+export function hasModule(name, s = state) {
+  const list = s.session?.modules;
+  return !list || list.includes(name);
+}
 export function canAny(entity, s = state) {
   return !!s.session?.caps?.[entity]?.length;
 }

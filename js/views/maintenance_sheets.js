@@ -2,7 +2,7 @@
 import { h, card, button, field, openSheet, toast, icon, plotChip, loadingRegion, statusPill, errorState } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 import { compressPhoto } from '../photo.js';
 import { ymNow, shiftMonth } from '../maint.js';
 import { rupeesToPaise } from './expenses.js';
@@ -53,7 +53,7 @@ export function recordPaymentSheet(ctx, done) {
   const file = h('input', { type: 'file', accept: 'image/*', id: 'rp-file' });
   const [note, warn] = warnBox();
 
-  const seg = h('div', { class: 'seg', role: 'group', 'aria-label': t('mt.paymentFor') }, [['maint', t('mt.purposeMaint')], ['fee', t('mt.purposeFee')]].map(([v, text]) =>
+  const seg = h('div', { class: 'seg', role: 'group', 'aria-label': t('mt.paymentFor') }, [['maint', t('mt.purposeMaint')], hasModule('fees') && ['fee', t('mt.purposeFee')]].filter(Boolean).map(([v, text]) =>
     h('button', { type: 'button', 'aria-pressed': String(v === purpose), 'data-purpose': v, onClick: () => { setPurpose(v); } }, text)));
   function setPurpose(v) {
     purpose = v; dueChosen = null; note.replaceChildren();
@@ -77,7 +77,7 @@ export function recordPaymentSheet(ctx, done) {
     } catch (e) { duesBox.replaceChildren(h('p', { class: 'small muted' }, friendly(e, t))); }
   }
 
-  openSheet({ title: t('mt.record'), body: h('div', { class: 'stack' }, h('div', { class: 'field' }, h('label', {}, t('mt.paymentFor')), seg), picker.el,
+  openSheet({ title: t('mt.record'), body: h('div', { class: 'stack' }, hasModule('fees') ? h('div', { class: 'field' }, h('label', {}, t('mt.paymentFor')), seg) : null, picker.el,
     monthsBox, duesBox, amount,
     h('div', { class: 'field' }, h('label', { for: 'rp-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp'))),
     h('p', { class: 'small muted' }, t('mt.confirmNote')), note), actions: [

@@ -2,7 +2,7 @@
 import { h, icon, button, statusPill, plotChip, rolePill, errorState } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 import { summarize, currentTotals } from '../maint.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 
@@ -53,7 +53,7 @@ export default function render(ctx) {
     can('expenses', 'c') && button(t('home.quick.expense'), { icon: 'add', href: '#/money' }),
   ].filter(Boolean);
 
-  if (can('dues', 'r') || r('maintenance_payments')) {
+  if (hasModule('maintenance') && (can('dues', 'r') || r('maintenance_payments'))) {
     cards.push(lazyCard(ctx, { title: t('home.maint.title'), ic: 'home_work', load: async () => summarize(await api.call('maintenance.mine')),
       render: (d) => [
         d.paidUpTo ? h('p', {}, t('home.maint.paidUpTo', { month: monthLabel(d.paidUpTo) })) : null,
@@ -61,6 +61,8 @@ export default function render(ctx) {
           statusPill(d.due.status === 'partly_paid' ? 'partly' : 'due')) : null,
         h('p', { class: 'small muted' }, t('home.maint.flat')),
         link('#/money', t('common.view'))] }));
+  }
+  if (hasModule('fees') && (can('dues', 'r') || r('maintenance_payments'))) {
     cards.push(lazyCard(ctx, { title: t('home.fees.title'), ic: 'request_quote', load: async () => (await api.call('dues.mine')).items.filter((d) => d.status !== 'paid'),
       render: (list) => list.length ? [
         ...list.map((d) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, d.title,
@@ -94,7 +96,7 @@ export default function render(ctx) {
     cards.push(lazyCard(ctx, { title: t('home.event.title'), ic: 'celebration', load: async () => (await api.call('events.list')).items.filter((e) => e.upcoming).slice(0, 1),
       render: (list) => list[0] ? [h('p', {}, h('strong', {}, list[0].title)), h('p', { class: 'muted' }, dateShort(list[0].date)), link(`#/community`, t('common.view'))] : [h('p', { class: 'muted' }, t('home.event.none'))] }));
   }
-  cards.push(lazyCard(ctx, { title: t('home.money.title'), ic: 'savings', load: async () => currentTotals(await api.call('maintenance.totals')),
+  if (hasModule('maintenance')) cards.push(lazyCard(ctx, { title: t('home.money.title'), ic: 'savings', load: async () => currentTotals(await api.call('maintenance.totals')),
     render: (d) => { const exp = d.collected_paise + d.outstanding_paise || 1; return [h('p', {}, t('home.money.collected', { month: monthLabel(d.month), got: money(d.collected_paise), of: money(exp) })),
       h('div', { class: 'progress', role: 'img', 'aria-label': `${Math.round(d.collected_paise / exp * 100)}%` }, h('i', { style: `width:${Math.min(100, d.collected_paise / exp * 100)}%` }))]; } }));
 

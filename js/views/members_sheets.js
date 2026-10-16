@@ -2,7 +2,7 @@
 import { h, button, field, openSheet, confirmSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
-import { can, store } from '../store.js';
+import { can, store, hasModule } from '../store.js';
 import { ROLES, dashKey, plotsOf } from './members.js';
 
 const val = (el) => el.querySelector('input,select').value.trim();
@@ -10,6 +10,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Membership fee for a set of plot keys, by the rule: the house rate if any plot is a house, otherwise the open-plot rate. null = cannot tell.
 export async function feeForPlots(ctx, plotKeys) {
+  if (!hasModule('fees')) return 0;                                  // Fees switched off: no membership fee
   try {
     const [{ items: plots }, { items: rates }] = await Promise.all([ctx.api.call('plots.list'), ctx.api.call('membership.rates.list')]);
     const cats = plotKeys.map((k) => plots.find((p) => p.plot_key === k)?.category).filter(Boolean);
@@ -78,7 +79,7 @@ export function memberSheet(ctx, { member, items, done }) {
   const drawJoin = () => joinBox.replaceChildren(
     isPresident ? h('div', { class: 'seg', role: 'group', 'aria-label': t('mem.joining') }, [['new', t('mem.joinNew')], ['existing', t('mem.joinExisting')]].map(([v, label]) =>
       h('button', { type: 'button', 'aria-pressed': String(v === joining), onClick: () => { joining = v; drawJoin(); } }, label))) : '',
-    h('p', { class: 'small muted', 'aria-live': 'polite' }, joining === 'new' ? (feeAmount == null ? t('mem.feeApplies') : feeAmount > 0 ? t('mem.feeAmount', { amount: money(feeAmount) }) : t('mem.feeNone')) : t('mem.noFee')));
+    !hasModule('fees') ? null : h('p', { class: 'small muted', 'aria-live': 'polite' }, joining === 'new' ? (feeAmount == null ? t('mem.feeApplies') : feeAmount > 0 ? t('mem.feeAmount', { amount: money(feeAmount) }) : t('mem.feeNone')) : t('mem.noFee')));
   const date = field({ id: 'mem-date', label: t('mem.joinedAt'), type: 'date', value: today(), max: today() });
   joinReady = true;
   if (!editing) {
