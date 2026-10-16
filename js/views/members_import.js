@@ -17,12 +17,18 @@ export default function render(ctx) {
   const guide = () => card(t('imp.guideTitle'), 'list_alt', h('ol', { class: 'stack-sm', style: 'padding-inline-start:20px' },
     h('li', {}, t('imp.g1')), h('li', {}, t('imp.g2')), h('li', {}, t('imp.g3'))));
 
+  // The address of the sheet to fill in, for the President (asked once; the button appears when the server has one).
+  let sheet = null, atStart = false;
+  ctx.api.call('members.importSheet').then((r) => { sheet = r; if (atStart) start(); }).catch(() => {});
+  const openSheetBtn = () => (sheet?.url ? h('a', { class: 'btn', href: sheet.url, target: '_blank', rel: 'noopener' }, icon('open_in_new'), t('imp.openSheet')) : null);
+
   function start(note) {
-    body.replaceChildren(guide(), note || null, button(t('imp.check'), { kind: 'primary', block: true, icon: 'fact_check', onClick: runCheck }));
+    atStart = true;
+    body.replaceChildren(guide(), openSheetBtn(), note || null, button(t('imp.check'), { kind: 'primary', block: true, icon: 'fact_check', onClick: runCheck }));
   }
 
   async function runCheck() {
-    if (busy) return; busy = true;
+    if (busy) return; busy = true; atStart = false;
     body.replaceChildren(guide(), h('p', { role: 'status', class: 'muted' }, t('imp.checking')));
     try { show(await ctx.api.call('members.importCheck')); } catch (e) { body.replaceChildren(errorState(friendly(e, t), runCheck)); } finally { busy = false; }
   }

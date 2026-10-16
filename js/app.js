@@ -64,7 +64,7 @@ if (mock) {
 
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
-const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory)$/;
+const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory|importSheet)$/;
 // A floating "Loading" bar just under the header while data is fetched in the background (stored answers are shown first, see swr.js).
 const syncText = h('span', {});
 const syncDot = h('div', { class: 'sync-bar', role: 'status', hidden: true }, syncText, h('span', { class: 'spinner', 'aria-hidden': 'true' }));

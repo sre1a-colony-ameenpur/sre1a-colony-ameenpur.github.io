@@ -938,5 +938,6 @@
  "roles.deleteTitle": "Delete {role}?",
  "roles.deleteBody": "Nobody holds this role. It disappears from the lists; its history stays in the change log.",
  "roles.deleted": "Role deleted",
- "roles.deleteBlocked": "{n} member(s) hold this role. Give them another role first."
+ "roles.deleteBlocked": "{n} member(s) hold this role. Give them another role first.",
+ "imp.openSheet": "Open the sheet"
 }
