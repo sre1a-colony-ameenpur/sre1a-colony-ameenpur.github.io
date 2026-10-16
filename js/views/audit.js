@@ -37,12 +37,13 @@ export default function render(ctx) {
     if (first) root.replaceChildren(loadingRegion(3));
     else { list.replaceChildren(loadingRegion(2)); more.replaceChildren(); count.textContent = ''; }
     try {
-      const r = await ctx.api.call('audit.list', params());
-      if (mine !== ticket) return;                               // a newer filter already asked
-      items = r.items; cursor = r.next_cursor || null; lastVerify = r.last_verify; remember(items);
-      if (lastVerify && !lastVerify.ok && !bad) bad = { from_ts: null };
-      if (first) { root.replaceChildren(body); drawTop(); drawFilters(); }
-      drawList();
+      await ctx.api.swr('audit.list', params(), (r) => {
+        if (mine !== ticket) return;                             // a newer filter already asked
+        items = r.items; cursor = r.next_cursor || null; lastVerify = r.last_verify; remember(items);
+        if (lastVerify && !lastVerify.ok && !bad) bad = { from_ts: null };
+        if (first) { root.replaceChildren(body); drawTop(); drawFilters(); }
+        drawList();
+      });
     } catch (e) {
       if (mine !== ticket) return;
       if (first) root.replaceChildren(errorState(friendly(e, t), () => load(true)));

@@ -13,9 +13,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(h('a', { href: '#/money', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')), loadingRegion(2));
     try {
-      let got;
-      try { got = await ctx.api.call('expenses.get', { id: ctx.params.id }); } catch (e) { if (e.code === 'NOT_FOUND') got = null; else throw e; }
-      if (!got) { root.replaceChildren(errorState(t('exp.notFound'), () => { location.hash = '#/money'; })); return; }
+      await ctx.api.swr('expenses.get', { id: ctx.params.id }, (got) => {
       const x = got.item, reversed = got.reversed;
       const isReversal = !!x.reverses_id;
       const proof = h('div', { class: 'proof' });
@@ -39,7 +37,8 @@ export default async function render(ctx) {
         x.has_proof ? card(t('exp.proof'), 'image', proof) : null,
         card(t('exp.history'), 'history', h('ul', { class: 'timeline' }, steps)),
         ...actions);
-    } catch (e) { root.replaceChildren(errorState(friendly(e, t), load)); }
+      });
+    } catch (e) { root.replaceChildren(e.code === 'NOT_FOUND' ? errorState(t('exp.notFound'), () => { location.hash = '#/money'; }) : errorState(friendly(e, t), load)); }
   }
 
   async function showProof(box, id) {
