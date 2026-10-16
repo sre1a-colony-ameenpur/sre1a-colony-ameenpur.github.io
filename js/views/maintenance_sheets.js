@@ -195,12 +195,19 @@ export function recentPaymentsCard(ctx, kind, onChange) {
   const listAction = fee ? 'dues.payments.list' : 'maintenance.payments.list';
   const reverseAction = fee ? 'dues.payments.reverse' : 'maintenance.payments.reverse';
   const body = h('div', { class: 'stack-sm' });
-  async function load() {
-    body.replaceChildren(loadingRegion(1));
+  let all = [], cursor = null;
+  const more = h('div');
+  async function load(older = false) {
+    if (!older && !all.length) body.replaceChildren(loadingRegion(1));
     try {
-      const { items } = await ctx.api.call(listAction);
+      if (older) { const r = await ctx.api.call(listAction, { before: cursor }); all = all.concat(r.items); cursor = r.next_cursor || null; paint(all); return; }
+      await ctx.api.swr(listAction, {}, (r) => { all = r.items; cursor = r.next_cursor || null; paint(all); });
+    } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
+  }
+  function paint(items) {
+    {
       const reversed = new Set(items.filter((x) => x.reverses_id).map((x) => x.reverses_id));   // a reversal waits for a second person to confirm it
-      const shown = items.filter((x) => x.reverses_id || x.status === 'confirmed').slice(0, 15);
+      const shown = items.filter((x) => x.reverses_id || x.status === 'confirmed');
       body.replaceChildren(...(shown.length ? shown.map((x) => {
         const what = fee ? x.title : (x.months || []).map(monthLabel).join(', ');
         const isReversal = !!x.reverses_id;
@@ -210,10 +217,11 @@ export function recentPaymentsCard(ctx, kind, onChange) {
             isReversal ? h('span', { class: 'small muted' }, t(x.status === 'confirmed' ? 'mt.reversalRow' : 'mt.reversalWaiting')) : reversed.has(x.id) ? statusPill('closed', t('mt.reversed'))
               : can('maintenance_payments', 'c') ? button(t('mt.reversePayment'), { kind: 'text', onClick: () => reversePaymentSheet(ctx, reverseAction, x, () => { load(); onChange?.(); }) }) : null));
       }) : [h('p', { class: 'small muted' }, t('mt.noRecent'))]));
-    } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
+      more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, onClick: () => load(true) })] : []));
+    }
   }
   load();
-  return card(t('mt.recent'), 'history', body);
+  return card(t('mt.recent'), 'history', body, more);
 }
 
 // Record a payment for a removed member's debt. "What is it for" is either their unpaid monthly maintenance or one fee due.

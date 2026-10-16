@@ -17,12 +17,12 @@ export default function render(ctx) {
   const tabs = h('div');
 
   async function loadPlots() {
-    body.replaceChildren(loadingRegion(2));
-    try { ({ items: plots } = await ctx.api.call('plots.list')); drawPlots(); } catch (e) { body.replaceChildren(errorState(friendly(e, t), loadPlots)); }
+    if (!plots.length) body.replaceChildren(loadingRegion(2));
+    try { await ctx.api.swr('plots.list', {}, (r) => { plots = r.items; drawPlots(); }); } catch (e) { body.replaceChildren(errorState(friendly(e, t), loadPlots)); }
   }
   async function countPending() {
     if (!canQueue) return;
-    try { pending = (await ctx.api.call('plotRequests.list', { status: 'Pending' })).items.length; drawTabs(); } catch { /* the queue tab reports its own errors */ }
+    try { await ctx.api.swr('plotRequests.list', { status: 'Pending' }, (r) => { pending = r.items.length; drawTabs(); }); } catch { /* the queue tab reports its own errors */ }
   }
   function drawTabs() {
     if (!canQueue) { tabs.replaceChildren(); return; }
@@ -50,14 +50,19 @@ export default function render(ctx) {
     h('div', { class: 'grow' }, p.owner ? h('div', {}, p.owner.name) : h('div', { class: 'muted' }, t('plots.noMember')),
       h('div', { class: 'small muted' }, p.category ? t(`plots.cat.${p.category}`) : t('plots.cat.none'), p.located ? '' : ` · ${t('plots.notLocated')}`)), icon('chevron_right'));
 
-  async function loadRequests() {
-    body.replaceChildren(loadingRegion(2));
+  let reqItems = [], reqCursor = null;
+  async function loadRequests(older = false) {
+    if (!reqItems.length) body.replaceChildren(loadingRegion(2));
+    countPending();
     try {
-      const { items } = await ctx.api.call('plotRequests.list');
-      pending = items.filter((r) => r.status === 'Pending').length; drawTabs();
-      body.replaceChildren(h('p', { class: 'small muted' }, t('plots.req.help')), h('div', { class: 'card' },
-        ...(items.length ? items.map((r) => reqRow(r)) : [emptyState(t('plots.req.none'), 'inbox')])));
+      if (older) { const r = await ctx.api.call('plotRequests.list', { before: reqCursor }); reqItems = reqItems.concat(r.items); reqCursor = r.next_cursor || null; paintRequests(); return; }
+      await ctx.api.swr('plotRequests.list', {}, (r) => { reqItems = r.items; reqCursor = r.next_cursor || null; paintRequests(); });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), loadRequests)); }
+  }
+  function paintRequests() {
+    body.replaceChildren(h('p', { class: 'small muted' }, t('plots.req.help')), h('div', { class: 'card' },
+      ...(reqItems.length ? reqItems.map((r) => reqRow(r)) : [emptyState(t('plots.req.none'), 'inbox')])),
+      ...(reqCursor ? [button(t('audit.more'), { block: true, onClick: () => loadRequests(true) })] : []));
   }
   function reqRow(r) {
     const kind = { Pending: 'pending', Approved: 'approved', Rejected: 'rejected' }[r.status] || 'closed';

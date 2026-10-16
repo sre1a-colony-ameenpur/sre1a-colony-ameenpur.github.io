@@ -30,11 +30,12 @@ export default async function render(ctx) {
       ...(parts.length ? parts : [emptyState(t(scope === 'mine' ? 'ai.noneMine' : 'ai.none'), 'task_alt')]));
   }
   async function load() {
-    body.replaceChildren(loadingRegion(3));
+    if (!items.length) body.replaceChildren(loadingRegion(3));
     try {
-      const [open, meetings] = await Promise.all([ctx.api.call('actionItems.list', { status: 'open' }), ctx.api.call('meetings.list')]);
-      items = open.items; titles = Object.fromEntries(meetings.items.map((m) => [m.id, meetingTitle(m, t('mtg.meeting'))]));
-      draw();
+      await ctx.api.swrMany([['actionItems.list', { status: 'open' }], ['meetings.list']], ([open, meetings]) => {
+        items = open.items; titles = Object.fromEntries(meetings.items.map((m) => [m.id, meetingTitle(m, t('mtg.meeting'))]));
+        draw();
+      });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();

@@ -73,6 +73,7 @@ const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, 
   onSync: (n) => { syncDot.hidden = n <= 0; syncDot.setAttribute('aria-label', t('common.refreshing')); } });
 const api = {
   swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
+  swrMany: (specs, cb) => swrCache.many(specs, cb),
   async call(action, payload) {
     const block = !READ_ACTION.test(action);
     if (block) busy.start();

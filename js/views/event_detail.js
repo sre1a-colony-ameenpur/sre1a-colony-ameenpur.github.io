@@ -13,7 +13,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(back(), loadingRegion(2));
     try {
-      const { event: e, media } = await ctx.api.call('events.get', { id: ctx.params.id });
+      await ctx.api.swr('events.get', { id: ctx.params.id }, ({ event: e, media }) => {
       const photos = media.filter((m) => m.kind === 'photo');
       const files = h('input', { type: 'file', accept: 'image/*', multiple: true, class: 'sr-only', id: 'ev-add', onChange: async (ev) => {
         if (!ev.target.files.length) return;
@@ -30,6 +30,7 @@ export default async function render(ctx) {
         card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
           photos.length ? h('div', { class: 'photo-grid' }, photos.map((m) => h('button', { type: 'button', class: 'photo-btn', 'aria-label': t('cmp.photo'), onClick: () => viewer(ctx, m.id) }, photoImg(ctx, m.id)))) : h('p', { class: 'muted' }, t('evt.noPhotos')),
           can('media', 'c') ? h('div', {}, files, h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null));
+      });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }
   }
   load();

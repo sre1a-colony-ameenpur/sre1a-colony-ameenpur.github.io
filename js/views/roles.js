@@ -22,13 +22,15 @@ export default function render(ctx) {
   const box = h('div', { class: 'stack' });
 
   async function load() {
-    box.replaceChildren(loadingRegion(2));
+    if (!data) box.replaceChildren(loadingRegion(2));
     try {
-      const [g, hs, ds] = await Promise.all([ctx.api.call('roles.get'), ctx.api.call('roles.holders'), ctx.api.call('roles.list')]);
-      data = g; holders = hs.items; defs = ds;
-      if (!g.roles.includes(role)) role = 'Member';
-      saved = JSON.parse(JSON.stringify(g.matrix)); working = JSON.parse(JSON.stringify(g.matrix));
-      draw();
+      await ctx.api.swrMany([['roles.get'], ['roles.holders'], ['roles.list']], ([g, hs, ds], { stale }) => {
+        if (data && changes().length && !stale) { holders = hs.items; defs = ds; return; }          // never replace ticks the President has not saved yet
+        data = g; holders = hs.items; defs = ds;
+        if (!g.roles.includes(role)) role = 'Member';
+        saved = JSON.parse(JSON.stringify(g.matrix)); working = JSON.parse(JSON.stringify(g.matrix));
+        draw();
+      });
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }
 

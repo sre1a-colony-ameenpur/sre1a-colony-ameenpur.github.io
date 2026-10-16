@@ -13,7 +13,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(back(), loadingRegion(2));
     try {
-      const { poll: p, my_vote: mv, results: r } = await ctx.api.call('polls.get', { id: ctx.params.id });
+      await ctx.api.swr('polls.get', { id: ctx.params.id }, ({ poll: p, my_vote: mv, results: r }) => {
       const stateText = p.status === 'open' ? t('poll.closes', { date: dateShort(p.closes_at) }) : p.status === 'upcoming' ? t('poll.opens', { date: dateShort(p.opens_at) }) : p.status === 'cancelled' ? t('poll.cancelled') : t('poll.closed');
       const head = card(null, null, h('h2', {}, p.question),
         h('div', { class: 'row' }, h('span', { class: 'pill role' }, icon(p.type === 'secret' ? 'lock' : 'visibility', 'sm'), t(p.type === 'secret' ? 'poll.secret' : 'poll.open')), h('span', { class: 'small muted' }, stateText)),
@@ -25,6 +25,7 @@ export default async function render(ctx) {
       if (can('polls', 'u') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.edit'), { block: true, icon: 'edit', onClick: () => createSheet(ctx, load, p) }));
       if (can('polls', 'd') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.cancelPoll'), { kind: 'danger', block: true, onClick: () => cancelSheet(ctx, p.id, load) }));
       root.replaceChildren(...parts);
+      });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('poll.notFound') : friendly(e, t), load)); }
   }
   load();

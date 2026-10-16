@@ -14,7 +14,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(back(), loadingRegion(2));
     try {
-      const d = await ctx.api.call('complaints.get', { id: ctx.params.id });
+      await ctx.api.swr('complaints.get', { id: ctx.params.id }, (d) => {
       const c = d.complaint;
       const stageDate = (s) => (s === 'Open' ? c.raised_at : d.history.filter((x) => x.to_stage === s).map((x) => x.at)[0]);
       const idx = STAGES.indexOf(c.stage);
@@ -40,6 +40,7 @@ export default async function render(ctx) {
             h('p', {}, m.body), commentPhotos(m.id).length ? h('div', { class: 'photo-grid' }, commentPhotos(m.id).map((p) => thumb(ctx, p.id))) : null)) : [h('p', { class: 'muted' }, t('cmp.noComments'))]),
           can('comments', 'c') ? commentBox(ctx, c.id, load) : null),
         can('complaints', 'd') ? button(t('cmp.hideComplaint'), { kind: 'danger', block: true, onClick: () => hideSheet(ctx, 'complaints.hide', c.id, () => { location.hash = '#/issues'; }) }) : null);
+      });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('cmp.notFound') : friendly(e, t), load)); }
   }
   load();

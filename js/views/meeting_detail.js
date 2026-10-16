@@ -15,7 +15,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(back(), loadingRegion(2));
     try {
-      const d = await ctx.api.call('meetings.get', { id: ctx.params.id });
+      await ctx.api.swr('meetings.get', { id: ctx.params.id }, (d) => {
       const m = d.meeting;
       const item = (a, carried) => h('div', { class: 'list-row' },
         can('action_items', 'u') ? h('input', { type: 'checkbox', checked: a.status === 'done', style: 'width:24px;height:24px', 'aria-label': t('mtg.markDone'), onChange: async (e) => {
@@ -37,6 +37,7 @@ export default async function render(ctx) {
         card(t('mtg.actionItems'), 'checklist', ...(d.action_items.length ? d.action_items.map((a) => item(a, false)) : [h('p', { class: 'muted' }, t('mtg.noItems'))]),
           d.carried_open.length ? h('h3', {}, t('mtg.carriedTitle')) : null, ...d.carried_open.map((a) => item(a, true)),
           can('action_items', 'c') ? button(t('mtg.addItem'), { icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null));
+      });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('mtg.notFound') : friendly(e, t), load)); }
   }
   load();

@@ -21,9 +21,13 @@ export default async function render(ctx) {
   return root;
 
   async function loadMine() {
-    mineBox.replaceChildren(loadingRegion(2));
+    if (!mineBox.childElementCount) mineBox.replaceChildren(loadingRegion(2));
     try {
-      const [mine, rates, totals] = await Promise.all([ctx.api.call('maintenance.mine'), ctx.api.call('maintenance.rates.list'), ctx.api.call('maintenance.totals')]);
+      await ctx.api.swrMany([['maintenance.mine'], ['maintenance.rates.list'], ['maintenance.totals']], ([mine, rates, totals]) => paintMine(mine, rates, totals));
+    } catch (e) { mineBox.replaceChildren(errorState(friendly(e, t), loadMine)); }
+  }
+  function paintMine(mine, rates, totals) {
+    {
       const now = ymNow(), sum = summarize(mine), fee = rateFor(rates.items, now);
       const year = now.slice(0, 4), tot = currentTotals(totals, now);
       const tiles = Array.from({ length: 12 }, (_, i) => {
@@ -42,7 +46,7 @@ export default async function render(ctx) {
           h('p', { class: 'small muted' }, t('mt.flat'))),
         card(t('mt.year', { year }), 'calendar_month', h('div', { class: 'tiles' }, tiles)),
         card(t('mt.colony'), 'groups', h('p', {}, t('mt.colonyLine', { got: money(tot.collected_paise), out: money(tot.outstanding_paise) }))));
-    } catch (e) { mineBox.replaceChildren(errorState(friendly(e, t), loadMine)); }
+    }
   }
 }
 
@@ -69,8 +73,8 @@ function committee(ctx) {
   const head = h('div', { class: 'stack' });
 
   async function load() {
-    list.replaceChildren(loadingRegion(2));
-    try { data = await ctx.api.call('maintenance.status', { month }); draw(); } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
+    if (!data || data.month !== month) list.replaceChildren(loadingRegion(2));
+    try { await ctx.api.swr('maintenance.status', { month }, (r) => { data = r; draw(); }); } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
     loadQueue();
   }
   function draw() {
@@ -92,15 +96,14 @@ function committee(ctx) {
   async function loadQueue() {
     if (!can('maintenance_payments', 'r') && !can('payment_confirmation', 'u')) return;
     try {
-      const { items } = await ctx.api.call('maintenance.payments.list', { status: 'awaiting' });
-      queue.replaceChildren(items.length ? card(t('mt.queue', { n: items.length }), 'pending_actions', ...items.map((p) => h('div', { class: 'stack-sm queue-item' },
+      await ctx.api.swr('maintenance.payments.list', { status: 'awaiting' }, ({ items }) => queue.replaceChildren(items.length ? card(t('mt.queue', { n: items.length }), 'pending_actions', ...items.map((p) => h('div', { class: 'stack-sm queue-item' },
         h('div', {}, h('strong', {}, p.member), ' ', p.plots.map(plot)),
         h('div', { class: 'small muted' }, `${money(p.amount_paise)} · ${p.months.map(monthLabel).join(', ')} · ${t('exp.addedBy', { name: p.recorded_by_name })}`),
         h('div', { class: 'row' },
           p.has_proof ? button(t('mt.proof'), { kind: 'text', icon: 'image', onClick: () => proofSheet(ctx, p.id) }) : null,
           can('payment_confirmation', 'u') && !p.mine ? button(t('mt.confirm'), { kind: 'primary', onClick: async () => {
             try { await ctx.api.call('maintenance.payments.confirm', { id: p.id }); toast(t('mt.confirmed')); load(); } catch (e) { toast(friendly(e, t)); }
-          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null))))) : h('div'));
+          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null))))) : h('div')));
     } catch (e) { queue.replaceChildren(errorState(friendly(e, t), loadQueue)); }
   }
 
@@ -115,13 +118,12 @@ function committee(ctx) {
   const removedBox = h('div');
   async function loadRemoved() {
     try {
-      const { items, total_paise: total } = await ctx.api.call('maintenance.removedBalances');
-      removedBox.replaceChildren(items.length ? card(t('mt.removedOwe', { amount: money(total) }), 'person_off', h('p', { class: 'small muted' }, t('mt.removedHelp')),
+      await ctx.api.swr('maintenance.removedBalances', {}, ({ items, total_paise: total }) => removedBox.replaceChildren(items.length ? card(t('mt.removedOwe', { amount: money(total) }), 'person_off', h('p', { class: 'small muted' }, t('mt.removedHelp')),
         ...items.map((i) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, h('div', {}, i.name), h('div', { class: 'row small' }, i.plots.map(plot),
           i.removed_at ? h('span', { class: 'muted' }, t('mt.removedOn', { date: dateShort(i.removed_at) })) : null,
           h('span', { class: 'muted' }, t('mt.removedSplit', { maintenance: money(i.maintenance_paise), fees: money(i.fees_paise) })))),
           h('div', { style: 'text-align:end' }, h('div', { class: 'amount' }, money(i.total_paise)),
-            can('maintenance_payments', 'c') ? button(t('mt.record'), { kind: 'text', onClick: () => removedPaymentSheet(ctx, i, () => { loadRemoved(); load(); }) }) : null)))) : h('div'));
+            can('maintenance_payments', 'c') ? button(t('mt.record'), { kind: 'text', onClick: () => removedPaymentSheet(ctx, i, () => { loadRemoved(); load(); }) }) : null)))) : h('div')));
     } catch { /* the month view reports its own errors */ }
   }
   loadRemoved();

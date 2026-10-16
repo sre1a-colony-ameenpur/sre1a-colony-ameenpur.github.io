@@ -38,5 +38,12 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
       throw e;
     } finally { onSync(--running); }
   }
-  return { swr, clear, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
+  // Several reads for one screen: cb(results[], { stale }) runs once every read has an answer (stored or fresh), and again as each fresh one arrives.
+  async function many(specs, cb) {
+    const latest = new Array(specs.length), have = new Array(specs.length).fill(false), fresh = new Array(specs.length).fill(false);
+    const push = () => { if (have.every(Boolean)) cb(latest.slice(), { stale: !fresh.every(Boolean) }); };
+    await Promise.all(specs.map(([action, payload], i) => swr(action, payload || {}, (d, m) => { latest[i] = d; have[i] = true; fresh[i] = !m.stale; push(); })));
+    return latest;
+  }
+  return { swr, many, clear, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
 }
