@@ -195,6 +195,16 @@ export function createMock({ delayMs = 120 } = {}) {
   const handedOver = () => { try { return JSON.parse(sessionStorage.getItem('mock.handover') || 'null'); } catch { return null; } };
 
   const handlers = {
+    // Same as the real backend: every Home card's data in one answer, keyed by the action the card used to call.
+    'home.summary': (u) => {
+      const out = {};
+      for (const [k, p] of [['expenses.list', {}], ['plotRequests.list', { status: 'Pending' }], ['maintenance.mine', {}], ['dues.mine', {}], ['polls.list', {}], ['meetings.list', {}],
+        ['actionItems.list', { status: 'open' }], ['complaints.list', {}], ['events.list', {}], ['maintenance.totals', {}]]) {
+        const f = handlers[k]; const r = f && f(u, p);
+        if (r && r.ok) out[k] = r.data;
+      }
+      return ok(out);
+    },
     'session.get': (u) => {
       const ho = handedOver();                                // after a handover (kept for the tab, so a reload still shows it) the old President is a Member
       const gone = ho && u === MOCK_USERS.president;
@@ -583,7 +593,7 @@ export function createMock({ delayMs = 120 } = {}) {
       expenses.unshift(e); return ok({ id: e.id });
     },
     'expenses.proof': (u, p) => (expenses.find((x) => x.id === p.id)?.proof ? ok({ jpegBase64: PIXEL }) : fail('NOT_FOUND', 'No screenshot')),
-    'plotRequests.list': (u, p) => ok(p.status === 'Pending' ? [{ id: 'r0', member: 'Anand R.', action: 'add', plotKey: 'B-10' }] : []),
+    'plotRequests.list': (u, p) => ok({ items: p.status === 'Pending' ? [{ id: 'r0', member: 'Anand R.', action: 'add', plotKey: 'B-10' }] : [] }),
     'plotRequests.mine': (u) => ok({ items: plotRequests.filter((r) => r.email === u.email).map((r) => ({ id: r.id, member: r.email, action: r.action, plot_key: r.plotKey.replace('-', ''), status: r.status, requested_at: r.createdAt })) }),
     'plotRequests.create': (u, p) => {
       const plotKey = String(p.plotKey || '').toUpperCase();

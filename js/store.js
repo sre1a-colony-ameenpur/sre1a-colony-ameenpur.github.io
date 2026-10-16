@@ -10,6 +10,14 @@ const state = {
 };
 const subs = new Set();
 
+// Home data that arrived together with the session (one request on opening the app). Used once if still fresh, then dropped.
+export const homeSeed = { at: 0, data: null };
+export function takeHomeSeed(maxAgeMs = 60000) {
+  const d = homeSeed.data && Date.now() - homeSeed.at < maxAgeMs ? homeSeed.data : null;
+  homeSeed.data = null;
+  return d;
+}
+
 export const store = {
   get: () => state,
   set(patch) { Object.assign(state, patch); subs.forEach((f) => f(state)); },

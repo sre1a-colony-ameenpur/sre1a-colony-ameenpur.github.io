@@ -1,6 +1,6 @@
 // App bootstrap: i18n, theme, auth, session, router and shell.
 import { CONFIG, isMock, isDevHost } from './config.js';
-import { store, can } from './store.js';
+import { store, can, homeSeed } from './store.js';
 import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
@@ -102,9 +102,13 @@ async function boot(render = true) {
   } catch { store.set({ status: 'down' }); }
   if (render) router.refresh();
 }
+// Opening the app on Home asks for the Home data together with the session: one request instead of two.
+const onHome = () => { const hsh = location.hash; return !hsh || hsh === '#/' || hsh.startsWith('#/home'); };
 async function loadSession() {
   try {
-    const session = await api.call('session.get');
+    const session = await api.call('session.get', onHome() ? { home: true } : {});
+    if (session.home) { homeSeed.data = session.home; homeSeed.at = Date.now(); }
+    delete session.home;
     session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
     if (!ls.get('sre.lang') && session.language && session.language !== getLang()) await loadLang(session.language);
