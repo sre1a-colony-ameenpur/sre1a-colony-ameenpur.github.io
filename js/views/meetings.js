@@ -1,7 +1,7 @@
 // S4.4 Meetings list (upcoming highlighted, open action items) and new meeting sheet.
 import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
-import { dateShort } from '../fmt.js';
+import { whenShort } from '../fmt.js';
 import { can } from '../store.js';
 
 export const agendaLines = (a) => String(a || '').split('\n').map((x) => x.trim()).filter(Boolean);
@@ -20,7 +20,7 @@ export default async function render(ctx) {
       const rest = items.filter((m) => !upcoming.includes(m));
       const card = (m, hi) => h('a', { class: `card${hi ? ' accent' : ''}`, href: `#/community/meetings/${m.id}`, style: 'display:block;text-decoration:none;color:inherit' },
         h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start' }, h('strong', {}, meetingTitle(m, t('mtg.meeting'))), hi ? statusPill('open', t('mtg.upcoming')) : null),
-        h('div', { class: 'small muted' }, `${dateShort(m.date)} · ${m.place}`),
+        h('div', { class: 'small muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
         counts[m.id] ? h('div', { class: 'small', style: 'margin-top:8px' }, icon('checklist', 'sm'), ' ', t('mtg.openItems', { n: counts[m.id] })) : null);
       list.replaceChildren(...(items.length ? [...upcoming.map((m, i) => card(m, i === 0)), ...rest.map((m) => card(m, false))] : [emptyState(t('mtg.none'), 'event_note')]));
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
@@ -32,14 +32,17 @@ export default async function render(ctx) {
 function newSheet(ctx, done) {
   const { t } = ctx;
   const date = field({ id: 'mt-d', label: t('exp.date'), type: 'date', value: new Date().toISOString().slice(0, 10) });
+  const time = field({ id: 'mt-t', label: t('mtg.time'), type: 'time', required: true });
   const place = field({ id: 'mt-p', label: t('mtg.place'), maxlength: 120 });
   const agenda = h('div', { class: 'field' }, h('label', { for: 'mt-a' }, t('mtg.agenda')), h('textarea', { id: 'mt-a', rows: 5, maxlength: 2000 }), h('div', { class: 'help' }, t('mtg.agendaHelp')));
   const note = h('div', { role: 'alert' });
-  openSheet({ title: t('mtg.new'), body: h('div', { class: 'stack' }, date, place, agenda, note), actions: [
+  openSheet({ title: t('mtg.new'), body: h('div', { class: 'stack' }, h('div', { class: 'row', style: 'gap:var(--s3);align-items:flex-start' }, h('div', { style: 'flex:1' }, date), h('div', { style: 'flex:1' }, time)), place, agenda, note), actions: [
     { label: t('mtg.create'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const pl = place.querySelector('input').value.trim();
       if (!pl) { note.replaceChildren(h('div', { class: 'banner warn' }, t('mtg.placeNeeded'))); return; }
-      try { await ctx.api.call('meetings.create', { date: date.querySelector('input').value, place: pl, agenda: agenda.querySelector('textarea').value.trim() }); close(); toast(t('mtg.created')); done(); }
+      const tm = time.querySelector('input').value;
+      if (!tm) { note.replaceChildren(h('div', { class: 'banner warn' }, t('mtg.timeNeeded'))); return; }
+      try { await ctx.api.call('meetings.create', { date: date.querySelector('input').value, time: tm, place: pl, agenda: agenda.querySelector('textarea').value.trim() }); close(); toast(t('mtg.created')); done(); }
       catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
     } }, { label: t('common.cancel') }] });
 }

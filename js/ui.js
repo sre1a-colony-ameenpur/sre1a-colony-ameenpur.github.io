@@ -43,12 +43,44 @@ export const plotChip = (key) => h('span', { class: 'plot' }, key);
 export const avatar = (name, lg = false) => h('span', { class: `avatar${lg ? ' lg' : ''}`, 'aria-hidden': 'true' }, initials(name));
 export const crest = (sm = false) => h('span', { class: `crest${sm ? ' sm' : ''}`, 'aria-hidden': 'true' }, icon('home'));
 
+// While an async click handler runs, disable the control and show a spinner on it; a second click cannot start a second action.
+export function whileBusy(el, run) {
+  if (el.disabled || el.classList.contains('busy')) return undefined;
+  const done = () => { el.classList.remove('busy'); el.removeAttribute('aria-busy'); el.disabled = false; };
+  let out;
+  try { out = run(); } catch (e) { done(); throw e; }
+  if (out && typeof out.then === 'function') {
+    el.classList.add('busy'); el.setAttribute('aria-busy', 'true'); el.disabled = true;
+    out.then(done, done);
+  }
+  return out;
+}
+
 export function button(label, { kind = '', icon: ic, onClick, block = false, href, disabled, ...rest } = {}) {
   const el = h(href ? 'a' : 'button', {
-    class: `btn ${kind} ${block ? 'block' : ''}`.trim(), type: href ? null : 'button', href, onClick, disabled, ...rest,
+    class: `btn ${kind} ${block ? 'block' : ''}`.trim(), type: href ? null : 'button', href, disabled, ...rest,
   }, ic && icon(ic), label);
+  if (onClick) el.addEventListener('click', href ? onClick : (e) => whileBusy(el, () => onClick(e)));
   return el;
 }
+
+// Full-screen block while a write is in flight. A modal <dialog> sits above any open sheet, so nothing underneath can be clicked.
+let busyCount = 0;
+let busyDlg = null;
+export const busy = {
+  start() {
+    if (++busyCount > 1 || typeof document === 'undefined') return;
+    busyDlg = h('dialog', { class: 'busy-overlay', 'aria-label': t('common.working') },
+      h('div', { class: 'busy-box', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), t('common.working')));
+    busyDlg.addEventListener('cancel', (e) => e.preventDefault());
+    document.body.append(busyDlg);
+    busyDlg.showModal();
+  },
+  end() {
+    if (busyCount === 0 || --busyCount > 0) return;
+    busyDlg?.close(); busyDlg?.remove(); busyDlg = null;
+  },
+};
 
 export function segmented(options, value, onChange, label) {
   const wrap = h('div', { class: 'seg', role: 'group', 'aria-label': label });
@@ -94,7 +126,13 @@ export function toast(msg, ms = 3500) {
 export function openSheet({ title, body, actions = [], wide = false, onClose }) {
   const dlg = h('dialog', { class: `sheet${wide ? ' wide' : ''}`, 'aria-labelledby': 'sheet-title' });
   const close = () => dlg.close();
-  const acts = actions.map((a) => button(a.label, { kind: a.kind, block: true, onClick: async () => { if (!a.keepOpen) close(); await a.onClick?.(close); } }));
+  // The sheet stays open, with its buttons disabled, until the action finishes; it closes only after it succeeds.
+  let acts = [];
+  const lock = (on) => acts.forEach((b) => { b.disabled = on; });
+  acts = actions.map((a) => button(a.label, { kind: a.kind, block: true, onClick: async () => {
+    lock(true);
+    try { await a.onClick?.(close); if (!a.keepOpen && dlg.open) close(); } finally { lock(false); }
+  } }));
   dlg.append(h('div', { class: 'sheet-in' },
     h('h2', { id: 'sheet-title' }, title), body, acts.length ? h('div', { class: 'btn-row' }, acts) : null));
   dlg.addEventListener('close', () => { dlg.remove(); onClose?.(); });

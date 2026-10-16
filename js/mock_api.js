@@ -113,7 +113,7 @@ export function createMock({ delayMs = 120 } = {}) {
     { id: 'p3', question: 'Preferred time for the general body meeting', type: 'secret', result_display: 'ongoing', opens_at: day(-1), closes_at: day(5), status: '', options: [{ id: 'o1', text: 'Morning', n: 8 }, { id: 'o2', text: 'Evening', n: 14 }], voted: [], choices: [] },
   ];
   const meetings = [
-    { id: 'm1', date: day(11).slice(0, 10), place: 'Community hall', agenda: 'General body meeting\nCompound wall repainting\nDiwali plan\nAccounts for the quarter', notes: '', status: 'scheduled', attendees: [] },
+    { id: 'm1', date: day(11).slice(0, 10), time: '17:30', place: 'Community hall', agenda: 'General body meeting\nCompound wall repainting\nDiwali plan\nAccounts for the quarter', notes: '', status: 'scheduled', attendees: [] },
     { id: 'm0', date: day(-12).slice(0, 10), place: 'Community hall', agenda: 'Budget review\nGate repair', notes: 'Wall repaint approved in principle. Quotes to be collected.', status: 'held', attendees: ['A7', 'D3', 'B1', 'C49'] },
   ];
   const actionItems = [
@@ -478,17 +478,17 @@ export function createMock({ delayMs = 120 } = {}) {
       q.voted.push(u.email); o.n++; if (q.type === 'open') q.choices.push({ member_name: u.name, option_id: o.id });
       return ok({ voted: true });
     },
-    'meetings.list': () => ok({ items: meetings.map((m) => ({ id: m.id, date: m.date, place: m.place, agenda: m.agenda, status: m.status })) }),
+    'meetings.list': () => ok({ items: meetings.map((m) => ({ id: m.id, date: m.date, time: m.time || '', place: m.place, agenda: m.agenda, status: m.status })) }),
     'meetings.get': (u, p) => {
       const m = meetings.find((x) => x.id === p.id);
       if (!m) return fail('NOT_FOUND', 'Meeting not found');
       const later = meetings.filter((x) => x.date < m.date).map((x) => x.id);
-      return ok({ meeting: { id: m.id, date: m.date, place: m.place, agenda: m.agenda, notes: m.notes, status: m.status },
+      return ok({ meeting: { id: m.id, date: m.date, time: m.time || '', place: m.place, agenda: m.agenda, notes: m.notes, status: m.status },
         attendees: m.attendees.map((k) => { const mm = members.find((x) => x.plotKeys.some((pk) => pk.replace('-', '') === k)); return { name: mm.name, plot_keys: [k] }; }),
         action_items: actionItems.filter((a) => a.meeting_id === m.id).map((a) => itemView(a, u)), carried_open: actionItems.filter((a) => a.status === 'open' && later.includes(a.meeting_id)).map((a) => itemView(a, u)) });
     },
-    'meetings.create': (u, p) => { const m = { id: 'G' + nextId++, date: p.date, place: p.place, agenda: p.agenda || '', notes: '', status: 'scheduled', attendees: [] }; meetings.unshift(m); return ok({ id: m.id }); },
-    'meetings.update': (u, p) => { const m = meetings.find((x) => x.id === p.id); if (!m) return fail('NOT_FOUND', 'Not found'); ['notes', 'status', 'place', 'date', 'agenda'].forEach((k) => { if (p[k] !== undefined) m[k] = p[k]; }); return ok({ id: m.id }); },
+    'meetings.create': (u, p) => { const m = { id: 'G' + nextId++, date: p.date, time: p.time, place: p.place, agenda: p.agenda || '', notes: '', status: 'scheduled', attendees: [] }; meetings.unshift(m); return ok({ id: m.id }); },
+    'meetings.update': (u, p) => { const m = meetings.find((x) => x.id === p.id); if (!m) return fail('NOT_FOUND', 'Not found'); ['notes', 'status', 'place', 'date', 'time', 'agenda'].forEach((k) => { if (p[k] !== undefined) m[k] = p[k]; }); return ok({ id: m.id }); },
     'attendance.set': (u, p) => { const m = meetings.find((x) => x.id === p.meeting_id); if (!m) return fail('NOT_FOUND', 'Not found'); m.attendees = [...new Set(p.plotKeys)]; return ok({ count: m.attendees.length }); },
     'actionItems.list': (u, p) => ok({ items: actionItems.filter((a) => (!p.status || a.status === p.status) && (!p.meeting_id || a.meeting_id === p.meeting_id)).map((a) => itemView(a, u)) }),
     'actionItems.create': (u, p) => {

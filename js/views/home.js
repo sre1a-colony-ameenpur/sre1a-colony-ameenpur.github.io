@@ -1,7 +1,7 @@
 // S1 Home. Each card loads on its own and appears only if `caps` allows reading it.
 import { h, icon, button, statusPill, plotChip, rolePill, errorState } from '../ui.js';
 import { friendly } from '../api.js';
-import { money, monthLabel, dateShort, daysUntil } from '../fmt.js';
+import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
 import { can } from '../store.js';
 import { summarize, currentTotals } from '../maint.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
@@ -82,7 +82,7 @@ export default function render(ctx) {
         return next ? [{ ...next, open }] : [];
       },
       render: (list) => list[0] ? [
-        h('p', {}, h('strong', {}, String(list[0].agenda).split('\n')[0] || t('mtg.meeting'))), h('p', { class: 'muted' }, `${dateShort(list[0].date)}, ${list[0].place}`),
+        h('p', {}, h('strong', {}, String(list[0].agenda).split('\n')[0] || t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(list[0].date, list[0].time)}, ${list[0].place}`),
         list[0].open ? link('#/community', t('home.meeting.actions', { n: list[0].open })) : null] : [h('p', { class: 'muted' }, t('home.meeting.none'))] }));
   }
   if (r('complaints')) {

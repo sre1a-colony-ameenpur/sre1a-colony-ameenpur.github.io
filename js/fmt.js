@@ -11,6 +11,14 @@ export function dateShort(iso) {
   if (isNaN(d)) return '';
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
+// '17:30' -> '5:30 PM'; empty when the time is unknown (meetings saved before times existed).
+export function timeShort(hm) {
+  const m = /^(\d{2}):(\d{2})$/.exec(hm || '');
+  if (!m) return '';
+  const h = Number(m[1]);
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+export const whenShort = (date, time) => [dateShort(date), timeShort(time)].filter(Boolean).join(', ');
 export function dateDM(iso) {
   const d = new Date(iso);
   return isNaN(d) ? '' : `${d.getDate()} ${MONTHS[d.getMonth()]}`;

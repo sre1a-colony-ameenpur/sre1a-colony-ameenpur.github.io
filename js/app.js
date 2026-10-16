@@ -5,7 +5,7 @@ import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
-import { h, icon, button, toast } from './ui.js';
+import { h, icon, button, toast, busy } from './ui.js';
 import { buildNav, buildTopbar } from './shell.js';
 import { devbar } from './devbar.js';
 
@@ -62,8 +62,11 @@ if (mock) {
 
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
+const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo)$/;
 const api = {
   async call(action, payload) {
+    const block = !READ_ACTION.test(action);
+    if (block) busy.start();
     try {
       const out = await client.call(action, payload);
       if (!store.get().online) store.set({ online: true });
@@ -74,6 +77,8 @@ const api = {
         auth.signOut(); store.set({ status: 'out', session: null, notice: 'signin.expired' }); router.refresh();
       }
       throw e;
+    } finally {
+      if (block) busy.end();
     }
   },
 };

@@ -20,7 +20,7 @@
   --gutter: 16px; --tap: 48px; --tap-min: 44px;
   --nav-w: 0px; --tabbar-h: 64px; --topbar-h: 56px;
   /* type */
-  --fs-h1: 24px; --fs-h2: 20px; --fs-h3: 18px; --fs-body: 16px; --fs-small: 14px;
+  --fs-h1: 1.5rem; --fs-h2: 1.25rem; --fs-h3: 1.125rem; --fs-body: 1rem; --fs-small: 0.875rem;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {

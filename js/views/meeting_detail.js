@@ -1,7 +1,7 @@
 // S4.5 Meeting detail: agenda, attendance, notes, action items.
 import { h, card, button, field, statusPill, avatar, plotChip, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
-import { dateShort } from '../fmt.js';
+import { dateShort, whenShort } from '../fmt.js';
 import { can } from '../store.js';
 import { agendaLines, meetingTitle } from './meetings.js';
 
@@ -25,7 +25,7 @@ export default async function render(ctx) {
           h('div', { class: 'small muted' }, `${a.owner_name}${a.mine ? ` (${t('mtg.you')})` : ''} · ${t('mtg.due', { date: dateShort(a.due_date) })}`, carried ? ` · ${t('mtg.carried')}` : '')),
         a.overdue ? statusPill('overdue', t('mtg.overdue')) : a.status === 'done' ? statusPill('paid', t('mtg.done')) : null);
       root.replaceChildren(back(),
-        card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${dateShort(m.date)} · ${m.place}`),
+        card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
           h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : 'mtg.scheduled')),
             can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.markHeld'), { kind: 'text', onClick: async () => { try { await ctx.api.call('meetings.update', { id: m.id, status: 'held' }); load(); } catch (e) { toast(friendly(e, t)); } } }) : null)),
         card(t('mtg.agenda'), 'format_list_numbered', agendaLines(m.agenda).length ? h('ol', { class: 'agenda' }, agendaLines(m.agenda).map((l) => h('li', {}, l))) : h('p', { class: 'muted' }, t('mtg.noAgenda'))),
