@@ -506,7 +506,14 @@ export function createMock({ delayMs = 120 } = {}) {
       const a = { id: 'A' + nextId++, meeting_id: p.meeting_id, text: p.text, owner: o.name, owner_email: o.email, due_date: p.due_date, status: 'open' }; actionItems.push(a); return ok({ id: a.id });
     },
     'actionItems.update': (u, p) => { const a = actionItems.find((x) => x.id === p.id); if (!a) return fail('NOT_FOUND', 'Not found'); if (p.status) a.status = p.status; return ok({ id: a.id }); },
-    'complaints.list': () => ok({ items: complaints.map((c) => ({ ...complaintView(c), comment_count: c.comments.filter((m) => !m.hidden).length })) }),
+    'complaints.list': (u, p = {}) => {
+      const groups = { open: ['Open', 'Acknowledged'], progress: ['In progress'], resolved: ['Resolved'], closed: ['Closed'] };
+      const rows = complaints.map((c, i) => ({ i, c })).filter(({ i, c }) => (p.before === undefined || i < Number(p.before)) && (!p.group || groups[p.group].includes(c.stage))
+        && (!p.q || `${c.description} ${c.plot_key} ${c.area}`.toLowerCase().includes(String(p.q).toLowerCase()))).sort((a, b) => b.i - a.i);
+      const page = rows.slice(0, p.limit || 30);
+      return ok({ items: page.map(({ c }) => ({ ...complaintView(c), comment_count: c.comments.filter((m) => !m.hidden).length })), total: complaints.length,
+        next_cursor: rows.length > page.length ? String(page[page.length - 1].i) : null });
+    },
     'complaints.get': (u, p) => {
       const c = complaints.find((x) => x.id === p.id);
       if (!c) return fail('NOT_FOUND', 'Complaint not found');

@@ -15,30 +15,38 @@ export const whereChip = (t, c) => (c.plot_key ? plotChip(c.plot_key.replace(/^(
 
 export default async function render(ctx) {
   const { t } = ctx;
-  let filter = 'all', items = [];
-  const list = h('div', { class: 'stack-sm' });
+  let filter = 'all', items = [], cursor = null, total = 0, busy = false, timer = null;
+  const list = h('div', { class: 'stack-sm' }), more = h('div');
   const q = h('input', { type: 'search', class: 'map-q', placeholder: t('cmp.search'), 'aria-label': t('cmp.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
-  q.addEventListener('input', draw);
-  const group = { all: () => true, open: (c) => c.stage === 'Open' || c.stage === 'Acknowledged', progress: (c) => c.stage === 'In progress', resolved: (c) => c.stage === 'Resolved', closed: (c) => c.stage === 'Closed' };
+  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => load(), 350); });     // the server searches every complaint
 
   function draw() {
-    const f = q.value.trim().toLowerCase();
-    const rows = items.filter((c) => group[filter](c) && (!f || (c.description + c.plot_key + c.area).toLowerCase().includes(f)));
-    list.replaceChildren(...(rows.length ? rows.map((c) => h('a', { class: 'card', href: `#/issues/${c.id}`, style: 'display:block;text-decoration:none;color:inherit' },
+    list.replaceChildren(...(items.length ? items.map((c) => h('a', { class: 'card', href: `#/issues/${c.id}`, style: 'display:block;text-decoration:none;color:inherit' },
       h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start' }, h('strong', {}, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
       h('div', { class: 'row', style: 'margin-top:8px' }, whereChip(t, c)),
       h('div', { class: 'small muted', style: 'margin-top:8px' }, daysAgo(c.raised_at) === 0 ? t('cmp.raisedToday', { name: c.raised_by_name }) : t('cmp.raisedAgo', { n: daysAgo(c.raised_at), name: c.raised_by_name }),
         c.comment_count ? ` · ${t('cmp.comments', { n: c.comment_count })}` : '')))
       : [emptyState(t('cmp.none'), 'report')]));
+    more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, disabled: busy, onClick: () => load(true) })] : []));
   }
-  async function load() {
-    list.replaceChildren(loadingRegion(3));
-    try { items = (await ctx.api.call('complaints.list')).items; draw(); } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
+  // Newest first, 30 a page. A filter or a search starts again from the newest; "Show more" asks for the next page.
+  async function load(older = false) {
+    if (!older) { list.replaceChildren(loadingRegion(3)); more.replaceChildren(); }
+    busy = true;
+    try {
+      const payload = {};
+      if (filter !== 'all') payload.group = filter;
+      if (q.value.trim()) payload.q = q.value.trim();
+      if (older) payload.before = cursor;
+      const r = await ctx.api.call('complaints.list', payload);
+      items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; total = r.total;
+      busy = false; draw();
+    } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
   load();
   return h('div', { class: 'page stack' }, h('h1', {}, t('cmp.title')),
-    segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; draw(); }, t('exp.filter')),
-    q, list, can('complaints', 'c') ? button(t('cmp.raise'), { kind: 'primary', block: true, icon: 'add', onClick: () => raiseSheet(ctx, load) }) : null);
+    segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; load(); }, t('exp.filter')),
+    q, list, more, can('complaints', 'c') ? button(t('cmp.raise'), { kind: 'primary', block: true, icon: 'add', onClick: () => raiseSheet(ctx, load) }) : null);
 }
 
 function raiseSheet(ctx, done) {
