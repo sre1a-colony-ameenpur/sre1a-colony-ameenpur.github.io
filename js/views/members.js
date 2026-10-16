@@ -4,7 +4,12 @@ import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { memberSheet } from './members_sheets.js';
 
-export const ROLES = ['Member', 'Treasurer', 'Vice President', 'General Secretary', 'Joint Secretary'];
+// Roles a member can be given (not the President): Member plus the roles the President created. Filled from roles.list.
+export let ROLES = ['Member'];
+export async function loadRoles(api) {
+  try { const { items } = await api.call('roles.list'); ROLES = items.map((r) => r.role).filter((r) => r !== 'President'); } catch { /* keep the last list */ }
+  return ROLES;
+}
 export const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 export const plotsOf = (m) => String(m.plot_keys || '').split(',').filter(Boolean);
 const norm = (s) => String(s).toLowerCase().replace(/[\s-]/g, '');
@@ -18,7 +23,11 @@ export default function render(ctx) {
 
   async function load() {
     list.replaceChildren(loadingRegion(2));
-    try { ({ items } = await ctx.api.call('members.list')); draw(); } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
+    try {
+      [{ items }] = await Promise.all([ctx.api.call('members.list'), loadRoles(ctx.api)]);
+      role.replaceChildren(h('option', { value: 'all' }, t('mem.allRoles')), ...ROLES.map((r) => h('option', { value: r }, r)));
+      draw();
+    } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   function draw() {
     const shown = items.filter((m) => (stateF === 'active' ? m.active : !m.active) && (roleF === 'all' || m.role === roleF)

@@ -1,6 +1,6 @@
 // S6.3 Roles and permissions: pick a role, see who holds it, toggle Create / Read / Update / Delete per record type.
 // Phone-first: one role at a time. From 960 px wide, all roles side by side in one table. The server enforces the locked rights too.
-import { h, card, button, plotChip, avatar, openSheet, toast, errorState, loadingRegion, icon, statusPill } from '../ui.js';
+import { h, card, button, field, plotChip, avatar, openSheet, toast, errorState, loadingRegion, icon, statusPill } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { dashKey } from './members.js';
@@ -18,14 +18,15 @@ const WIDE = '(min-width: 960px)';
 export default function render(ctx) {
   const { t } = ctx;
   const editable = can('roles_config', 'u');
-  let data = null, saved = null, working = null, role = 'Treasurer', holders = [];
+  let data = null, saved = null, working = null, role = 'Member', holders = [], defs = { items: [], presets: [] };
   const box = h('div', { class: 'stack' });
 
   async function load() {
     box.replaceChildren(loadingRegion(2));
     try {
-      const [g, hs] = await Promise.all([ctx.api.call('roles.get'), ctx.api.call('roles.holders')]);
-      data = g; holders = hs.items;
+      const [g, hs, ds] = await Promise.all([ctx.api.call('roles.get'), ctx.api.call('roles.holders'), ctx.api.call('roles.list')]);
+      data = g; holders = hs.items; defs = ds;
+      if (!g.roles.includes(role)) role = 'Member';
       saved = JSON.parse(JSON.stringify(g.matrix)); working = JSON.parse(JSON.stringify(g.matrix));
       draw();
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
@@ -39,13 +40,47 @@ export default function render(ctx) {
   const lockedVerb = (e, v) => (PRESIDENT_ONLY[e] || '').includes(v);
 
   function holderStrip() {
-    const hd = holders.find((x) => x.role === role);
+    const hd = holders.filter((x) => x.role === role && x.member);
     if (role === 'Member') return h('p', { class: 'small muted' }, t('roles.everyone'));
     return h('div', { class: 'stack-sm', style: 'padding-bottom:12px' },
       h('div', { class: 'muted small' }, t('roles.holds')),
-      hd?.member ? h('div', { class: 'row' }, avatar(hd.member.name), h('strong', {}, hd.member.name), hd.member.plot_keys.map((k) => plotChip(dashKey(k))))
-        : h('div', { class: 'row' }, statusPill('closed', t('roles.vacant')), h('span', { class: 'small muted' }, t('roles.nobody'))),
-      role === 'President' ? null : h('a', { class: 'small', href: '#/members' }, t('roles.change')));
+      ...(hd.length ? hd.map((x) => h('div', { class: 'row' }, avatar(x.member.name), h('strong', {}, x.member.name), x.member.plot_keys.map((k) => plotChip(dashKey(k)))))
+        : [h('div', { class: 'row' }, statusPill('closed', t('roles.vacant')), h('span', { class: 'small muted' }, t('roles.nobody')))]),
+      role === 'President' ? null : h('a', { class: 'small', href: '#/members' }, t('roles.change')),
+      role !== 'President' && can('roles_config', 'd') ? deleteButton() : null);
+  }
+
+  // The President creates every role except Member and President, and may delete one nobody holds.
+  function deleteButton() {
+    const d = defs.items.find((x) => x.role === role);
+    if (!d || d.builtin) return null;
+    return d.holder_count ? h('p', { class: 'small muted' }, icon('info', 'sm'), ' ', t('roles.deleteBlocked', { n: d.holder_count }))
+      : button(t('roles.delete'), { kind: 'danger', icon: 'delete', onClick: () => confirmDelete(d.role) });
+  }
+  function confirmDelete(name) {
+    openSheet({ title: t('roles.deleteTitle', { role: name }), body: h('p', {}, t('roles.deleteBody')), actions: [
+      { label: t('roles.delete'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
+        try { await ctx.api.call('roles.delete', { name }); close(); toast(t('roles.deleted')); role = 'Member'; load(); } catch (e) { close(); toast(friendly(e, t)); }
+      } }, { label: t('common.cancel') }] });
+  }
+  function newRoleSheet() {
+    let one = true;
+    const name = field({ id: 'nr-name', label: t('roles.newName'), maxlength: 40, help: t('roles.newNameHelp') });
+    const preset = h('div', { class: 'field' }, h('label', { for: 'nr-preset' }, t('roles.preset')),
+      h('select', { id: 'nr-preset' }, h('option', { value: '' }, t('roles.presetNone')), (defs.presets || []).map((p) => h('option', { value: p }, p))),
+      h('div', { class: 'help' }, t('roles.presetHelp')));
+    const holdSeg = h('div', { class: 'seg', role: 'group', 'aria-label': t('roles.holderMode') }, [[true, t('roles.oneHolder')], [false, t('roles.manyHolders')]].map(([v, label]) =>
+      h('button', { type: 'button', 'aria-pressed': String(v === one), onClick: (e) => { one = v; holdSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); } }, label)));
+    const note = h('div', { role: 'alert' });
+    openSheet({ title: t('roles.new'), body: h('div', { class: 'stack' }, name, holdSeg, preset, note), actions: [
+      { label: t('roles.create'), kind: 'primary', keepOpen: true, onClick: async (close) => {
+        const v = name.querySelector('input').value.trim();
+        if (!v) { note.replaceChildren(h('div', { class: 'banner warn' }, t('roles.nameNeeded'))); return; }
+        try {
+          const r = await ctx.api.call('roles.create', { name: v, singleHolder: one, preset: preset.querySelector('select').value || undefined });
+          close(); toast(t('roles.created')); role = r.role; load();
+        } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, e.code === 'CONFLICT' ? t('roles.nameTaken') : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t))); }
+      } }, { label: t('common.cancel') }] });
   }
 
   function toggleRow(e) {
@@ -117,12 +152,13 @@ export default function render(ctx) {
   function draw() {
     const roles = data.roles.filter((r) => r !== 'President');
     if (matchMedia(WIDE).matches) {
-      box.replaceChildren(h('div', { class: 'banner info', style: 'border-radius:12px;border:1px solid var(--c-border)' }, icon('info'), h('div', { class: 'grow' }, t('roles.rules'))), matrixTable(roles), foot);
+      box.replaceChildren(h('div', { class: 'banner info', style: 'border-radius:12px;border:1px solid var(--c-border)' }, icon('info'), h('div', { class: 'grow' }, t('roles.rules'))), can('roles_config', 'c') ? button(t('roles.new'), { icon: 'add', onClick: newRoleSheet }) : null, matrixTable(roles), foot);
       drawFoot();
       return;
     }
     box.replaceChildren(
       h('div', { class: 'banner info', style: 'border-radius:12px;border:1px solid var(--c-border)' }, icon('info'), h('div', { class: 'grow' }, t('roles.rules'))),
+      can('roles_config', 'c') ? button(t('roles.new'), { icon: 'add', onClick: newRoleSheet }) : null,
       h('div', { class: 'field' }, h('label', { for: 'roles-pick' }, t('roles.pick')),
         h('select', { id: 'roles-pick', onChange: (ev) => { role = ev.target.value; draw(); } }, [...roles, 'President'].map((r) => h('option', { value: r, selected: r === role }, r)))),
       role === 'President'

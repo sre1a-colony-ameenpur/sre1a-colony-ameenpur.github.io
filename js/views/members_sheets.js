@@ -3,7 +3,7 @@ import { h, button, field, openSheet, confirmSheet, toast, icon } from '../ui.js
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
 import { can, store, hasModule } from '../store.js';
-import { ROLES, dashKey, plotsOf } from './members.js';
+import { ROLES, loadRoles, dashKey, plotsOf } from './members.js';
 
 const val = (el) => el.querySelector('input,select').value.trim();
 const today = () => new Date().toISOString().slice(0, 10);
