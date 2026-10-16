@@ -1,0 +1,84 @@
+// S7.1 My profile: read-only details, language, appearance, plot change requests, sign out.
+import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion } from '../ui.js';
+import { friendly } from '../api.js';
+import { dateShort } from '../fmt.js';
+import { can } from '../store.js';
+
+const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
+
+export default function render(ctx) {
+  const { t, store } = ctx;
+  const s = store.get().session;
+  const row = (label, val) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, val));
+  const reqBox = h('div', { class: 'stack-sm' });
+
+  const root = h('div', { class: 'page stack' },
+    h('h1', {}, t('profile.title')),
+    card(null, null,
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true), h('div', {}, h('h2', {}, s.name), rolePill(s.role))),
+      row(t('profile.email'), s.email),
+      row(t('profile.mobile'), s.mobile || h('span', { class: 'muted' }, t('profile.notAdded'))),
+      row(t('profile.plots'), h('span', { class: 'row' }, s.plotKeys.length ? s.plotKeys.map(plotChip) : t('profile.noPlots'))),
+      h('p', { class: 'small muted', style: 'margin-top:8px' }, t('profile.readonly')),
+      can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, onClick: () => requestSheet(ctx, loadRequests) })) : null),
+    card(t('profile.showMobile'), 'call', mobileSwitch(ctx, s)),
+    can('plot_change_requests', 'c') ? card(t('profile.myRequests'), 'list_alt', reqBox) : null,
+    card(t('profile.language'), 'translate', segmented([['en', 'English'], ['te', 'తెలుగు']], ctx.lang, ctx.setLang, t('lang.label'))),
+    card(t('profile.appearance'), 'contrast', segmented([['auto', t('theme.auto')], ['light', t('theme.light')], ['dark', t('theme.dark')]], store.get().theme, ctx.setTheme, t('profile.appearance'))),
+    button(t('menu.signOut'), { kind: 'danger', block: true, icon: 'logout', onClick: async () => {
+      if (await confirmSheet(t('signout.title'), t('signout.text'), { confirmLabel: t('menu.signOut'), danger: true })) ctx.signOut();
+    } }));
+
+  async function loadRequests() {
+    if (!can('plot_change_requests', 'c')) return;
+    reqBox.replaceChildren(loadingRegion(1));
+    try {
+      const { items: list } = await ctx.api.call('plotRequests.mine');
+      reqBox.replaceChildren(...(list.length ? list.map((r) => h('div', { class: 'list-row' },
+        h('div', { class: 'grow' }, `${t(r.action === 'add' ? 'req.add' : 'req.remove')} `, plotChip(dashKey(r.plot_key)),
+          h('div', { class: 'small muted' }, dateShort(r.requested_at))),
+        statusPill(r.status === 'Pending' ? 'pending' : r.status === 'Approved' ? 'approved' : r.status === 'Rejected' ? 'rejected' : 'closed', t(`req.status.${r.status}`)),
+        r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
+          try { await ctx.api.call('plotRequests.cancel', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toast(friendly(e, t)); }
+        } }) : null)) : [emptyState(t('req.none'), 'inbox')]));
+    } catch (e) { reqBox.replaceChildren(errorState(friendly(e, t), loadRequests)); }
+  }
+  loadRequests();
+  return root;
+}
+
+// Request a plot change: Add / Remove, then plot id. Server decides; ownedByOther shows the amber note.
+function requestSheet(ctx, done) {
+  const { t } = ctx;
+  let action = 'add';
+  const note = h('div', { role: 'alert' });
+  const input = field({ id: 'plotkey', label: t('req.plot'), help: t('req.plotHelp'), autocapitalize: 'characters' });
+  const send = { label: t('req.send'), kind: 'primary', keepOpen: true, onClick: async (close) => {
+    note.replaceChildren();
+    try {
+      await ctx.api.call('plotRequests.create', { action, plotKey: input.querySelector('input').value.trim().toUpperCase() });
+      close(); toast(t('req.sent')); done();
+    } catch (e) {
+      note.append(h('div', { class: 'banner warn', style: 'border-radius:12px' }, e.extra?.details?.owner ? t('req.ownedByOther') : friendly(e, t)));
+    }
+  } };
+  openSheet({ title: t('profile.requestPlot'), actions: [send, { label: t('common.cancel') }],
+    body: h('div', { class: 'stack' }, segmented([['add', t('req.add')], ['remove', t('req.remove')]], 'add', (v) => { action = v; }, t('profile.requestPlot')), input, note) });
+}
+
+// Member's own choice to show their mobile number to other members (FR-084); off by default.
+function mobileSwitch(ctx, s) {
+  const { t, store } = ctx;
+  const box = h('input', { type: 'checkbox', id: 'show-mobile', checked: !!s.showMobile, style: 'width:24px;height:24px' });
+  box.addEventListener('change', async () => {
+    const show = box.checked;
+    try {
+      await ctx.api.call('members.setMobileVisibility', { show });
+      store.set({ session: { ...store.get().session, showMobile: show } });
+      toast(t('common.saved'));
+    } catch (e) { box.checked = !show; toast(friendly(e, t)); }
+  });
+  return h('div', { class: 'stack-sm' },
+    h('label', { class: 'row', for: 'show-mobile' }, box, h('span', { class: 'grow' }, t('profile.showMobileLabel'))),
+    h('p', { class: 'small muted' }, t('profile.showMobileHelp')));
+}
