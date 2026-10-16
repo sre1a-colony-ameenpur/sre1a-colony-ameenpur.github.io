@@ -6,6 +6,7 @@ import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
 import { h, icon, button, toast, busy } from './ui.js';
+import { registerPwa } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
 import { devbar } from './devbar.js';
 
@@ -199,3 +200,4 @@ window.addEventListener('online', () => { store.set({ online: true }); renderAll
 if (!mock) await auth.init();
 await boot(false);
 router.start();
+if (!mock && !isDevHost()) registerPwa();      // installable app + update banner; not on localhost, so dev edits are never cached
