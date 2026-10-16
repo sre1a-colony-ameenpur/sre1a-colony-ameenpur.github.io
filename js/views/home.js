@@ -7,19 +7,25 @@ import { summarize, currentTotals } from '../maint.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 
 // A card that loads independently. render(data) returns nodes, or null to hide the card.
+// Stored answers are drawn first; when the fresh answer arrives every card re-runs quietly (the bus), without a skeleton.
+const bus = new Set();
 function lazyCard(ctx, { title, ic, load, render, cls = '' }) {
   const box = h('section', { class: `card ${cls}`.trim(), 'aria-busy': 'true' });
   const head = () => h('h2', { class: 'card-title' }, icon(ic), title);
-  async function run() {
-    box.setAttribute('aria-busy', 'true');
-    box.replaceChildren(head(), h('div', { class: 'skel line', style: 'width:70%;margin-top:8px' }), h('div', { class: 'skel line', style: 'width:45%;margin-top:8px' }));
+  async function run(silent = false) {
+    if (!silent) {
+      box.setAttribute('aria-busy', 'true');
+      box.replaceChildren(head(), h('div', { class: 'skel line', style: 'width:70%;margin-top:8px' }), h('div', { class: 'skel line', style: 'width:45%;margin-top:8px' }));
+    }
     try {
       const out = render(await load());
       if (!out) { box.remove(); return; }
       box.replaceChildren(head(), ...out.filter(Boolean));
-    } catch (e) { box.replaceChildren(head(), errorState(friendly(e, ctx.t), run)); }
+    } catch (e) { if (!silent) box.replaceChildren(head(), errorState(friendly(e, ctx.t), run)); }
     box.removeAttribute('aria-busy');
   }
+  const again = () => { if (box.isConnected) run(true); else bus.delete(again); };
+  bus.add(again);
   run();
   return box;
 }
@@ -32,12 +38,17 @@ const GROUP = { 'maintenance.mine': 'money', 'dues.mine': 'money', 'maintenance.
   'complaints.list': 'around', 'events.list': 'around', 'plotRequests.list': 'around' };
 
 function homeData(api) {
-  const pending = {};
+  const pending = {}, latest = {};
   return async (action) => {
     const g = GROUP[action];
-    if (!pending[g]) pending[g] = api.call('home.summary', { group: g });
-    let sum;
-    try { sum = await pending[g]; } catch (e) { pending[g] = null; throw e; }
+    if (!pending[g]) {
+      pending[g] = new Promise((resolve, reject) => {
+        let first = true;
+        api.swr('home.summary', { group: g }, (s) => { latest[g] = s; if (first) { first = false; resolve(s); } else bus.forEach((f) => f()); }).catch((e) => { if (first) reject(e); });
+      });
+    }
+    try { await pending[g]; } catch (e) { pending[g] = null; throw e; }
+    const sum = latest[g];
     const v = sum[action];
     if (v === undefined) throw new ApiError('NOT_FOUND');
     if (v && v.error) { pending[g] = null; throw new ApiError(v.error.code); }

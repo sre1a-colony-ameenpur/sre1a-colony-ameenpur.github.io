@@ -20,14 +20,20 @@ export default async function render(ctx) {
       p.status === 'open' ? h('div', { style: 'margin-top:8px' }, p.my_vote.voted ? statusPill('voted', t('poll.voted'))
         : can('polls', 'vote') ? h('span', { class: 'btn primary' }, t('poll.vote')) : null) : null))
       : [emptyState(t('poll.none'), 'how_to_vote')]));
+    more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, onClick: () => load(true) })] : []));
   }
-  async function load() {
-    list.replaceChildren(loadingRegion(2));
-    try { items = (await ctx.api.call('polls.list')).items; draw(); } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
+  let cursor = null;
+  const more = h('div');
+  async function load(older = false) {
+    if (!older && !items.length) list.replaceChildren(loadingRegion(2));
+    try {
+      if (older) { const r = await ctx.api.call('polls.list', { before: cursor }); items = items.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      await ctx.api.swr('polls.list', {}, (r) => { items = r.items; cursor = r.next_cursor || null; draw(); });
+    } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
   return h('div', { class: 'stack' }, segmented([['open', t('poll.tabOpen')], ['closed', t('poll.tabClosed')]], 'open', (v) => { tab = v; draw(); }, t('com.polls')),
-    list, can('polls', 'c') ? button(t('poll.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => createSheet(ctx, load) }) : null);
+    list, more, can('polls', 'c') ? button(t('poll.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => createSheet(ctx, load) }) : null);
 }
 
 // Create a poll, or edit one (pass `poll` from polls.get). The backend refuses edits once anyone has voted.

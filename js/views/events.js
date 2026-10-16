@@ -22,18 +22,26 @@ export async function uploadPhotos(ctx, parentId, files) {
 export default async function render(ctx) {
   const { t } = ctx;
   const list = h('div', { class: 'stack-sm' });
-  async function load() {
-    list.replaceChildren(loadingRegion(2));
-    try {
-      const { items } = await ctx.api.call('events.list');
+  let items = [], cursor = null;
+  const more = h('div');
+  function draw() {
+    {
       list.replaceChildren(...(items.length ? items.map((e) => h('a', { class: 'card', href: `#/community/events/${e.id}`, style: 'display:block;text-decoration:none;color:inherit;padding:0;overflow:hidden' },
         e.cover_media_id ? h('div', { class: 'cover' }, photoImg(ctx, e.cover_media_id, 'cover-img')) : h('div', { class: 'cover empty' }, icon('celebration')),
         h('div', { style: 'padding:12px' }, h('strong', {}, e.title), h('div', { class: 'small muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`),
           !e.upcoming ? h('div', { class: 'small muted' }, t('evt.past')) : null))) : [emptyState(t('evt.none'), 'celebration')]));
+      more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, onClick: () => load(true) })] : []));
+    }
+  }
+  async function load(older = false) {
+    if (!older && !items.length) list.replaceChildren(loadingRegion(2));
+    try {
+      if (older) { const r = await ctx.api.call('events.list', { before: cursor }); items = items.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      await ctx.api.swr('events.list', {}, (r) => { items = r.items; cursor = r.next_cursor || null; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'stack' }, list, can('events', 'c') ? button(t('evt.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
+  return h('div', { class: 'stack' }, list, more, can('events', 'c') ? button(t('evt.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
 }
 
 function newSheet(ctx, done) {

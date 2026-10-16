@@ -61,15 +61,16 @@ export default async function render(ctx) {
     const payload = {};
     if (filter !== 'all') payload.status = filter;
     if (older) payload.before = cursor;
-    const r = await ctx.api.call('expenses.list', payload);
-    items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; stats = r;
+    const apply = (r) => { items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; stats = r; };
+    if (older) apply(await ctx.api.call('expenses.list', payload));
+    else await ctx.api.swr('expenses.list', payload, (r) => { apply(r); if (box.childElementCount) draw(); });
   }
   async function loadList(older = false) {
     busy = true;
     try { await fetchPage(older); busy = false; draw(); } catch (e) { busy = false; toast(friendly(e, t)); }
   }
   async function load() {
-    box.replaceChildren(loadingRegion(3));
+    if (!items.length) box.replaceChildren(loadingRegion(3));
     try {
       await fetchPage(false);
       queue = can('expense_approval', 'u') && stats.pending_count ? (await ctx.api.call('expenses.list', { status: 'pending' })).items : [];

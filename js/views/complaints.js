@@ -18,7 +18,7 @@ export default async function render(ctx) {
   let filter = 'all', items = [], cursor = null, total = 0, busy = false, timer = null;
   const list = h('div', { class: 'stack-sm' }), more = h('div');
   const q = h('input', { type: 'search', class: 'map-q', placeholder: t('cmp.search'), 'aria-label': t('cmp.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
-  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => load(), 350); });     // the server searches every complaint
+  q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { items = []; load(); }, 350); });     // the server searches every complaint
 
   function draw() {
     list.replaceChildren(...(items.length ? items.map((c) => h('a', { class: 'card', href: `#/issues/${c.id}`, style: 'display:block;text-decoration:none;color:inherit' },
@@ -31,21 +31,21 @@ export default async function render(ctx) {
   }
   // Newest first, 30 a page. A filter or a search starts again from the newest; "Show more" asks for the next page.
   async function load(older = false) {
-    if (!older) { list.replaceChildren(loadingRegion(3)); more.replaceChildren(); }
+    if (!older && !items.length) { list.replaceChildren(loadingRegion(3)); more.replaceChildren(); }
     busy = true;
     try {
       const payload = {};
       if (filter !== 'all') payload.group = filter;
       if (q.value.trim()) payload.q = q.value.trim();
       if (older) payload.before = cursor;
-      const r = await ctx.api.call('complaints.list', payload);
-      items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; total = r.total;
+      if (older) { const r = await ctx.api.call('complaints.list', payload); items = items.concat(r.items); cursor = r.next_cursor || null; total = r.total; }
+      else await ctx.api.swr('complaints.list', payload, (r) => { items = r.items; cursor = r.next_cursor || null; total = r.total; draw(); });
       busy = false; draw();
     } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
   load();
   return h('div', { class: 'page stack' }, h('h1', {}, t('cmp.title')),
-    segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; load(); }, t('exp.filter')),
+    segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; items = []; load(); }, t('exp.filter')),
     q, list, more, can('complaints', 'c') ? button(t('cmp.raise'), { kind: 'primary', block: true, icon: 'add', onClick: () => raiseSheet(ctx, load) }) : null);
 }
 

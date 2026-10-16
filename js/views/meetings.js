@@ -10,10 +10,11 @@ export const meetingTitle = (m, fallback) => agendaLines(m.agenda)[0] || fallbac
 export default async function render(ctx) {
   const { t } = ctx;
   const list = h('div', { class: 'stack-sm' });
-  async function load() {
-    list.replaceChildren(loadingRegion(2));
-    try {
-      const [{ items }, open] = await Promise.all([ctx.api.call('meetings.list'), can('action_items', 'r') ? ctx.api.call('actionItems.list', { status: 'open' }) : { items: [] }]);
+  let all = [], cursor = null, openItems = { items: [] };
+  const more = h('div');
+  function draw() {
+    const items = all, open = openItems;
+    {
       const counts = {}; open.items.forEach((a) => { counts[a.meeting_id] = (counts[a.meeting_id] || 0) + 1; });
       const today = new Date().toISOString().slice(0, 10);
       const upcoming = items.filter((m) => m.status === 'scheduled' && m.date >= today).sort((a, b) => a.date.localeCompare(b.date));
@@ -23,10 +24,19 @@ export default async function render(ctx) {
         h('div', { class: 'small muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
         counts[m.id] ? h('div', { class: 'small', style: 'margin-top:8px' }, icon('checklist', 'sm'), ' ', t('mtg.openItems', { n: counts[m.id] })) : null);
       list.replaceChildren(...(items.length ? [...upcoming.map((m, i) => card(m, i === 0)), ...rest.map((m) => card(m, false))] : [emptyState(t('mtg.none'), 'event_note')]));
+      more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, onClick: () => load(true) })] : []));
+    }
+  }
+  async function load(older = false) {
+    if (!older && !all.length) list.replaceChildren(loadingRegion(2));
+    try {
+      if (older) { const r = await ctx.api.call('meetings.list', { before: cursor }); all = all.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      if (can('action_items', 'r')) ctx.api.swr('actionItems.list', { status: 'open' }, (r) => { openItems = r; if (all.length) draw(); }).catch(() => {});
+      await ctx.api.swr('meetings.list', {}, (r) => { all = r.items; cursor = r.next_cursor || null; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'stack' }, can('action_items', 'r') ? h('a', { class: 'btn', href: '#/community/action-items', style: 'align-self:flex-start' }, icon('checklist'), t('ai.title')) : null, list, can('meetings', 'c') ? button(t('mtg.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
+  return h('div', { class: 'stack' }, can('action_items', 'r') ? h('a', { class: 'btn', href: '#/community/action-items', style: 'align-self:flex-start' }, icon('checklist'), t('ai.title')) : null, list, more, can('meetings', 'c') ? button(t('mtg.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
 }
 
 function newSheet(ctx, done) {

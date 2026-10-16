@@ -6,6 +6,7 @@ import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
 import { h, icon, button, toast, busy } from './ui.js';
+import { createSwr } from './swr.js';
 import { registerPwa } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
 import { devbar } from './devbar.js';
@@ -64,13 +65,21 @@ if (mock) {
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
 const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary)$/;
+// A small spinner in the corner while data is refreshed in the background (stored answers are shown first, see swr.js).
+const syncDot = h('div', { class: 'sync-dot', role: 'status', hidden: true }, h('span', { class: 'spinner', 'aria-hidden': 'true' }));
+document.body.append(syncDot);
+const lsOrNull = (() => { try { return globalThis.localStorage || null; } catch { return null; } })();
+const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, userKey: () => store.get().session?.email,
+  onSync: (n) => { syncDot.hidden = n <= 0; syncDot.setAttribute('aria-label', t('common.refreshing')); } });
 const api = {
+  swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
   async call(action, payload) {
     const block = !READ_ACTION.test(action);
     if (block) busy.start();
     try {
       const out = await client.call(action, payload);
       if (!store.get().online) store.set({ online: true });
+      if (block) swrCache.clear();                                    // a write may change anything we stored
       return out;
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') store.set({ online: false });
@@ -119,6 +128,7 @@ async function loadSession() {
 const mockEmail = () => ({ unlisted: 'someone.else@example.com', removed: 'former.member@example.com' })[ss.get('sre.mockRole')] || '';
 
 function signOut() {
+  swrCache.clear();
   auth.signOut();
   store.set({ status: 'out', session: null, user: null, notice: null });
   location.hash = '#/signin'; router.refresh();

@@ -230,6 +230,14 @@ export function createMock({ delayMs = 120 } = {}) {
         owner: m ? { name: m.name, role: m.role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')), ...(shows ? { mobile: '90000 ' + String(m.email.length).padStart(5, '0') } : {}) } : null,
         profile: m ? { Occupation: 'Engineer' } : undefined });
     },
+    'members.directory': (u, p = {}) => {
+      const q = String(p.q || '').toLowerCase().replace(/[\s-]/g, '');
+      const rows = members.filter((m) => m.active !== false && (!q || `${m.name},${m.plotKeys.join(',')}`.toLowerCase().replace(/[\s-]/g, '').includes(q))).sort((a, b) => a.name.localeCompare(b.name));
+      const off = Number(p.before || 0), page = rows.slice(off, off + 30);
+      const out = { items: page.map((m) => ({ name: m.name, role: m.role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')) })), total: rows.length, next_cursor: off + 30 < rows.length ? String(off + 30) : null };
+      if (!off && !q) out.committee = ['President', 'Treasurer', 'Vice President', 'General Secretary', 'Joint Secretary'].map((role) => { const m = members.find((x) => x.role === role); return { role, member: m ? { name: m.name, role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')) } : null }; });
+      return ok(out);
+    },
     'map.committee': () => ok(['President', 'Treasurer', 'Vice President', 'General Secretary', 'Joint Secretary'].map((role) => {
       const m = members.find((x) => x.role === role);
       return { role, member: m ? { name: m.name, role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')) } : null };
