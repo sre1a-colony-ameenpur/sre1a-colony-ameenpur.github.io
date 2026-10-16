@@ -1,6 +1,6 @@
 // App bootstrap: i18n, theme, auth, session, router and shell.
 import { CONFIG, isMock, isDevHost } from './config.js';
-import { store, can, homeSeed } from './store.js';
+import { store, can } from './store.js';
 import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
@@ -63,7 +63,7 @@ if (mock) {
 
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
-const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo)$/;
+const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary)$/;
 const api = {
   async call(action, payload) {
     const block = !READ_ACTION.test(action);
@@ -102,13 +102,9 @@ async function boot(render = true) {
   } catch { store.set({ status: 'down' }); }
   if (render) router.refresh();
 }
-// Opening the app on Home asks for the Home data together with the session: one request instead of two.
-const onHome = () => { const hsh = location.hash; return !hsh || hsh === '#/' || hsh.startsWith('#/home'); };
 async function loadSession() {
   try {
-    const session = await api.call('session.get', onHome() ? { home: true } : {});
-    if (session.home) { homeSeed.data = session.home; homeSeed.at = Date.now(); }
-    delete session.home;
+    const session = await api.call('session.get');
     session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
     if (!ls.get('sre.lang') && session.language && session.language !== getLang()) await loadLang(session.language);

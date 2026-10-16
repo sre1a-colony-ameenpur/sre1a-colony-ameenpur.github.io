@@ -2,7 +2,7 @@
 import { h, icon, button, statusPill, plotChip, rolePill, errorState } from '../ui.js';
 import { friendly, ApiError } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
-import { can, hasModule, takeHomeSeed } from '../store.js';
+import { can, hasModule } from '../store.js';
 import { summarize, currentTotals } from '../maint.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 
@@ -24,17 +24,23 @@ function lazyCard(ctx, { title, ic, load, render, cls = '' }) {
   return box;
 }
 
-// One request feeds every card: the summary came with the session, or is fetched once here. A card that failed, or the whole
-// request failing, is fetched again when its Retry is pressed.
+// Home data comes in three requests sent at the same time, grouped by the spreadsheets they read (Apps Script runs separate requests in
+// parallel, but one request reads its sheets one after another). Each card draws as soon as its group answers; a group is asked for only
+// if some card needs it, so switched-off modules cost nothing. Retry on a failed card or group asks again.
+const GROUP = { 'maintenance.mine': 'money', 'dues.mine': 'money', 'maintenance.totals': 'money', 'expenses.list': 'money',
+  'polls.list': 'community', 'meetings.list': 'community', 'actionItems.list': 'community',
+  'complaints.list': 'around', 'events.list': 'around', 'plotRequests.list': 'around' };
+
 function homeData(api) {
-  let pending = null;
+  const pending = {};
   return async (action) => {
-    if (!pending) { const seed = takeHomeSeed(); pending = seed ? Promise.resolve(seed) : api.call('home.summary'); }
+    const g = GROUP[action];
+    if (!pending[g]) pending[g] = api.call('home.summary', { group: g });
     let sum;
-    try { sum = await pending; } catch (e) { pending = null; throw e; }
+    try { sum = await pending[g]; } catch (e) { pending[g] = null; throw e; }
     const v = sum[action];
     if (v === undefined) throw new ApiError('NOT_FOUND');
-    if (v && v.error) { pending = null; throw new ApiError(v.error.code); }
+    if (v && v.error) { pending[g] = null; throw new ApiError(v.error.code); }
     return v;
   };
 }
