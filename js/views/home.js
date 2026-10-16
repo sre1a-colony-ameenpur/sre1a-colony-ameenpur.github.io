@@ -59,7 +59,7 @@ export default function render(ctx) {
   if (can('expense_approval', 'u') || can('plot_change_requests', 'u')) {
     cards.push(lazyCard(ctx, { title: t('home.action.title'), ic: 'notification_important', cls: 'accent span-all',
       load: async () => ({
-        expenses: can('expense_approval', 'u') ? (await home('expenses.list')).items.filter((x) => x.status === 'pending' && !x.mine).length : 0,
+        expenses: can('expense_approval', 'u') ? (await home('expenses.list')).pending_for_me : 0,
         plots: can('plot_change_requests', 'u') ? (await home('plotRequests.list')).items.length : 0,
       }),
       render: (d) => {

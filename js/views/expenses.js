@@ -29,7 +29,7 @@ export async function approve(ctx, id, done) {
 export default async function render(ctx) {
   const { t } = ctx;
   const box = h('div', { class: 'stack' });
-  let filter = 'all', items = [];
+  let filter = 'all', items = [], queue = [], cursor = null, stats = { year_total_paise: 0 }, busy = false;
 
   function row(x) {
     const rev = !!x.reverses_id;
@@ -40,27 +40,41 @@ export default async function render(ctx) {
 
   function draw() {
     const year = new Date().getFullYear();
-    const total = items.filter((x) => x.status === 'approved' && String(x.date).startsWith(String(year))).reduce((a, x) => a + x.amount_paise, 0);
-    const waiting = items.filter((x) => x.status === 'pending');
-    const shown = items.filter((x) => filter === 'all' || x.status === filter);
-    const parts = [card(null, null, h('div', { class: 'muted small' }, t('exp.yearTotal', { year })), h('div', { class: 'amount big' }, money(total)))];
+    const waiting = queue;
+    const parts = [card(null, null, h('div', { class: 'muted small' }, t('exp.yearTotal', { year })), h('div', { class: 'amount big' }, money(stats.year_total_paise)))];
     if (can('expense_approval', 'u') && waiting.length) {
-      parts.push(card(t('exp.queue', { n: waiting.length }), 'pending_actions', ...waiting.map((x) => h('div', { class: 'stack-sm queue-item' },
+      parts.push(card(t('exp.queue', { n: stats.pending_count }), 'pending_actions', ...waiting.map((x) => h('div', { class: 'stack-sm queue-item' },
         h('a', { class: 'grow', href: `#/money/expense/${x.id}` }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${money(x.amount_paise)} · ${t('exp.addedBy', { name: x.created_by_name })}`)),
         x.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : h('span', { class: 'row' },
           button(t('exp.approve'), { kind: 'primary', onClick: () => approve(ctx, x.id, load) }),
           button(t('exp.reject'), { kind: 'danger', onClick: () => rejectSheet(ctx, x.id, load) }))))));
     }
-    parts.push(segmented([['all', t('exp.f.all')], ['pending', t('exp.f.pending')], ['approved', t('exp.f.approved')], ['rejected', t('exp.f.rejected')]], filter, (v) => { filter = v; draw(); }, t('exp.filter')));
-    parts.push(shown.length ? h('div', { class: 'stack-sm' }, shown.map(row)) : emptyState(t('exp.none'), 'receipt_long'));
+    parts.push(segmented([['all', t('exp.f.all')], ['pending', t('exp.f.pending')], ['approved', t('exp.f.approved')], ['rejected', t('exp.f.rejected')]], filter, (v) => { filter = v; loadList(); }, t('exp.filter')));
+    parts.push(items.length ? h('div', { class: 'stack-sm' }, items.map(row)) : emptyState(t('exp.none'), 'receipt_long'));
+    if (cursor) parts.push(button(t('audit.more'), { block: true, disabled: busy, onClick: () => loadList(true) }));
     if (can('expenses', 'c')) parts.push(button(t('exp.add'), { kind: 'primary', block: true, icon: 'add', onClick: () => addSheet(ctx, load) }));
     box.replaceChildren(...parts);
   }
 
+  // The first page comes from the server's cache of the newest rows; the waiting list for approvers is its own request.
+  async function fetchPage(older) {
+    const payload = {};
+    if (filter !== 'all') payload.status = filter;
+    if (older) payload.before = cursor;
+    const r = await ctx.api.call('expenses.list', payload);
+    items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; stats = r;
+  }
+  async function loadList(older = false) {
+    busy = true;
+    try { await fetchPage(older); busy = false; draw(); } catch (e) { busy = false; toast(friendly(e, t)); }
+  }
   async function load() {
     box.replaceChildren(loadingRegion(3));
-    try { items = (await ctx.api.call('expenses.list')).items; draw(); }
-    catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
+    try {
+      await fetchPage(false);
+      queue = can('expense_approval', 'u') && stats.pending_count ? (await ctx.api.call('expenses.list', { status: 'pending' })).items : [];
+      draw();
+    } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
   return box;

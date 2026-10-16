@@ -567,7 +567,16 @@ export function createMock({ delayMs = 120 } = {}) {
     },
     'events.update': (u, p) => { const e = events.find((x) => x.id === p.id); if (!e) return fail('NOT_FOUND', 'Not found'); ['title', 'date', 'place', 'description'].forEach((k) => { if (p[k] !== undefined) e[k] = p[k]; }); return ok({ id: e.id }); },
     'events.hide': (u, p) => { const i = events.findIndex((x) => x.id === p.id); if (i < 0) return fail('NOT_FOUND', 'Not found'); events.splice(i, 1); return ok({ id: p.id }); },
-    'expenses.list': (u) => ok({ items: expenses.map((e) => viewExpense(e, u)), approved_total_paise: expenses.filter((e) => e.status === 'approved').reduce((a, e) => a + e.amount_paise, 0) }),
+    'expenses.list': (u, p = {}) => {
+      const rows = expenses.map((e, i) => ({ i, e })).filter(({ i, e }) => (p.before === undefined || i < Number(p.before)) && (!p.status || e.status === p.status)).sort((a, b) => b.i - a.i);
+      const page = rows.slice(0, p.limit || 30);
+      const year = String(new Date().getFullYear()), approved = expenses.filter((e) => e.status === 'approved');
+      const pending = expenses.filter((e) => e.status === 'pending');
+      return ok({ items: page.map(({ e }) => viewExpense(e, u)), total: expenses.length, next_cursor: rows.length > page.length ? String(page[page.length - 1].i) : null,
+        approved_total_paise: approved.reduce((a, e) => a + e.amount_paise, 0), year_total_paise: approved.filter((e) => String(e.date).startsWith(year)).reduce((a, e) => a + e.amount_paise, 0),
+        pending_count: pending.length, pending_for_me: pending.filter((e) => !viewExpense(e, u).mine).length });
+    },
+    'expenses.get': (u, p) => { const e = expenses.find((x) => x.id === p.id); return e ? ok({ item: viewExpense(e, u), reversed: expenses.some((x) => x.reverses_id === e.id) }) : fail('NOT_FOUND', 'Expense not found'); },
     'expenses.create': (u, p) => {
       if (!(p.amount_paise > 0) || !p.reason || !p.proof_jpeg_base64) return fail('INVALID', 'Check the form');
       const e = { id: 'E' + nextId++, date: p.date, amount_paise: p.amount_paise, category: p.category, reason: p.reason, status: 'pending', by: u, at: new Date().toISOString(), proof: true };

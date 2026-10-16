@@ -13,10 +13,10 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(h('a', { href: '#/money', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')), loadingRegion(2));
     try {
-      const { items } = await ctx.api.call('expenses.list');
-      const x = items.find((i) => i.id === ctx.params.id);
-      if (!x) { root.replaceChildren(errorState(t('exp.notFound'), () => { location.hash = '#/money'; })); return; }
-      const reversed = items.some((i) => i.reverses_id === x.id);
+      let got;
+      try { got = await ctx.api.call('expenses.get', { id: ctx.params.id }); } catch (e) { if (e.code === 'NOT_FOUND') got = null; else throw e; }
+      if (!got) { root.replaceChildren(errorState(t('exp.notFound'), () => { location.hash = '#/money'; })); return; }
+      const x = got.item, reversed = got.reversed;
       const isReversal = !!x.reverses_id;
       const proof = h('div', { class: 'proof' });
       if (x.has_proof) showProof(proof, x.id);
