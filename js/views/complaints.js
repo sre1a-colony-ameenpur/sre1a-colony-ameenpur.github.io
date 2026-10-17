@@ -45,7 +45,7 @@ export default async function render(ctx) {
     } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
   load();
-  return h('div', { class: 'page stack' }, h('h1', {}, t('cmp.title')),
+  return h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('a', { class: 'btn', href: '#/issues/monthly' }, icon('insights', 'sm'), t('cmp.monthly'))),
     segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; items = []; load(); }, t('exp.filter')),
     q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
 }
