@@ -1,6 +1,14 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-18',
+    title: { en: 'Who looks after a complaint, and who helped', te: 'ఫిర్యాదును ఎవరు చూసుకుంటారు, ఎవరు సహాయం చేశారు' },
+    items: [
+      { en: 'Committee members can take on a complaint nobody is looking after.', te: 'ఎవరూ చూసుకోని ఫిర్యాదును కమిటీ సభ్యులు తీసుకోవచ్చు.' },
+      { en: 'Complaints can only be handed to committee members.', te: 'ఫిర్యాదులను కమిటీ సభ్యులకు మాత్రమే అప్పగించవచ్చు.' },
+      { en: 'When resolving or closing, add photos of the fix and mark who helped.', te: 'పరిష్కరించేటప్పుడు లేదా మూసివేసేటప్పుడు, సరిచేసిన ఫోటోలు జోడించి, సహాయం చేసినవారిని గుర్తించండి.' },
+      { en: 'The language switch now shows EN and తె.', te: 'భాష మార్పు ఇప్పుడు EN, తె అని చూపిస్తుంది.' },
+    ] },
   { date: '2026-10-17',
     title: { en: 'Videos, event spending and a new look', te: 'వీడియోలు, కార్యక్రమ ఖర్చులు, కొత్త రూపం' },
     items: [

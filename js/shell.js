@@ -46,8 +46,8 @@ export function buildNav(s, current) {
 }
 
 export function langToggle(lang, setLang) {
-  const b = (code, label) => h('button', { type: 'button', lang: code, 'aria-pressed': String(lang === code), onClick: () => setLang(code) }, label);
-  return h('div', { class: 'lang', role: 'group', 'aria-label': t('lang.label') }, b('en', 'EN'), b('te', 'తెలుగు'));
+  const b = (code, label, name) => h('button', { type: 'button', lang: code, 'aria-label': name, title: name, 'aria-pressed': String(lang === code), onClick: () => setLang(code) }, label);
+  return h('div', { class: 'lang', role: 'group', 'aria-label': t('lang.label') }, b('en', 'EN', 'English'), b('te', 'తె', 'తెలుగు'));
 }
 
 export function buildTopbar(s, { title, lang, setLang, onSignOut }) {

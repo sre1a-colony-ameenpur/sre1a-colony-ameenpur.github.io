@@ -24,6 +24,7 @@ export default async function render(ctx) {
         icon(i <= idx ? 'check_circle' : 'radio_button_unchecked', 'sm'), h('span', {}, t(`cmp.stage.${STAGE_KEY[s]}`)), h('small', { class: 'muted' }, stageDate(s) ? dateDM(stageDate(s)) : ''))));
       const days = Math.max(0, Math.round(c.elapsed_ms / 86400000));
       const photos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'complaint');
+      const fixPhotos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'resolution');
       const commentPhotos = (cid) => d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'comment' && m.parent_id === cid);
       const next = STAGES.slice(idx + 1);
       root.replaceChildren(back(),
@@ -31,11 +32,17 @@ export default async function render(ctx) {
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
           h('p', { class: 'small muted' }, t('cmp.raisedOn', { date: dateShort(c.raised_at), name: c.raised_by_name })),
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
-            store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null)),
+            store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
+          c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
+            try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toast(friendly(e, t)); }
+          } }) : null),
         card(t('cmp.progress'), 'timeline', tracker,
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, ${dateDM(x.at)}`))),
           h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { n: days }) : t('cmp.timeSoFar', { n: days })),
           (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', onClick: () => stageSheet(ctx, c, next, load) }) : null),
+        fixPhotos.length || d.contributors?.length ? card(t('cmp.fixPhotosTitle'), 'task_alt',
+          fixPhotos.length ? h('div', { class: 'photo-grid' }, fixPhotos.map((m) => thumb(ctx, m.id))) : null,
+          d.contributors?.length ? h('p', {}, icon('volunteer_activism', 'sm'), ' ', t('cmp.contribThanks', { names: d.contributors.map((x) => `${x.name} (${x.plot_keys.map((k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2')).join(', ')})`).join(', ') })) : null) : null,
         photos.length ? card(t('cmp.photosTitle'), 'image', h('div', { class: 'photo-grid' }, photos.map((m) => thumb(ctx, m.id)))) : null,
         videosCard(ctx, { videos: d.media.filter((m) => m.kind === 'video' && m.parent_type === 'complaint'), parentType: 'complaint', parentId: c.id, canAdd: can('complaints', 'c'), done: load }),
         card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
@@ -91,7 +98,7 @@ function assignSheet(ctx, c, done) {
   let closeSheet = () => {};
   function draw() {
     const f = norm(q.value.trim());
-    const rows = all.filter((m) => m.plot_keys?.length && (!f || norm(`${m.name},${m.plot_keys.join(',')}`).includes(f)));
+    const rows = all.filter((m) => m.role !== 'Member' && m.plot_keys?.length && (!f || norm(`${m.name},${m.plot_keys.join(',')}`).includes(f)));
     list.replaceChildren(...rows.map((m) => h('button', { type: 'button', class: 'list-row map-row', style: 'width:100%;text-align:start', onClick: () => pick({ plotKey: m.plot_keys[0] }, closeSheet) },
       avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'row small' }, m.plot_keys.map((k) => plotChip(String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2'))))))));
   }
@@ -106,10 +113,40 @@ function stageSheet(ctx, c, next, done) {
   const { t } = ctx;
   const note = h('div', { role: 'alert' });
   const why = field({ id: 'st-note', label: t('cmp.stageNote'), help: t('cmp.stageNoteHelp'), maxlength: 200 });
-  openSheet({ title: t('cmp.changeStatus'), body: h('div', { class: 'stack-sm' }, h('p', { class: 'small muted' }, t('cmp.forwardOnly')), why, note), actions: [
+  const picked = new Set();                                           // plot keys of the members who helped
+  const finishing = next.some((s) => s === 'Resolved' || s === 'Closed');
+  const files = h('input', { type: 'file', accept: 'image/*', multiple: true, 'aria-label': t('cmp.fixPhotos') });
+  const q = h('input', { type: 'search', class: 'map-q', placeholder: t('com.membersSearch'), 'aria-label': t('com.membersSearch'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
+  const list = h('div', { class: 'stack-sm', style: 'max-height:220px;overflow:auto' });
+  const chosen = h('p', { class: 'small muted' }, t('cmp.contribNone'));
+  let all = [];
+  const norm = (v) => String(v).toLowerCase().replace(/[\s-]/g, '');
+  function drawList() {
+    const f = norm(q.value.trim());
+    list.replaceChildren(...all.filter((m) => m.plot_keys?.length && (!f || norm(`${m.name},${m.plot_keys.join(',')}`).includes(f))).map((m) => {
+      const key = m.plot_keys[0], box = h('input', { type: 'checkbox', checked: picked.has(key), onChange: () => { box.checked ? picked.add(key) : picked.delete(key); drawChosen(); } });
+      return h('label', { class: 'row', style: 'gap:8px' }, box, h('span', { class: 'grow' }, m.name), h('span', { class: 'small muted' }, m.plot_keys.map((k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2')).join(', ')));
+    }));
+  }
+  function drawChosen() { chosen.textContent = picked.size ? all.filter((m) => picked.has(m.plot_keys?.[0])).map((m) => m.name).join(', ') : t('cmp.contribNone'); }
+  if (finishing) {
+    q.addEventListener('input', drawList);
+    ctx.api.swr('members.directory', {}, (r) => { all = r.items; drawList(); drawChosen(); }).catch((e) => toast(friendly(e, t)));
+  }
+  const extras = finishing ? h('div', { class: 'stack-sm' }, h('strong', {}, t('cmp.resolveExtras')),
+    h('div', { class: 'stack-sm' }, h('div', {}, h('strong', { class: 'small' }, t('cmp.contribTitle')), h('p', { class: 'small muted' }, t('cmp.contribHelp'))), q, list, chosen),
+    h('div', { class: 'stack-sm' }, h('strong', { class: 'small' }, t('cmp.fixPhotos')), h('p', { class: 'small muted' }, t('cmp.fixPhotosHelp')), files)) : null;
+  openSheet({ title: t('cmp.changeStatus'), body: h('div', { class: 'stack-sm' }, h('p', { class: 'small muted' }, t('cmp.forwardOnly')), why, extras, note), actions: [
     ...next.map((s) => ({ label: t(`cmp.stage.${STAGE_KEY[s]}`), kind: 'primary', keepOpen: true, onClick: async (close) => {
-      try { await ctx.api.call('complaints.stage', { id: c.id, stage: s, note: why.querySelector('input').value.trim() }); close(); toast(t('common.saved')); done(); }
-      catch (e) { note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }
+      const finish = s === 'Resolved' || s === 'Closed';
+      try {
+        await ctx.api.call('complaints.stage', { id: c.id, stage: s, note: why.querySelector('input').value.trim(), ...(finish && picked.size ? { contributors: [...picked] } : {}) });
+        let failed = 0;
+        if (finish) for (const f of [...files.files].slice(0, 3)) {
+          try { await ctx.api.call('media.addPhoto', { parentType: 'resolution', parentId: c.id, jpegBase64: await compressPhoto(f, { maxBase64: 1400000 }) }); } catch { failed++; }
+        }
+        close(); toast(failed ? t('cmp.photoFailed') : t('common.saved')); done();
+      } catch (e) { note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }
     } })), { label: t('common.cancel') }] });
 }
 
