@@ -1,4 +1,5 @@
 // Sheets for maintenance: record a payment (S3.7), raise dues (S3.12), edit a due (S3.13), change the fee (S3.8), view a proof.
+import { withCamera } from '../camera.js';
 import { h, card, button, field, openSheet, toast, icon, plotChip, loadingRegion, statusPill, errorState } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
@@ -79,7 +80,7 @@ export function recordPaymentSheet(ctx, done) {
 
   openSheet({ title: t('mt.record'), body: h('div', { class: 'stack' }, hasModule('fees') ? h('div', { class: 'field' }, h('label', {}, t('mt.paymentFor')), seg) : null, picker.el,
     monthsBox, duesBox, amount,
-    h('div', { class: 'field' }, h('label', { for: 'rp-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp'))),
+    h('div', { class: 'field' }, h('label', { for: 'rp-file' }, t('exp.proof')), withCamera(file, t), h('div', { class: 'help' }, t('exp.proofHelp'))),
     h('p', { class: 'small muted' }, t('mt.confirmNote')), note), actions: [
     { label: t('mt.submit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const who = picker.get(), paise = rupeesToPaise(amount.querySelector('input').value);
@@ -240,7 +241,7 @@ export function removedPaymentSheet(ctx, row, done) {
     h('span', { class: 'grow' }, x.label), h('strong', {}, money(x.paise))));
   openSheet({ title: t('mt.recordFor', { name: row.name }), body: h('div', { class: 'stack' }, h('p', { class: 'small muted' }, t('mt.removedHelp')),
     h('div', { class: 'field' }, h('label', {}, t('mt.paymentFor')), ...radios), amount,
-    h('div', { class: 'field' }, h('label', { for: 'rm-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp'))),
+    h('div', { class: 'field' }, h('label', { for: 'rm-file' }, t('exp.proof')), withCamera(file, t), h('div', { class: 'help' }, t('exp.proofHelp'))),
     h('p', { class: 'small muted' }, t('mt.confirmNote')), note), actions: [
     { label: t('mt.submit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const paise = rupeesToPaise(amount.querySelector('input').value);

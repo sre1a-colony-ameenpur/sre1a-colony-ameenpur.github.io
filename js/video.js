@@ -1,6 +1,7 @@
 // Videos on events and complaints. The file never goes through our server: the backend starts an UNLISTED upload on the colony's YouTube channel,
 // the browser sends the file straight to YouTube, and only the video id is stored. Played in the app with no address and no share button
 // (a deterrent, not security: unlisted only means "not searchable").
+import { withCamera } from './camera.js';
 import { h, button, card, openSheet, toast, icon } from './ui.js';
 import { friendly } from './api.js';
 
@@ -37,7 +38,7 @@ export function addVideoSheet(ctx, { parentType, parentId, done }) {
   const bar = h('progress', { max: 100, value: 0, style: 'width:100%', hidden: true });
   const note = h('div', { role: 'alert', 'aria-live': 'polite' });
   openSheet({ title: t('vid.add'), body: h('div', { class: 'stack' },
-    h('div', { class: 'field' }, h('label', { for: 'vd-file' }, t('vid.pick')), file), h('div', { class: 'field' }, h('label', { for: 'vd-cap' }, t('vid.caption')), caption),
+    h('div', { class: 'field' }, h('label', { for: 'vd-file' }, t('vid.pick')), withCamera(file, t, { video: true })), h('div', { class: 'field' }, h('label', { for: 'vd-cap' }, t('vid.caption')), caption),
     bar, h('p', { class: 'small muted' }, t('vid.keepOpen')), note), actions: [
     { label: t('vid.start'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const f = file.files[0];

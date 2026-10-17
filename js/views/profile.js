@@ -1,5 +1,6 @@
 // S7.1 My profile: read-only details, language, appearance, plot change requests, sign out.
-import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion } from '../ui.js';
+import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion, setMyPhoto } from '../ui.js';
+import { pickPhoto, compressPhoto } from '../photo.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -15,7 +16,8 @@ export default function render(ctx) {
   const root = h('div', { class: 'page stack' },
     h('h1', {}, t('profile.title')),
     card(null, null,
-      h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true), h('div', {}, h('h2', {}, s.name), rolePill(s.role))),
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true, true), h('div', {}, h('h2', {}, s.name), rolePill(s.role))),
+      button(t('profile.changePhoto'), { kind: 'text', icon: 'photo_camera', onClick: () => photoSheet(ctx) }),
       row(t('profile.email'), s.email),
       row(t('profile.mobile'), s.mobile || h('span', { class: 'muted' }, t('profile.notAdded'))),
       row(t('profile.plots'), h('span', { class: 'row' }, s.plotKeys.length ? s.plotKeys.map(plotChip) : t('profile.noPlots'))),
@@ -81,4 +83,25 @@ function mobileSwitch(ctx, s) {
   return h('div', { class: 'stack-sm' },
     h('label', { class: 'row', for: 'show-mobile' }, box, h('span', { class: 'grow' }, t('profile.showMobileLabel'))),
     h('p', { class: 'small muted' }, t('profile.showMobileHelp')));
+}
+
+// Profile photo: take one with the camera (front camera on a phone) or choose one from the gallery. Kept small (512 px) before it is sent.
+function photoSheet(ctx) {
+  const { t } = ctx;
+  const note = h('div', { role: 'alert' });
+  const choose = (camera) => async (close) => {
+    const file = await pickPhoto({ camera });                       // opened straight from the tap
+    if (!file) return;
+    close();
+    try {
+      const jpegBase64 = await compressPhoto(file, { max: 512, quality: 0.85, maxBase64: 1300000 });
+      await ctx.api.call('profile.setPhoto', { jpegBase64 });
+      setMyPhoto(`data:image/jpeg;base64,${jpegBase64}`);
+      toast(t('profile.photoSaved'));
+    } catch (e) { toast(friendly(e, t)); }
+  };
+  openSheet({ title: t('profile.photoTitle'), body: h('div', { class: 'stack-sm' }, h('p', { class: 'small muted' }, t('profile.photoHelp')), note), actions: [
+    { label: t('profile.takePhoto'), kind: 'primary', keepOpen: true, onClick: choose('user') },
+    { label: t('profile.pickGallery'), keepOpen: true, onClick: choose(null) },
+    { label: t('common.cancel') }] });
 }

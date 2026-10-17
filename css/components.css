@@ -46,6 +46,7 @@ a.list-row:hover .grow { text-decoration: underline; }
 .chip[aria-pressed="true"], .chip.on { background: var(--c-primary); border-color: var(--c-primary); color: var(--c-on-primary); }
 .chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
 .avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--c-primary); color: var(--c-on-primary); font-weight: 600; font-size: var(--fs-small); flex: none; }
+.avatar.has-photo { background-size: cover; background-position: center; background-color: var(--c-border); }
 .avatar.lg { width: 56px; height: 56px; font-size: var(--fs-h3); }
 .crest { display: inline-block; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #fff; }
 .crest.sm { width: 40px; height: 40px; }

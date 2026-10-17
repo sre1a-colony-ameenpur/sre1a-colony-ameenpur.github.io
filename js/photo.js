@@ -11,6 +11,19 @@ const blobToBase64 = (blob) => new Promise((resolve, reject) => {
   r.readAsDataURL(blob);
 });
 
+// Opens the phone's camera ("user" = front, "environment" = back) or its photo gallery and resolves with the chosen File, or null when cancelled.
+// Call it straight from a tap: browsers only open the picker from a user gesture.
+export function pickPhoto({ camera = null, accept = 'image/*' } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = accept;
+    if (camera) input.setAttribute('capture', camera);
+    input.addEventListener('change', () => resolve(input.files?.[0] || null));
+    input.addEventListener('cancel', () => resolve(null));
+    input.click();
+  });
+}
+
 // Returns the JPEG as base64 (no data: prefix). Retries at lower quality if the result is over maxBase64 characters.
 export async function compressPhoto(file, { max = 1600, quality = 0.8, maxBase64 = 2400000 } = {}) {
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });

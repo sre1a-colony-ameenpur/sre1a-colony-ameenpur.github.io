@@ -27,6 +27,7 @@ export function menuItems(s) {
   const view = (e) => (can(e, 'c', s) || can(e, 'u', s) || can(e, 'd', s) ? '' : t('menu.viewOnly'));
   return [
     { path: '/profile', icon: 'person', label: 'menu.profile', show: true },
+    { path: '/documents', icon: 'menu_book', label: 'menu.documents', show: true },
     { path: '/members', icon: 'group', label: 'menu.members', hint: view('members'), show: can('members', 'r', s) },
     { path: '/roles', icon: 'admin_panel_settings', label: 'menu.roles', hint: view('roles_config'), show: can('roles_config', 'r', s) },
     { path: '/plots', icon: 'grid_view', label: 'menu.plots', hint: view('plots'), show: can('plots', 'r', s) },
@@ -54,14 +55,14 @@ export function langToggle(lang, setLang) {
 export function buildTopbar(s, { title, back, lang, setLang, onSignOut }) {
   const session = s.session;
   const btn = h('button', { class: 'avatar-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
-    'aria-label': t('menu.open', { name: session.name }), onClick: () => toggle() }, avatar(session.name));
+    'aria-label': t('menu.open', { name: session.name }), onClick: () => toggle() }, avatar(session.name, false, true));
   let menu = null, scrim = null;
   function close() { menu?.remove(); scrim?.remove(); menu = scrim = null; btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
   function toggle() {
     if (menu) return close();
     scrim = h('div', { class: 'menu-scrim', onClick: close });
     menu = h('div', { class: 'menu', role: 'menu', onKeydown: (e) => { if (e.key === 'Escape') close(); } },
-      h('header', {}, avatar(session.name, true), h('div', { class: 'grow' },
+      h('header', {}, avatar(session.name, true, true), h('div', { class: 'grow' },
         h('div', { style: 'font-weight:600' }, session.name), h('div', { class: 'small muted', style: 'overflow-wrap:anywhere' }, session.email),
         h('div', { style: 'margin-top:4px' }, rolePill(session.role)))),
       menuItems(s).map((i) => h('a', { href: '#' + i.path, role: 'menuitem', onClick: close }, icon(i.icon),

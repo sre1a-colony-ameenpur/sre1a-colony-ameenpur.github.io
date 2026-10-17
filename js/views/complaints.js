@@ -1,4 +1,5 @@
 // S2.1 Complaints list and S2.2 raise a complaint. Detail is complaint_detail.js.
+import { withCamera } from '../camera.js';
 import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
@@ -66,7 +67,7 @@ function raiseSheet(ctx, done) {
   openSheet({ title: t('cmp.raise'), body: h('div', { class: 'stack' }, dl,
     segmented([['plot', t('cmp.aPlot')], ['area', t('cmp.commonArea')]], 'plot', (v) => { where = v; plotInput.hidden = v !== 'plot'; area.hidden = v !== 'area'; }, t('cmp.where')), plotInput, area,
     h('div', { class: 'field' }, h('label', { for: 'cm-text' }, t('cmp.what')), text, count),
-    h('div', { class: 'field' }, h('label', { for: 'cm-files' }, t('cmp.photos')), files, h('div', { class: 'help' }, t('cmp.photosHelp'))), note), actions: [
+    h('div', { class: 'field' }, h('label', { for: 'cm-files' }, t('cmp.photos')), withCamera(files, t, { multiple: true }), h('div', { class: 'help' }, t('cmp.photosHelp'))), note), actions: [
     { label: t('cmp.submit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const description = text.value.trim();
       if (!description) return warn(t('cmp.whatNeeded'));

@@ -1,4 +1,5 @@
 // Sheets for fees: raise a request (S3.10), request detail with recipients (S3.11), cancel/edit, record a fee payment, membership fee amount, proof.
+import { withCamera } from '../camera.js';
 import { h, button, field, openSheet, toast, icon, plotChip, segmented, statusPill, loadingRegion, errorState } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
@@ -130,7 +131,7 @@ export function recordFeePaymentSheet(ctx, due, done) {
   const file = h('input', { type: 'file', accept: 'image/*', id: 'fp-file' });
   const [note, warn] = warnBox();
   openSheet({ title: t('fee.record'), body: h('div', { class: 'stack' }, h('p', {}, `${due.member || ''} · ${due.title}`), h('p', { class: 'small muted' }, t('fee.owed', { amount: money(owed) })), amount,
-    h('div', { class: 'field' }, h('label', { for: 'fp-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp'))), h('p', { class: 'small muted' }, t('mt.confirmNote')), note), actions: [
+    h('div', { class: 'field' }, h('label', { for: 'fp-file' }, t('exp.proof')), withCamera(file, t), h('div', { class: 'help' }, t('exp.proofHelp'))), h('p', { class: 'small muted' }, t('mt.confirmNote')), note), actions: [
     { label: t('mt.submit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const paise = rupeesToPaise(amount.querySelector('input').value);
       if (!(paise > 0)) return warn(t('exp.amountNeeded')); if (!file.files[0]) return warn(t('exp.proofNeeded'));

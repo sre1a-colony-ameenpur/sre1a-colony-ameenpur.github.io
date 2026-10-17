@@ -1,4 +1,5 @@
 // S3.1 Expenses list (with S3.4 approvals queue and S3.2 add sheet). Detail is expense_detail.js.
+import { withCamera } from '../camera.js';
 import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
@@ -106,7 +107,7 @@ export function addSheet(ctx, done, eventId = '') {
   const reason = field({ id: 'e-why', label: t('exp.reason'), maxlength: 300 });
   const event = eventPicker(ctx, 'e-event', eventId);
   const file = h('input', { type: 'file', accept: 'image/*', id: 'e-file' });
-  const proof = h('div', { class: 'field' }, h('label', { for: 'e-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp')));
+  const proof = h('div', { class: 'field' }, h('label', { for: 'e-file' }, t('exp.proof')), withCamera(file, t), h('div', { class: 'help' }, t('exp.proofHelp')));
   const autoOk = can('expense_approval', 'u');   // the President's own entries are approved on entry
   const note = h('div', { role: 'alert' });
   const warn = (m) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error'), m));

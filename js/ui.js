@@ -41,7 +41,19 @@ export function statusPill(kind, label) {
 }
 export const rolePill = (role) => h('span', { class: 'pill role' }, role);
 export const plotChip = (key) => h('span', { class: 'plot' }, key);
-export const avatar = (name, lg = false) => h('span', { class: `avatar${lg ? ' lg' : ''}`, 'aria-hidden': 'true' }, initials(name));
+// Your own avatar (mine = true) shows your profile photo once it is loaded, and is updated in place when it changes; others show initials.
+let myPhoto = '';
+function paintMine(el) {
+  el.style.backgroundImage = myPhoto ? `url("${myPhoto}")` : '';
+  el.classList.toggle('has-photo', !!myPhoto);
+  el.textContent = myPhoto ? '' : el.dataset.initials;
+}
+export function setMyPhoto(dataUrl) { myPhoto = dataUrl || ''; document.querySelectorAll('.avatar[data-mine]').forEach(paintMine); }
+export const avatar = (name, lg = false, mine = false) => {
+  const el = h('span', { class: `avatar${lg ? ' lg' : ''}`, 'aria-hidden': 'true' }, initials(name));
+  if (mine) { el.dataset.mine = '1'; el.dataset.initials = initials(name); if (myPhoto) paintMine(el); }
+  return el;
+};
 export const crest = (sm = false) => h('img', { class: `crest${sm ? ' sm' : ''}`, src: 'icons/logo.png', alt: '', 'aria-hidden': 'true' });
 
 // While an async click handler runs, disable the control and show a spinner on it; a second click cannot start a second action.

@@ -1,4 +1,5 @@
 // S4.1 Events list (cover photo, upcoming first) and S4.3 new event.
+import { withCamera } from '../camera.js';
 import { h, button, field, emptyState, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
@@ -53,7 +54,7 @@ function newSheet(ctx, done) {
   const files = h('input', { type: 'file', accept: 'image/*', multiple: true, id: 'ev-f' });
   const note = h('div', { role: 'alert' });
   openSheet({ title: t('evt.new'), body: h('div', { class: 'stack' }, title, date, place, desc,
-    h('div', { class: 'field' }, h('label', { for: 'ev-f' }, t('evt.photos')), files, h('div', { class: 'help' }, t('evt.photosHelp'))), note), actions: [
+    h('div', { class: 'field' }, h('label', { for: 'ev-f' }, t('evt.photos')), withCamera(files, t, { multiple: true }), h('div', { class: 'help' }, t('evt.photosHelp'))), note), actions: [
     { label: t('evt.publish'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const ttl = title.querySelector('input').value.trim();
       if (!ttl) { note.replaceChildren(h('div', { class: 'banner warn' }, t('fee.titleNeeded'))); return; }

@@ -5,7 +5,7 @@ import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
-import { h, icon, button, toast, busy } from './ui.js';
+import { h, icon, button, toast, busy, setMyPhoto } from './ui.js';
 import { createSwr } from './swr.js';
 import { registerPwa } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
@@ -38,6 +38,7 @@ const routes = [
   { path: '/map', title: 'nav.map', needs: ['map_profile', 'r'], load: lazy('./views/map.js') },
   { path: '/members', back: '/home', title: 'menu.members', needs: ['members', 'r'], load: lazy('./views/members.js') }, { path: '/members/import', back: '/members', title: 'imp.title', needs: ['members', 'c'], load: lazy('./views/members_import.js') }, { path: '/roles', back: '/home', title: 'menu.roles', needs: ['roles_config', 'r'], load: lazy('./views/roles.js') },
   { path: '/plots', back: '/home', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/plots.js') }, { path: '/plots/layout', back: '/plots', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/layout.js') }, { path: '/audit', back: '/home', title: 'menu.audit', needs: ['audit', 'r'], load: lazy('./views/audit.js') },
+  { path: '/documents', back: '/home', title: 'menu.documents', load: lazy('./views/documents.js') },
   { path: '/settings', back: '/home', title: 'menu.settings', needs: ['handover', 'c'], load: lazy('./views/settings.js') },
   { path: '/handover', back: '/home', title: 'menu.handover', needs: ['handover', 'c'], load: lazy('./views/handover.js') },
 ];
@@ -121,6 +122,7 @@ async function loadSession() {
     const session = await api.call('session.get');
     session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
+    loadMyPhoto(session);       // not awaited: the photo never holds up sign-in
     if (!ls.get('sre.lang') && session.language && session.language !== getLang()) await loadLang(session.language);
   } catch (e) {
     if (e.code === 'NO_ACCESS') {
@@ -130,10 +132,17 @@ async function loadSession() {
     else store.set({ status: 'down' });
   }
 }
+// First sign-in without a photo: the server takes the Google picture (if any). Then the photo is fetched once for the avatar.
+async function loadMyPhoto(session) {
+  try {
+    if (!session.hasPhoto && !(await api.call('profile.syncGooglePhoto')).saved) return;
+    setMyPhoto(`data:image/jpeg;base64,${(await api.call('profile.photo')).jpegBase64}`);
+  } catch { /* initials stay */ }
+}
 const mockEmail = () => ({ unlisted: 'someone.else@example.com', removed: 'former.member@example.com' })[ss.get('sre.mockRole')] || '';
 
 function signOut() {
-  swrCache.clear();
+  swrCache.clear(); setMyPhoto('');
   auth.signOut();
   store.set({ status: 'out', session: null, user: null, notice: null });
   location.hash = '#/signin'; router.refresh();

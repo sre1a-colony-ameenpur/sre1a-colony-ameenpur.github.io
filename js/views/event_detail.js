@@ -1,4 +1,5 @@
 // S4.2 Event detail: details, photo grid with full-size viewer, add photos, edit and hide for allowed roles.
+import { withCamera } from '../camera.js';
 import { h, card, button, field, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
@@ -30,7 +31,7 @@ export default async function render(ctx) {
             can('events', 'd') ? button(t('cmp.hide'), { kind: 'danger', onClick: () => hideSheet(ctx, e.id) }) : null)),
         card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
           photos.length ? h('div', { class: 'photo-grid' }, photos.map((m) => h('button', { type: 'button', class: 'photo-btn', 'aria-label': t('cmp.photo'), onClick: () => viewer(ctx, m.id) }, photoImg(ctx, m.id)))) : h('p', { class: 'muted' }, t('evt.noPhotos')),
-          can('media', 'c') ? h('div', {}, files, h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null),
+          can('media', 'c') ? h('div', { class: 'stack-sm' }, withCamera(files, t), h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null),
         spend ? card(t('evt.spendTitle'), 'payments',
           h('div', { class: 'amount big' }, money(spend.total_paise)),
           h('p', { class: 'small muted' }, t('evt.spendApproved')),

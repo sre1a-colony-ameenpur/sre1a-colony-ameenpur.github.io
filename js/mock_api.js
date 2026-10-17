@@ -122,6 +122,7 @@ export function createMock({ delayMs = 120 } = {}) {
     { id: 'a3', meeting_id: 'm0', text: 'Fix the gate light', owner: 'Ramesh K.', owner_email: MOCK_USERS.member.email, due_date: day(-9).slice(0, 10), status: 'done' },
   ];
   const itemView = (a, u) => ({ id: a.id, meeting_id: a.meeting_id, text: a.text, owner_name: a.owner, due_date: a.due_date, status: a.status, done_at: '', overdue: a.status === 'open' && a.due_date < new Date().toISOString().slice(0, 10), mine: a.owner_email === u.email });
+  const mockPhotos = new Map();                        // email -> profile photo (base64), lost on reload
   const complaintView = (c) => ({ id: c.id, plot_key: c.plot_key, area: c.area, description: c.description, stage: c.stage, raised_by_name: c.raised_by_name, raised_at: c.raised_at, resolved_at: c.resolved_at,
     elapsed_ms: (c.resolved_at ? Date.parse(c.resolved_at) : Date.now()) - Date.parse(c.raised_at) });
   const complaints = [
@@ -206,11 +207,17 @@ export function createMock({ delayMs = 120 } = {}) {
       }
       return ok(out);
     },
+    'profile.syncGooglePhoto': () => ok({ skipped: 'no_picture' }),
+    'profile.setPhoto': (u, p) => { if (!p.jpegBase64) return fail('INVALID', 'That is not a photo'); mockPhotos.set(u.email, p.jpegBase64); return ok({ saved: true }); },
+    'profile.photo': (u) => (mockPhotos.has(u.email) ? ok({ jpegBase64: mockPhotos.get(u.email) }) : fail('NOT_FOUND', 'No photo')),
+    'documents.list': () => ok({ items: [['bylaws', 'Association bylaws'], ['ec_en', 'EC rules (English)'], ['ec_te', 'EC rules (తెలుగు)']].map(([slot, title]) => ({ slot, title, has_file: false, uploaded_at: '', uploaded_by_name: '', size_kb: 0 })) }),
+    'documents.get': () => fail('NOT_FOUND', 'Not uploaded yet'),
+    'documents.upload': () => fail('SERVER', 'Not available in the sample app'),
     'session.get': (u) => {
       const ho = handedOver();                                // after a handover (kept for the tab, so a reload still shows it) the old President is a Member
       const gone = ho && u === MOCK_USERS.president;
       return ok({
-        name: u.name, email: u.email, role: gone ? 'Member' : u.role, plotKeys: u.plotKeys, showMobile: !!u.showMobile, language: 'en', caps: gone ? CAPS.member : u.caps,
+        name: u.name, email: u.email, hasPhoto: mockPhotos.has(u.email), role: gone ? 'Member' : u.role, plotKeys: u.plotKeys, showMobile: !!u.showMobile, language: 'en', caps: gone ? CAPS.member : u.caps,
         presidentName: ho ? ho.name : MOCK_USERS.president.name, presidentSince: ho ? ho.at : '',
       });
     },

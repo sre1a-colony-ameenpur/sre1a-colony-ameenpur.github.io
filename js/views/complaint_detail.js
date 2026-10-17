@@ -1,4 +1,5 @@
 // S2.3 Complaint detail: stage tracker, photos, comments, change status, hide.
+import { withCamera } from '../camera.js';
 import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when } from '../ui.js';
 import { friendly } from '../api.js';
 import { duration } from '../fmt.js';
@@ -86,7 +87,7 @@ function commentBox(ctx, complaintId, done) {
   const { t } = ctx;
   const text = h('textarea', { rows: 2, maxlength: 1000, 'aria-label': t('cmp.writeComment'), placeholder: t('cmp.writeComment') });
   const file = h('input', { type: 'file', accept: 'image/*', 'aria-label': t('cmp.addPhoto') });
-  return h('div', { class: 'stack-sm' }, text, file, button(t('cmp.send'), { kind: 'primary', icon: 'send', onClick: async () => {
+  return h('div', { class: 'stack-sm' }, text, withCamera(file, t), button(t('cmp.send'), { kind: 'primary', icon: 'send', onClick: async () => {
     const body = text.value.trim(); if (!body) return;
     try {
       const { id } = await ctx.api.call('comments.create', { complaint_id: complaintId, body });
