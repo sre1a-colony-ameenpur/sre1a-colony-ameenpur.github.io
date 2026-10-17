@@ -175,7 +175,8 @@ export function createMock({ delayMs = 120 } = {}) {
   ];
   const viewExpense = (e, u) => ({ id: e.id, date: e.date, amount_paise: e.amount_paise, category: e.category, reason: e.reason, status: e.status,
     created_by_name: e.by.name, decided_by_name: e.decider?.name || '', created_at: e.at, decided_at: e.decidedAt || '', reject_reason: e.rejectReason || '',
-    reverses_id: e.reverses || '', mine: e.by.email === u.email, has_proof: !!e.proof });
+    reverses_id: e.reverses || '', mine: e.by.email === u.email, has_proof: !!e.proof,
+    event_id: e.event_id || '', event_title: events.find((v) => v.id === e.event_id)?.title || '' });
   const dash = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
   const memberRow = (m) => ({ email: m.email, email_norm: m.email, name: m.name, mobile: m.mobile || '', plot_keys: m.plotKeys.map((k) => k.replace('-', '')).join(','),
     role: m.role, active: m.active !== false, removed_at: m.removed_at || '', joined_at: m.joined_at || '2024-06-01' });
@@ -567,7 +568,10 @@ export function createMock({ delayMs = 120 } = {}) {
     'events.get': (u, p) => {
       const e = events.find((x) => x.id === p.id);
       if (!e) return fail('NOT_FOUND', 'Event not found');
-      return ok({ event: { id: e.id, title: e.title, date: e.date, place: e.place, description: e.description }, media: e.photos.map((id) => ({ id, kind: 'photo', caption: '', at: new Date().toISOString() })) });
+      const linked = expenses.filter((x) => x.event_id === e.id);
+      const spend = { total_paise: linked.filter((x) => x.status === 'approved').reduce((a, x) => a + x.amount_paise, 0), pending_paise: linked.filter((x) => x.status === 'pending').reduce((a, x) => a + x.amount_paise, 0), count: linked.length,
+        items: linked.map((x) => ({ id: x.id, date: x.date, amount_paise: x.amount_paise, category: x.category, reason: x.reason, status: x.status, is_reversal: !!x.reverses })) };
+      return ok({ event: { id: e.id, title: e.title, date: e.date, place: e.place, description: e.description }, media: e.photos.map((id) => ({ id, kind: 'photo', caption: '', at: new Date().toISOString() })), ...(u.caps?.expenses ? { spend } : {}) });
     },
     'events.create': (u, p) => {
       if (!p.title || !/^\d{4}-\d{2}-\d{2}$/.test(p.date || '')) return fail('INVALID', 'Check the form');
@@ -587,7 +591,7 @@ export function createMock({ delayMs = 120 } = {}) {
     'expenses.get': (u, p) => { const e = expenses.find((x) => x.id === p.id); return e ? ok({ item: viewExpense(e, u), reversed: expenses.some((x) => x.reverses_id === e.id) }) : fail('NOT_FOUND', 'Expense not found'); },
     'expenses.create': (u, p) => {
       if (!(p.amount_paise > 0) || !p.reason || !p.proof_jpeg_base64) return fail('INVALID', 'Check the form');
-      const e = { id: 'E' + nextId++, date: p.date, amount_paise: p.amount_paise, category: p.category, reason: p.reason, status: 'pending', by: u, at: new Date().toISOString(), proof: true };
+      const e = { id: 'E' + nextId++, date: p.date, amount_paise: p.amount_paise, category: p.category, reason: p.reason, event_id: p.event_id || '', status: 'pending', by: u, at: new Date().toISOString(), proof: true };
       expenses.unshift(e); return ok({ id: e.id });
     },
     'expenses.approve': (u, p) => {
@@ -606,7 +610,7 @@ export function createMock({ delayMs = 120 } = {}) {
       const e = expenses.find((x) => x.id === p.id);
       if (!e) return fail('NOT_FOUND', 'Not found');
       if (e.status !== 'pending') return fail('CONFLICT', 'Only expenses waiting for approval can be edited');
-      ['date', 'amount_paise', 'category', 'reason'].forEach((k) => { if (p[k] !== undefined) e[k] = p[k]; });
+      ['date', 'amount_paise', 'category', 'reason', 'event_id'].forEach((k) => { if (p[k] !== undefined) e[k] = p[k]; });
       return ok({ id: e.id });
     },
     'expenses.reverse': (u, p) => {

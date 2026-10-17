@@ -2,7 +2,7 @@
 import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 import { compressPhoto } from '../photo.js';
 
 export const CATEGORIES = ['Electricity', 'Water', 'Security', 'Repairs', 'Gardening', 'Events', 'Other'];
@@ -34,7 +34,7 @@ export default async function render(ctx) {
   function row(x) {
     const rev = !!x.reverses_id;
     return h('a', { class: 'list-row', href: `#/money/expense/${x.id}`, style: rev ? 'opacity:.75' : '' },
-      h('div', { class: 'grow' }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`)),
+      h('div', { class: 'grow' }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`), x.event_title ? h('div', { class: 'small muted' }, icon('celebration', 'sm'), ' ', x.event_title) : null),
       h('div', { style: 'text-align:end' }, h('div', { class: 'amount' }, money(x.amount_paise)), statusPill(KIND[x.status], statusLabel(t, x.status))));
   }
 
@@ -81,7 +81,22 @@ export default async function render(ctx) {
   return box;
 }
 
-function addSheet(ctx, done) {
+// "Which event is this for?" (optional). Only offered while the Events module is on and the person may read events.
+// The list fills in from the stored/fresh events answer; `selected` is the event to start on.
+export function eventPicker(ctx, id, selected = '') {
+  const { t } = ctx;
+  const sel = h('select', { id }, h('option', { value: '' }, t('exp.noEvent')));
+  const box = h('div', { class: 'field' }, h('label', { for: id }, t('exp.event')), sel, h('div', { class: 'help' }, t('exp.eventHelp')));
+  if (!hasModule('events') || !can('events', 'r')) { box.hidden = true; return box; }
+  ctx.api.swr('events.list', {}, ({ items }) => {
+    const keep = sel.value || selected;
+    sel.replaceChildren(h('option', { value: '' }, t('exp.noEvent')), ...items.map((e) => h('option', { value: e.id }, `${e.title} · ${dateShort(e.date)}`)));
+    sel.value = [...sel.options].some((o) => o.value === keep) ? keep : '';
+  }).catch(() => { box.hidden = true; });
+  return box;
+}
+
+export function addSheet(ctx, done, eventId = '') {
   const { t } = ctx;
   const today = new Date().toISOString().slice(0, 10);
   const date = field({ id: 'e-date', label: t('exp.date'), type: 'date', value: today, max: today });
@@ -89,12 +104,13 @@ function addSheet(ctx, done) {
   const cat = h('div', { class: 'field' }, h('label', { for: 'e-cat' }, t('exp.category')),
     h('select', { id: 'e-cat' }, CATEGORIES.map((c) => h('option', { value: c }, t(`exp.cat.${c}`)))));
   const reason = field({ id: 'e-why', label: t('exp.reason'), maxlength: 300 });
+  const event = eventPicker(ctx, 'e-event', eventId);
   const file = h('input', { type: 'file', accept: 'image/*', id: 'e-file' });
   const proof = h('div', { class: 'field' }, h('label', { for: 'e-file' }, t('exp.proof')), file, h('div', { class: 'help' }, t('exp.proofHelp')));
   const autoOk = can('expense_approval', 'u');   // the President's own entries are approved on entry
   const note = h('div', { role: 'alert' });
   const warn = (m) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error'), m));
-  openSheet({ title: t('exp.add'), body: h('div', { class: 'stack' }, date, amount, cat, reason, proof, h('p', { class: 'small muted' }, t(autoOk ? 'exp.autoNote' : 'exp.approvalNote')), note), actions: [
+  openSheet({ title: t('exp.add'), body: h('div', { class: 'stack' }, date, amount, cat, event, reason, proof, h('p', { class: 'small muted' }, t(autoOk ? 'exp.autoNote' : 'exp.approvalNote')), note), actions: [
     { label: t(autoOk ? 'exp.addNow' : 'exp.submit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const paise = rupeesToPaise(amount.querySelector('input').value);
       const why = reason.querySelector('input').value.trim();
@@ -103,7 +119,7 @@ function addSheet(ctx, done) {
       if (!file.files[0]) return warn(t('exp.proofNeeded'));
       try {
         const b64 = await compressPhoto(file.files[0]);
-        await ctx.api.call('expenses.create', { date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why, proof_jpeg_base64: b64 });
+        await ctx.api.call('expenses.create', { date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why, event_id: event.querySelector('select').value, proof_jpeg_base64: b64 });
         close(); toast(t(autoOk ? 'exp.addedApproved' : 'exp.submitted')); done();
       } catch (e) { warn(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
@@ -118,16 +134,17 @@ export function editSheet(ctx, x, done) {
   const cat = h('div', { class: 'field' }, h('label', { for: 'x-cat' }, t('exp.category')),
     h('select', { id: 'x-cat' }, CATEGORIES.map((c) => h('option', { value: c, selected: c === x.category }, t(`exp.cat.${c}`)))));
   const reason = field({ id: 'x-why', label: t('exp.reason'), maxlength: 300, value: x.reason });
+  const event = eventPicker(ctx, 'x-event', x.event_id || '');
   const note = h('div', { role: 'alert' });
   const warn = (m) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error'), m));
-  openSheet({ title: t('exp.edit'), body: h('div', { class: 'stack' }, date, amount, cat, reason, h('p', { class: 'small muted' }, t('exp.editNote')), note), actions: [
+  openSheet({ title: t('exp.edit'), body: h('div', { class: 'stack' }, date, amount, cat, event, reason, h('p', { class: 'small muted' }, t('exp.editNote')), note), actions: [
     { label: t('exp.saveEdit'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const paise = rupeesToPaise(amount.querySelector('input').value);
       const why = reason.querySelector('input').value.trim();
       if (!(paise > 0)) return warn(t('exp.amountNeeded'));
       if (!why) return warn(t('exp.reasonNeeded'));
       try {
-        await ctx.api.call('expenses.update', { id: x.id, date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why });
+        await ctx.api.call('expenses.update', { id: x.id, date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why, ...(event.hidden ? {} : { event_id: event.querySelector('select').value }) });
         close(); toast(t('exp.edited')); done();
       } catch (e) { warn(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });

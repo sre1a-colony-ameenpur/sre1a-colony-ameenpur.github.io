@@ -1,8 +1,9 @@
 // S4.2 Event detail: details, photo grid with full-size viewer, add photos, edit and hide for allowed roles.
 import { h, card, button, field, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
-import { dateShort } from '../fmt.js';
+import { dateShort, money } from '../fmt.js';
 import { can } from '../store.js';
+import { addSheet } from './expenses.js';
 import { photoImg, uploadPhotos } from './events.js';
 import { videosCard } from '../video.js';
 
@@ -14,7 +15,7 @@ export default async function render(ctx) {
   async function load() {
     root.replaceChildren(back(), loadingRegion(2));
     try {
-      await ctx.api.swr('events.get', { id: ctx.params.id }, ({ event: e, media }) => {
+      await ctx.api.swr('events.get', { id: ctx.params.id }, ({ event: e, media, spend }) => {
       const photos = media.filter((m) => m.kind === 'photo');
       const files = h('input', { type: 'file', accept: 'image/*', multiple: true, class: 'sr-only', id: 'ev-add', onChange: async (ev) => {
         if (!ev.target.files.length) return;
@@ -31,6 +32,14 @@ export default async function render(ctx) {
         card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
           photos.length ? h('div', { class: 'photo-grid' }, photos.map((m) => h('button', { type: 'button', class: 'photo-btn', 'aria-label': t('cmp.photo'), onClick: () => viewer(ctx, m.id) }, photoImg(ctx, m.id)))) : h('p', { class: 'muted' }, t('evt.noPhotos')),
           can('media', 'c') ? h('div', {}, files, h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null),
+        spend ? card(t('evt.spendTitle'), 'payments',
+          h('div', { class: 'amount big' }, money(spend.total_paise)),
+          h('p', { class: 'small muted' }, t('evt.spendApproved')),
+          spend.pending_paise ? h('p', { class: 'small' }, t('evt.spendPending', { amount: money(spend.pending_paise) })) : null,
+          spend.items.length ? h('div', {}, spend.items.map((x) => h('a', { class: 'list-row', href: `#/money/expense/${x.id}` },
+            h('div', { class: 'grow' }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`)),
+            h('div', { style: 'text-align:end' }, h('div', { class: 'amount' }, money(x.amount_paise)), x.status === 'approved' ? null : h('div', { class: 'small muted' }, t(`status.${x.status}`)))))) : h('p', { class: 'muted' }, t('evt.noSpend')),
+          can('expenses', 'c') ? button(t('evt.addExpense'), { icon: 'add', block: true, onClick: () => addSheet(ctx, load, e.id) }) : null) : null,
         videosCard(ctx, { videos: media.filter((m) => m.kind === 'video'), parentType: 'event', parentId: e.id, canAdd: can('media', 'c'), done: load }));
       });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }

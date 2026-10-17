@@ -2,7 +2,7 @@
 import { h, card, button, field, statusPill, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 import { statusLabel, approve, rejectSheet, editSheet } from './expenses.js';
 
 export default async function render(ctx) {
@@ -33,6 +33,7 @@ export default async function render(ctx) {
       root.replaceChildren(h('a', { href: '#/money', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')),
         card(null, null, h('div', { class: 'amount big' }, money(x.amount_paise)), statusPill(x.status, statusLabel(t, x.status)),
           h('h2', {}, x.reason), h('p', { class: 'muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`),
+          x.event_id && x.event_title ? h('p', {}, icon('celebration', 'sm'), ' ', t('exp.forEvent'), ': ', hasModule('events') ? h('a', { href: `#/community/events/${x.event_id}` }, x.event_title) : x.event_title) : null,
           isReversal ? h('p', { class: 'small' }, t('exp.reversalOf', { id: x.reverses_id })) : null),
         x.has_proof ? card(t('exp.proof'), 'image', proof) : null,
         card(t('exp.history'), 'history', h('ul', { class: 'timeline' }, steps)),
