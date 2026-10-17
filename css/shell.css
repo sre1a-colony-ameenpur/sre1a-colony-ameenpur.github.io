@@ -64,5 +64,4 @@
 
 main:focus { outline: none; }
 .topbar .title { font-size: 1rem; line-height: 1.25rem; }
-@media (max-width: 420px) { .topbar .brand-sm { display: none; } }
 @media (min-width: 768px) { .topbar .title { font-size: var(--fs-h3); line-height: 1.5rem; } }
