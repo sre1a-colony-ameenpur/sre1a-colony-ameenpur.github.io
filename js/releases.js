@@ -1,6 +1,17 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-20',
+    title: { en: 'Your feedback: photos, rules, summaries and payments', te: 'మీ సూచనలు: ఫోటోలు, నియమాలు, సారాంశాలు, చెల్లింపులు' },
+    items: [
+      { en: 'Only the person who raised a complaint can close it, once it is resolved. They can reopen it if the problem is still there. If nobody closes it, it closes by itself after the number of hours the President sets.', te: 'ఫిర్యాదు చేసిన వ్యక్తి మాత్రమే, అది పరిష్కారమైన తర్వాత, దాన్ని మూసివేయగలరు. సమస్య ఇంకా ఉంటే మళ్లీ తెరవగలరు. ఎవరూ మూసివేయకపోతే, అధ్యక్షులు నిర్ణయించిన గంటల తర్వాత అదే మూసివేయబడుతుంది.' },
+      { en: 'Your Google picture is now your profile photo. Change it any time from Profile with the camera or the gallery.', te: 'మీ గూగుల్ ఫోటో ఇప్పుడు మీ ప్రొఫైల్ ఫోటో. ప్రొఫైల్ నుండి కెమెరా లేదా గ్యాలరీతో ఎప్పుడైనా మార్చవచ్చు.' },
+      { en: 'Take a photo or record a video with the camera wherever you add one: complaints, expenses, payments and events.', te: 'ఫిర్యాదులు, ఖర్చులు, చెల్లింపులు, కార్యక్రమాలలో ఫోటో లేదా వీడియో జోడించేటప్పుడు కెమెరాతో తీయవచ్చు.' },
+      { en: 'Bylaws & rules: read the colony documents in the menu.', te: 'నియమాలు: మెనూలో కాలనీ పత్రాలను చదవండి.' },
+      { en: 'Raising a complaint is now a floating + button, and the plot starts as your own and is chosen from a searchable list.', te: 'ఫిర్యాదు చేయడం ఇప్పుడు తేలియాడే + బటన్. ప్లాట్ మీ స్వంతదానితో మొదలై, వెతికే జాబితా నుండి ఎంచుకుంటారు.' },
+      { en: 'Monthly summary of complaints, and monthly accounts of what was collected and spent.', te: 'ఫిర్యాదుల నెలవారీ సారాంశం, వసూలైనది మరియు ఖర్చు చేసినదాని నెలవారీ లెక్కలు.' },
+      { en: 'My payments in Profile shows your payment history. The committee can see everyone\'s in Money.', te: 'ప్రొఫైల్‌లో నా చెల్లింపులు మీ చెల్లింపుల చరిత్రను చూపిస్తుంది. కమిటీ అందరివీ మనీలో చూడవచ్చు.' },
+    ] },
   { date: '2026-10-19',
     title: { en: 'Welcome email for new members', te: 'కొత్త సభ్యులకు స్వాగత ఈమెయిల్' },
     items: [
