@@ -1080,5 +1080,21 @@
  "acc.noExpenses": "No approved expenses this month.",
  "acc.reversal": "reversal",
  "acc.byCategory": "Spent by category",
- "acc.allTime": "All time"
+ "acc.allTime": "All time",
+ "pay.mineTitle": "My payments",
+ "pay.allTitle": "All payments",
+ "pay.none": "No payments yet.",
+ "pay.kind.maintenance": "Maintenance",
+ "pay.kind.membership": "Membership fee",
+ "pay.kind.fee": "Fee",
+ "pay.s.awaiting": "Awaiting confirmation",
+ "pay.s.confirmed": "Confirmed",
+ "pay.reversal": "reversal",
+ "pay.f.month": "Month",
+ "pay.f.kind": "Type",
+ "pay.f.status": "Status",
+ "pay.f.plot": "Plot, e.g. A-12",
+ "pay.f.all": "All",
+ "pay.count": "{n} payments",
+ "pay.more": "Show more"
 }

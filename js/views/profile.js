@@ -3,7 +3,7 @@ import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, conf
 import { pickPhoto, compressPhoto } from '../photo.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, hasModule } from '../store.js';
 
 const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
@@ -23,6 +23,7 @@ export default function render(ctx) {
       row(t('profile.plots'), h('span', { class: 'row' }, s.plotKeys.length ? s.plotKeys.map(plotChip) : t('profile.noPlots'))),
       h('p', { class: 'small muted', style: 'margin-top:8px' }, t('profile.readonly')),
       can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, onClick: () => requestSheet(ctx, loadRequests) })) : null),
+    (hasModule('maintenance') || hasModule('fees')) ? button(t('pay.mineTitle'), { icon: 'receipt_long', block: true, onClick: () => { location.hash = '#/profile/payments'; } }) : null,
     card(t('profile.showMobile'), 'call', mobileSwitch(ctx, s)),
     can('plot_change_requests', 'c') ? card(t('profile.myRequests'), 'list_alt', reqBox) : null,
     card(t('profile.language'), 'translate', segmented([['en', 'English'], ['te', 'తెలుగు']], ctx.lang, ctx.setLang, t('lang.label'))),

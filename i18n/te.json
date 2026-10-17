@@ -1080,5 +1080,21 @@
  "acc.noExpenses": "ఈ నెల ఆమోదించిన ఖర్చులు లేవు.",
  "acc.reversal": "రద్దు",
  "acc.byCategory": "వర్గం వారీగా ఖర్చు",
- "acc.allTime": "మొత్తం ఇప్పటివరకు"
+ "acc.allTime": "మొత్తం ఇప్పటివరకు",
+ "pay.mineTitle": "నా చెల్లింపులు",
+ "pay.allTitle": "అన్ని చెల్లింపులు",
+ "pay.none": "ఇంకా చెల్లింపులు లేవు.",
+ "pay.kind.maintenance": "నిర్వహణ రుసుము",
+ "pay.kind.membership": "సభ్యత్వ రుసుము",
+ "pay.kind.fee": "ఫీజు",
+ "pay.s.awaiting": "నిర్ధారణ కోసం వేచి ఉంది",
+ "pay.s.confirmed": "నిర్ధారించబడింది",
+ "pay.reversal": "రద్దు",
+ "pay.f.month": "నెల",
+ "pay.f.kind": "రకం",
+ "pay.f.status": "స్థితి",
+ "pay.f.plot": "ప్లాట్, ఉదా. A-12",
+ "pay.f.all": "అన్నీ",
+ "pay.count": "{n} చెల్లింపులు",
+ "pay.more": "మరిన్ని చూపించు"
 }
