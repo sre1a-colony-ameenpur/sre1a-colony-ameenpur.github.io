@@ -975,5 +975,8 @@
  "evt.spendApproved": "Approved expenses",
  "evt.spendPending": "Waiting for approval: {amount} (not counted yet)",
  "evt.noSpend": "No expenses recorded for this event yet.",
- "evt.addExpense": "Add an expense for this event"
+ "evt.addExpense": "Add an expense for this event",
+ "imp.noEdit": "We could not give you edit access to the sheet just now. Ask the colony account owner to share it with your Gmail as Editor.",
+ "ho.failRevoke": "The handover was NOT done. We could not remove {name}'s edit access to the members sheet, so nothing was changed. Please try again; if it keeps failing, ask the colony account owner.",
+ "ho.failGrant": "The handover was NOT done. We could not give {name} edit access to the members sheet, so nothing was changed. Please try again; if it keeps failing, ask the colony account owner."
 }

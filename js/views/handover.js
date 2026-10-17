@@ -9,7 +9,7 @@ const STEPS = 4, CHECKS = ['pw', 'recovery', 'twostep', 'codes'];
 
 export default function render(ctx) {
   const { t } = ctx;
-  let members = [], me = null, step = 1, pick = null, q = '', ticked = new Set(), busy = false;
+  let members = [], me = null, step = 1, pick = null, q = '', ticked = new Set(), busy = false, failNote = null;
   const body = h('div', { class: 'stack' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.handover')), body);
 
@@ -64,14 +64,21 @@ export default function render(ctx) {
     const word = h('input', { id: 'ho-word', type: 'text', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false' });
     const go = button(t('ho.confirm'), { kind: 'danger solid', disabled: true, onClick: () => run(word.value) });
     word.addEventListener('input', () => { go.disabled = word.value !== 'HANDOVER'; });
-    return h('div', { class: 'stack' }, card(t('ho.confirmTitle'), 'warning', h('p', {}, t('ho.confirmText', { name: pick.name })),
+    return h('div', { class: 'stack' }, failNote ? h('div', { class: 'banner bad', role: 'alert', style: 'border-radius:12px' }, icon('error'), h('div', { class: 'grow' }, failNote)) : null,
+      card(t('ho.confirmTitle'), 'warning', h('p', {}, t('ho.confirmText', { name: pick.name })),
       h('div', { class: 'field' }, h('label', { for: 'ho-word' }, t('ho.type')), word)),
       h('div', { class: 'row', style: 'gap:8px' }, button(t('ho.back'), { onClick: () => { step = 3; draw(); } }), go));
   }
 
   async function run(word) {
     if (busy) return; busy = true;
-    try { done(await ctx.api.call('members.handover', { email: pick.email, confirm: word })); } catch (e) { toast(friendly(e, t)); } finally { busy = false; }
+    failNote = null;
+    try { done(await ctx.api.call('members.handover', { email: pick.email, confirm: word })); } catch (e) {
+      // Drive refused to change who can edit the members sheet: the handover did not happen, and the screen says so and why.
+      const d = e.extra?.details;
+      if (d?.reason === 'sheet_access') { failNote = t(d.step === 'grant' ? 'ho.failGrant' : 'ho.failRevoke', { name: d.name }); draw(); }
+      else toast(friendly(e, t));
+    } finally { busy = false; }
   }
 
   function done(r) {

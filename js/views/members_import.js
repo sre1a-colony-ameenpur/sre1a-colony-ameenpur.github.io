@@ -20,7 +20,9 @@ export default function render(ctx) {
   // The address of the sheet to fill in, for the President (asked once; the button appears when the server has one).
   let sheet = null, atStart = false;
   ctx.api.call('members.importSheet').then((r) => { sheet = r; if (atStart) start(); }).catch(() => {});
-  const openSheetBtn = () => (sheet?.url ? h('a', { class: 'btn', href: sheet.url, target: '_blank', rel: 'noopener' }, icon('open_in_new'), t('imp.openSheet')) : null);
+  const openSheetBtn = () => (sheet?.url ? h('div', { class: 'stack-sm' },
+    h('a', { class: 'btn', href: sheet.url, target: '_blank', rel: 'noopener' }, icon('open_in_new'), t('imp.openSheet')),
+    sheet.shared === false ? h('p', { class: 'small muted' }, t('imp.noEdit')) : null) : null);
 
   function start(note) {
     atStart = true;
