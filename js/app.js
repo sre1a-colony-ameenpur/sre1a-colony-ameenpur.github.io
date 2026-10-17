@@ -100,7 +100,8 @@ function applyTheme(theme) {
   if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.dataset.theme = theme;
 }
-async function setLang(l) { ls.set('sre.lang', l); await loadLang(l); renderAll(); }
+// Changing the language only re-draws: stored answers are reused, so no data requests are sent.
+async function setLang(l) { ls.set('sre.lang', l); await loadLang(l); await swrCache.withoutRefresh(renderAll); }
 function setTheme(th) { ls.set('sre.theme', th); store.set({ theme: th }); applyTheme(th); }
 
 // ---- session ----

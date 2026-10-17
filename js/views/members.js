@@ -7,7 +7,7 @@ import { memberSheet } from './members_sheets.js';
 // Roles a member can be given (not the President): Member plus the roles the President created. Filled from roles.list.
 export let ROLES = ['Member'];
 export async function loadRoles(api) {
-  try { const { items } = await api.call('roles.list'); ROLES = items.map((r) => r.role).filter((r) => r !== 'President'); } catch { /* keep the last list */ }
+  try { await api.swr('roles.list', {}, ({ items }) => { ROLES = items.map((r) => r.role).filter((r) => r !== 'President'); }); } catch { /* keep the last list */ }
   return ROLES;
 }
 export const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');

@@ -6,7 +6,7 @@ const SKIP = /(proof|photo|video)$/;
 
 export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   const mem = new Map();
-  let running = 0;
+  let running = 0, holdFresh = false;
   const key = (action, payload) => `${PREFIX}${userKey() || ''}|${action}|${JSON.stringify(payload || {})}`;
   const cacheable = (action) => !SKIP.test(action);
   function read(k) {
@@ -27,6 +27,7 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   async function swr(action, payload, cb) {
     const k = key(action, payload), hit = cacheable(action) ? read(k) : null;
     if (hit) cb(hit.data, { stale: true });
+    if (hit && holdFresh) return hit.data;             // a re-draw with no new data (language change): the stored answer is enough
     onSync(++running);
     try {
       const data = await call(action, payload);
@@ -45,5 +46,8 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
     await Promise.all(specs.map(([action, payload], i) => swr(action, payload || {}, (d, m) => { latest[i] = d; have[i] = true; fresh[i] = !m.stale; push(); })));
     return latest;
   }
-  return { swr, many, clear, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
+  // Run fn (a re-draw) with stored answers served as they are, without asking the server again.
+  // The flag stays on briefly after fn returns, because views ask for their data a moment after they are drawn.
+  async function withoutRefresh(fn) { holdFresh = true; try { return await fn(); } finally { setTimeout(() => { holdFresh = false; }, 1500); } }
+  return { swr, many, clear, withoutRefresh, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
 }

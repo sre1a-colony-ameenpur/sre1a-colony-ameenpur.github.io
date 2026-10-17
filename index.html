@@ -22,9 +22,24 @@
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/shell.css">
+  <style>
+    /* First paint, before the scripts have run: replaced as soon as the app draws its first screen. */
+    .boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; font: 500 1rem/1.5 'Noto Sans', system-ui, sans-serif; color: #5b6670; }
+    .boot img { width: 96px; height: 96px; border-radius: 50%; }
+    .boot i { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #1f5fa8; border-top-color: transparent; animation: boot-spin .8s linear infinite; }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-color-scheme: dark) { .boot { color: #9aa5ae; } .boot i { border-color: #8ab4f0; border-top-color: transparent; } }
+    @media (prefers-reduced-motion: reduce) { .boot i { animation-duration: 3s; } }
+  </style>
 </head>
 <body>
-  <div id="app" role="presentation"></div>
+  <div id="app" role="presentation">
+    <div class="boot" role="status" aria-live="polite">
+      <img src="icons/logo.png" alt="Sai Ram Enclave Phase 1A">
+      <i aria-hidden="true"></i>
+      <span>Loading… · లోడ్ అవుతోంది…</span>
+    </div>
+  </div>
   <noscript>This app needs JavaScript.</noscript>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script type="module" src="js/app.js"></script>
