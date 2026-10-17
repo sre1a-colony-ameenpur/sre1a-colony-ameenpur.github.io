@@ -98,6 +98,8 @@ export async function transferSheet(ctx, { plot, done }) {
     const r = st.result;
     return h('div', { class: 'stack' }, h('div', { class: 'state ok' }, icon('check_circle', 'lg'), h('p', {}, t('tr.success'))),
       ...(r.removed || []).map((m) => h('p', {}, t('tr.removed', { name: m.name }))), r.added ? h('p', {}, t('tr.added', { name: r.added.name })) : null,
+      r.added && r.welcome_mail === true ? h('p', {}, t('tr.welcomeSent', { name: r.added.name })) : null,
+      r.added && r.welcome_mail === false ? h('p', { class: 'why' }, t('tr.welcomeFailed', { name: r.added.name })) : null,
       r.feeId ? h('p', {}, t('tr.feeRaised')) : r.fee_skipped && hasModule('fees') ? h('p', { class: 'small muted' }, t('tr.noFeeRate')) : null,
       r.feeId && can('fee_requests', 'r') ? button(t('tr.viewFee'), { icon: 'badge', onClick: async () => {
         dlg.close(); (await import('./money.js')).setMoneyTab('fees'); (await import('./fees.js')).setFeesTab('membership');

@@ -59,13 +59,14 @@ export default function render(ctx) {
   async function confirmLoad(n) {
     if (!(await confirmSheet(t('imp.confirmTitle', { n }), t('imp.confirmText'), { confirmLabel: t('imp.load') }))) return;
     if (busy) return; busy = true;
-    const total = { added: 0, updated: 0, unchanged: 0, feesRaised: 0, driveSyncFailed: 0, loaded: [] };
+    const total = { added: 0, updated: 0, unchanged: 0, feesRaised: 0, driveSyncFailed: 0, welcomeSent: 0, welcomeFailed: 0, loaded: [] };
     try {
       let left = n;
       for (;;) {
         body.replaceChildren(guide(), h('p', { role: 'status', class: 'muted' }, t('imp.loading', { done: total.loaded.length, n })));
         const r = await ctx.api.call('members.importApply', { limit: BATCH });
         for (const k of ['added', 'updated', 'feesRaised', 'driveSyncFailed']) total[k] += r[k];
+        total.welcomeSent += r.welcomeMail?.sent || 0; total.welcomeFailed += r.welcomeMail?.failed || 0;
         total.unchanged = r.unchanged; total.loaded.push(...r.loaded); left = r.remaining;
         if (!left || !r.loaded.length) break;
       }
@@ -84,7 +85,8 @@ export default function render(ctx) {
       rowsList(t('imp.list.loaded'), r.loaded || []),
       r.feesRaised ? h('p', {}, t('imp.doneFees', { n: r.feesRaised })) : null,
       r.driveSyncFailed ? h('p', { class: 'why' }, t('imp.driveFail', { n: r.driveSyncFailed })) : null,
-      h('p', { class: 'small muted' }, t('imp.noMessage'))),
+      r.welcomeSent ? h('p', {}, t('imp.welcomeSent', { n: r.welcomeSent })) : null,
+      r.welcomeFailed ? h('p', { class: 'why' }, t('imp.welcomeFailed', { n: r.welcomeFailed })) : null),
       button(t('imp.toMembers'), { kind: 'primary', block: true, href: '#/members' }));
   }
 

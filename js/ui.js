@@ -115,10 +115,10 @@ export const loadingRegion = (n = 3) => h('div', { class: 'stack', 'aria-busy': 
   Array.from({ length: n }, skeletonCard));
 
 // Toast: short, polite, auto-hides.
-export function toast(msg, ms = 3500) {
+export function toast(msg, ms = 3500, kind) {
   let box = document.getElementById('toasts');
   if (!box) { box = h('div', { id: 'toasts', class: 'toasts', 'aria-live': 'polite' }); document.body.append(box); }
-  const el = h('div', { class: 'toast', role: 'status' }, icon('check_circle', 'sm'), msg);
+  const el = h('div', { class: kind === 'warning' ? 'toast warn' : 'toast', role: 'status' }, icon(kind === 'warning' ? 'warning' : 'check_circle', 'sm'), msg);
   box.append(el);
   setTimeout(() => el.remove(), ms);
 }

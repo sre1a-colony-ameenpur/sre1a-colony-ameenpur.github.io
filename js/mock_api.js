@@ -269,7 +269,7 @@ export function createMock({ delayMs = 120 } = {}) {
       if (fi > -1) former.splice(fi, 1);
       members.push({ name: p.name.trim(), email, mobile: p.mobile || '', role: 'Member', plotKeys: keys, active: true, joined_at: p.joinedAt || new Date().toISOString().slice(0, 10) });
       keys.forEach((k) => holders.add(k));
-      return ok({ email_norm: email, drive_sync: true });
+      return ok({ email_norm: email, drive_sync: true, welcome_mail: !/fail/.test(email) });   // an address with "fail" in it shows the failed state
     },
     'members.update': (u, p) => {
       const m = members.find((x) => x.email === String(p.email || '').toLowerCase());
@@ -317,7 +317,7 @@ export function createMock({ delayMs = 120 } = {}) {
     },
     'members.importCheck': () => ok({ rows: [{ row: 2, status: 'new', message: 'New member.', name: 'Anand R.', plots: ['A-14'] }, { row: 3, status: 'update', message: 'Name, mobile or plots will be updated.', name: 'Lakshmi P.', plots: ['C-49', 'D-1'] }, { row: 4, status: 'unchanged', message: 'Already up to date.' }],
       counts: { new: 1, update: 1, unchanged: 1, error: 0 }, feeCount: 0, feeTotalPaise: 0 }),
-    'members.importApply': () => ok({ added: 1, updated: 1, unchanged: 1, feesRaised: 0, driveSyncFailed: 0, remaining: 0, loaded: [{ row: 2, name: 'Anand R.', status: 'added' }, { row: 3, name: 'Lakshmi P.', status: 'updated' }] }),
+    'members.importApply': () => ok({ added: 1, updated: 1, unchanged: 1, feesRaised: 0, driveSyncFailed: 0, welcomeMail: { sent: 1, failed: 0 }, remaining: 0, loaded: [{ row: 2, name: 'Anand R.', status: 'added' }, { row: 3, name: 'Lakshmi P.', status: 'updated' }] }),
     'members.handover': (u, p) => {
       if (p.confirm !== 'HANDOVER') return fail('INVALID', 'Type HANDOVER to confirm');
       const m = members.find((x) => x.email === String(p.email || '').toLowerCase());

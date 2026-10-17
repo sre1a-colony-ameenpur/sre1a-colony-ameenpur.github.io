@@ -101,6 +101,7 @@ export function memberSheet(ctx, { member, items, done }) {
   async function save(close) {
     note.replaceChildren();
     const n = val(name), m = val(mobile);
+    let mailed;                                           // undefined = not an add; true or false = the welcome email went out or not
     if (!n) return showErr(t('mem.needName'));
     try {
       if (editing) {
@@ -112,9 +113,14 @@ export function memberSheet(ctx, { member, items, done }) {
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return showErr(t('mem.needEmail'));
         if (!plots.length) return showErr(t('mem.needPlot'));
         const body = { email: em, name: n, mobile: m, plot_keys: plots, joiningType: joining, joinedAt: val(date) };
-        await ctx.api.call('members.add', body);
+        const r = await ctx.api.call('members.add', body);
+        mailed = r.welcome_mail;
       }
-      close(); toast(t('common.saved')); done();
+      close();
+      if (mailed === undefined) toast(t('common.saved'));
+      else if (mailed) toast(t('mem.welcomeSent', { email: val(email) }), 6000);
+      else toast(t('mem.welcomeFailed', { name: n }), 12000, 'warning');
+      done();
     } catch (e) { showErr(friendly(e, t)); }
   }
 

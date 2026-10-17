@@ -1,6 +1,13 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-19',
+    title: { en: 'Welcome email for new members', te: 'కొత్త సభ్యులకు స్వాగత ఈమెయిల్' },
+    items: [
+      { en: 'Every new member now gets a welcome email with the app link, in English and Telugu.', te: 'ప్రతి కొత్త సభ్యునికి ఇప్పుడు యాప్ లింక్‌తో స్వాగత ఈమెయిల్ వస్తుంది, ఇంగ్లీష్ మరియు తెలుగులో.' },
+      { en: 'After adding someone, the app tells you whether the email went out.', te: 'ఒకరిని చేర్చిన తర్వాత, ఈమెయిల్ వెళ్లిందో లేదో యాప్ చెబుతుంది.' },
+      { en: 'For the best experience, open the app in Chrome and add it to your home screen.', te: 'ఉత్తమ అనుభవం కోసం, యాప్‌ను Chromeలో తెరిచి హోమ్ స్క్రీన్‌కు జోడించండి.' },
+    ] },
   { date: '2026-10-18',
     title: { en: 'Who looks after a complaint, and who helped', te: 'ఫిర్యాదును ఎవరు చూసుకుంటారు, ఎవరు సహాయం చేశారు' },
     items: [
