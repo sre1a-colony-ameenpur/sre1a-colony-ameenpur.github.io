@@ -1054,5 +1054,7 @@
  "doc.replace": "Replace with a new PDF",
  "doc.pdfOnly": "Choose a PDF file.",
  "doc.tooBig": "The file is over 2 MB.",
- "doc.saved": "Document saved"
+ "doc.saved": "Document saved",
+ "cmp.plotPick": "Pick a plot from the list.",
+ "cmp.plotHelp": "It starts with your own plot. Type to search all plots."
 }

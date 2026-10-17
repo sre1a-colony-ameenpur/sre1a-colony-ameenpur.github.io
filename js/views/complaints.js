@@ -47,15 +47,14 @@ export default async function render(ctx) {
   load();
   return h('div', { class: 'page stack' }, h('h1', {}, t('cmp.title')),
     segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; items = []; load(); }, t('exp.filter')),
-    q, list, more, can('complaints', 'c') ? button(t('cmp.raise'), { kind: 'primary', block: true, icon: 'add', onClick: () => raiseSheet(ctx, load) }) : null);
+    q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
 }
 
 function raiseSheet(ctx, done) {
   const { t } = ctx;
   let where = 'plot', plots = [];
-  const plotInput = field({ id: 'cm-plot', label: t('cmp.plot'), placeholder: 'A-12', list: 'cm-plots', autocapitalize: 'characters' });
-  const dl = h('datalist', { id: 'cm-plots' });
-  ctx.api.call('map.plots').then((d) => { plots = d.plots; dl.replaceChildren(...plots.map((p) => h('option', { value: p.plot_label }))); }).catch(() => {});
+  const picker = plotPicker(ctx, 'cm-plot', t('cmp.plot'), (ctx.store.get().session?.plotKeys || [])[0] || '');       // starts with your own plot
+  const plotInput = picker.el;
   const area = h('div', { class: 'field' }, h('label', { for: 'cm-area' }, t('cmp.areaLabel')), h('select', { id: 'cm-area' }, AREAS.map((a) => h('option', { value: a }, t(`cmp.area.${AREA_KEY[a]}`)))));
   area.hidden = true;
   const text = h('textarea', { id: 'cm-text', rows: 4, maxlength: 500 });
@@ -64,7 +63,7 @@ function raiseSheet(ctx, done) {
   const files = h('input', { type: 'file', accept: 'image/*', multiple: true, id: 'cm-files' });
   const note = h('div', { role: 'alert' });
   const warn = (m) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error'), m));
-  openSheet({ title: t('cmp.raise'), body: h('div', { class: 'stack' }, dl,
+  openSheet({ title: t('cmp.raise'), body: h('div', { class: 'stack' },
     segmented([['plot', t('cmp.aPlot')], ['area', t('cmp.commonArea')]], 'plot', (v) => { where = v; plotInput.hidden = v !== 'plot'; area.hidden = v !== 'area'; }, t('cmp.where')), plotInput, area,
     h('div', { class: 'field' }, h('label', { for: 'cm-text' }, t('cmp.what')), text, count),
     h('div', { class: 'field' }, h('label', { for: 'cm-files' }, t('cmp.photos')), withCamera(files, t, { multiple: true }), h('div', { class: 'help' }, t('cmp.photosHelp'))), note), actions: [
@@ -73,9 +72,11 @@ function raiseSheet(ctx, done) {
       if (!description) return warn(t('cmp.whatNeeded'));
       const payload = { description };
       if (where === 'plot') {
-        const typed = plotInput.querySelector('input').value.trim().toUpperCase().replace(/\s/g, '');
+        const typed = picker.input.value.trim();
         if (!typed) return warn(t('cmp.plotNeeded'));
-        payload.plot_key = typed;
+        const known = picker.find(typed);
+        if (picker.loaded() && !known) return warn(t('cmp.plotPick'));          // only a plot on the list; until the list arrives the server checks it
+        payload.plot_key = known ? known.plot_key : typed.toUpperCase().replace(/\s/g, '');
       } else payload.area = area.querySelector('select').value;
       if (files.files.length > 3) return warn(t('cmp.maxPhotos'));
       try {
@@ -87,4 +88,29 @@ function raiseSheet(ctx, done) {
         close(); toast(failed ? t('cmp.raisedSomePhotos') : t('cmp.raised')); done();
       } catch (e) { warn(e.code === 'INVALID' ? t('cmp.plotUnknown') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
+}
+
+// A searchable list of the colony's plots: type to narrow it, tap one to choose. Only a plot on the list is accepted.
+function plotPicker(ctx, id, labelText, initial) {
+  const { t } = ctx;
+  let plots = [];
+  const norm = (k) => String(k || '').replace(/[\s-]/g, '').toUpperCase();
+  const input = h('input', { id, type: 'text', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': `${id}-list`, autocomplete: 'off', autocapitalize: 'characters', placeholder: 'A-12', value: initial || '' });
+  const list = h('ul', { id: `${id}-list`, role: 'listbox', class: 'combo-list', hidden: true });
+  const find = (v) => plots.find((p) => norm(p.plot_label) === norm(v) || norm(p.plot_key) === norm(v));
+  const hide = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+  const pick = (p) => { input.value = p.plot_label; hide(); };
+  function draw() {
+    const f = norm(input.value);
+    const hits = plots.filter((p) => !f || norm(p.plot_label).includes(f)).slice(0, 8);
+    list.replaceChildren(...hits.map((p) => h('li', { role: 'option', class: 'combo-opt', onPointerdown: (e) => { e.preventDefault(); pick(p); } }, p.plot_label)));
+    list.hidden = !hits.length; input.setAttribute('aria-expanded', String(!list.hidden));
+  }
+  input.addEventListener('focus', () => { input.select?.(); draw(); });
+  input.addEventListener('input', draw);
+  input.addEventListener('blur', hide);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !list.hidden && list.firstChild) { e.preventDefault(); input.value = list.firstChild.textContent; hide(); } });
+  ctx.api.call('map.plots').then((d) => { plots = d.plots; const own = find(initial); if (own) input.value = own.plot_label; }).catch(() => {});
+  const el = h('div', { class: 'field combo' }, h('label', { for: id }, labelText), input, list, h('div', { class: 'help' }, t('cmp.plotHelp')));
+  return { el, input, find, loaded: () => plots.length > 0 };
 }
