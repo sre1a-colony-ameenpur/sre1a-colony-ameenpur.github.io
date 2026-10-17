@@ -3,6 +3,7 @@ import { h, icon, avatar, rolePill, crest } from './ui.js';
 import { t } from './i18n.js';
 import { can } from './store.js';
 import { CONFIG } from './config.js';
+import { latestRelease } from './releases.js';
 
 // Nav items are shown only if `caps` allows reading something in that area.
 export function navItems(s) {
@@ -16,6 +17,11 @@ export function navItems(s) {
   ].filter((i) => i.show);
 }
 
+// True until the member opens What's new after the newest release.
+function unseenRelease() {
+  try { return localStorage.getItem('sre.whatsNewSeen') !== latestRelease(); } catch { return false; }
+}
+
 // Avatar menu items by caps, in the S7.0 order. Items a role cannot use are absent.
 export function menuItems(s) {
   const view = (e) => (can(e, 'c', s) || can(e, 'u', s) || can(e, 'd', s) ? '' : t('menu.viewOnly'));
@@ -26,6 +32,7 @@ export function menuItems(s) {
     { path: '/plots', icon: 'grid_view', label: 'menu.plots', hint: view('plots'), show: can('plots', 'r', s) },
     { path: '/audit', icon: 'history', label: 'menu.audit', show: can('audit', 'r', s) },
     { path: '/handover', icon: 'swap_horiz', label: 'menu.handover', show: can('handover', 'c', s) },
+    { path: '/whats-new', icon: 'new_releases', label: 'menu.whatsNew', hint: unseenRelease() ? t('menu.new') : '', show: true },
     { path: '/help', icon: 'help', label: 'menu.help', show: true },
   ].filter((i) => i.show);
 }

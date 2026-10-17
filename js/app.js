@@ -31,6 +31,7 @@ const routes = [
   { path: '/down', public: true, load: lazy('./views/down.js'), bare: true },
   { path: '/home', title: 'nav.home', load: lazy('./views/home.js') },
   { path: '/profile', title: 'menu.profile', load: lazy('./views/profile.js') },
+  { path: '/whats-new', title: 'menu.whatsNew', load: lazy('./views/whats_new.js') },
   { path: '/help', title: 'menu.help', load: lazy('./views/help.js') },
   { path: '/issues', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaints.js') }, { path: '/issues/:id', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaint_detail.js') },
   { path: '/money', title: 'nav.money', load: lazy('./views/money.js') }, { path: '/money/expense/:id', title: 'nav.money', needs: ['expenses', 'r'], load: lazy('./views/expense_detail.js') }, { path: '/community', title: 'nav.community', load: lazy('./views/community.js') }, { path: '/community/polls/:id', title: 'nav.community', needs: ['polls', 'r'], load: lazy('./views/poll_detail.js') }, { path: '/community/events/:id', title: 'nav.community', needs: ['events', 'r'], load: lazy('./views/event_detail.js') }, { path: '/community/action-items', title: 'nav.community', needs: ['action_items', 'r'], load: lazy('./views/action_items.js') }, { path: '/community/meetings/:id', title: 'nav.community', needs: ['meetings', 'r'], load: lazy('./views/meeting_detail.js') },
