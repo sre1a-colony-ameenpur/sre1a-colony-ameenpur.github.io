@@ -34,3 +34,36 @@ export function initials(name = '') {
   const p = name.trim().split(/\s+/).filter(Boolean);
   return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase() || '?';
 }
+
+// Relative age of a timestamp as { key, n } for t(): "just now", "10 secs ago", "1 min ago", "3 hours ago", "2 days ago"; a month or more: { key: 'date' }.
+export function relTime(iso, now = Date.now()) {
+  const ms = now - new Date(iso).getTime();
+  if (isNaN(ms)) return { key: 'none' };
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  if (sec < 5) return { key: 'time.now' };
+  if (sec < 60) return { key: 'time.secs', n: sec };
+  if (sec < 3600) return { key: 'time.mins', n: Math.floor(sec / 60) };
+  if (sec < 86400) return { key: 'time.hours', n: Math.floor(sec / 3600) };
+  if (sec < 30 * 86400) return { key: 'time.days', n: Math.floor(sec / 86400) };
+  return { key: 'date' };
+}
+
+// Full date and time in India time, whatever the device's zone is: "17 Oct 2026, 5:33 PM".
+export function fullStamp(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hourCycle: 'h12' })
+    .format(d).replace(/\b(am|pm)\b/, (m) => m.toUpperCase());
+}
+
+// How long something took, in its largest sensible unit, as { key, n } for t(): seconds up to years (a week = 7 days, a month = 30, a year = 365).
+export function duration(ms) {
+  const sec = Math.max(0, Math.floor((Number(ms) || 0) / 1000)), day = 86400;
+  if (sec < 60) return { key: 'dur.secs', n: sec };
+  if (sec < 3600) return { key: 'dur.mins', n: Math.floor(sec / 60) };
+  if (sec < day) return { key: 'dur.hours', n: Math.floor(sec / 3600) };
+  if (sec < 7 * day) return { key: 'dur.days', n: Math.floor(sec / day) };
+  if (sec < 30 * day) return { key: 'dur.weeks', n: Math.floor(sec / (7 * day)) };
+  if (sec < 365 * day) return { key: 'dur.months', n: Math.floor(sec / (30 * day)) };
+  return { key: 'dur.years', n: Math.floor(sec / (365 * day)) };
+}

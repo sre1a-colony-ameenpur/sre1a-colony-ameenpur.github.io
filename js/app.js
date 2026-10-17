@@ -30,15 +30,15 @@ const routes = [
   { path: '/no-access', public: true, load: lazy('./views/noaccess.js'), bare: true },
   { path: '/down', public: true, load: lazy('./views/down.js'), bare: true },
   { path: '/home', title: 'nav.home', load: lazy('./views/home.js') },
-  { path: '/profile', title: 'menu.profile', load: lazy('./views/profile.js') },
-  { path: '/whats-new', title: 'menu.whatsNew', load: lazy('./views/whats_new.js') },
-  { path: '/help', title: 'menu.help', load: lazy('./views/help.js') },
-  { path: '/issues', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaints.js') }, { path: '/issues/:id', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaint_detail.js') },
-  { path: '/money', title: 'nav.money', load: lazy('./views/money.js') }, { path: '/money/expense/:id', title: 'nav.money', needs: ['expenses', 'r'], load: lazy('./views/expense_detail.js') }, { path: '/community', title: 'nav.community', load: lazy('./views/community.js') }, { path: '/community/polls/:id', title: 'nav.community', needs: ['polls', 'r'], load: lazy('./views/poll_detail.js') }, { path: '/community/events/:id', title: 'nav.community', needs: ['events', 'r'], load: lazy('./views/event_detail.js') }, { path: '/community/action-items', title: 'nav.community', needs: ['action_items', 'r'], load: lazy('./views/action_items.js') }, { path: '/community/meetings/:id', title: 'nav.community', needs: ['meetings', 'r'], load: lazy('./views/meeting_detail.js') },
+  { path: '/profile', back: '/home', title: 'menu.profile', load: lazy('./views/profile.js') },
+  { path: '/whats-new', back: '/home', title: 'menu.whatsNew', load: lazy('./views/whats_new.js') },
+  { path: '/help', back: '/home', title: 'menu.help', load: lazy('./views/help.js') },
+  { path: '/issues', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaints.js') }, { path: '/issues/:id', back: '/issues', title: 'nav.issues', needs: ['complaints', 'r'], load: lazy('./views/complaint_detail.js') },
+  { path: '/money', title: 'nav.money', load: lazy('./views/money.js') }, { path: '/money/expense/:id', back: '/money', title: 'nav.money', needs: ['expenses', 'r'], load: lazy('./views/expense_detail.js') }, { path: '/community', title: 'nav.community', load: lazy('./views/community.js') }, { path: '/community/polls/:id', back: '/community', title: 'nav.community', needs: ['polls', 'r'], load: lazy('./views/poll_detail.js') }, { path: '/community/events/:id', back: '/community', title: 'nav.community', needs: ['events', 'r'], load: lazy('./views/event_detail.js') }, { path: '/community/action-items', back: '/community', title: 'nav.community', needs: ['action_items', 'r'], load: lazy('./views/action_items.js') }, { path: '/community/meetings/:id', back: '/community', title: 'nav.community', needs: ['meetings', 'r'], load: lazy('./views/meeting_detail.js') },
   { path: '/map', title: 'nav.map', needs: ['map_profile', 'r'], load: lazy('./views/map.js') },
-  { path: '/members', title: 'menu.members', needs: ['members', 'r'], load: lazy('./views/members.js') }, { path: '/members/import', title: 'imp.title', needs: ['members', 'c'], load: lazy('./views/members_import.js') }, { path: '/roles', title: 'menu.roles', needs: ['roles_config', 'r'], load: lazy('./views/roles.js') },
-  { path: '/plots', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/plots.js') }, { path: '/plots/layout', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/layout.js') }, { path: '/audit', title: 'menu.audit', needs: ['audit', 'r'], load: lazy('./views/audit.js') },
-  { path: '/handover', title: 'menu.handover', needs: ['handover', 'c'], load: lazy('./views/handover.js') },
+  { path: '/members', back: '/home', title: 'menu.members', needs: ['members', 'r'], load: lazy('./views/members.js') }, { path: '/members/import', back: '/members', title: 'imp.title', needs: ['members', 'c'], load: lazy('./views/members_import.js') }, { path: '/roles', back: '/home', title: 'menu.roles', needs: ['roles_config', 'r'], load: lazy('./views/roles.js') },
+  { path: '/plots', back: '/home', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/plots.js') }, { path: '/plots/layout', back: '/plots', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/layout.js') }, { path: '/audit', back: '/home', title: 'menu.audit', needs: ['audit', 'r'], load: lazy('./views/audit.js') },
+  { path: '/handover', back: '/home', title: 'menu.handover', needs: ['handover', 'c'], load: lazy('./views/handover.js') },
 ];
 
 // ---- mock / real wiring ----
@@ -176,7 +176,7 @@ async function renderRoute(r) {
   const main = h('main', { class: 'content', id: 'main', tabindex: '-1' }, banners(), view);
   root.replaceChildren(
     dev, h('a', { class: 'skip', href: '#main', onClick: (e) => { e.preventDefault(); main.focus(); } }, t('common.skip')),
-    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, lang: getLang(), setLang, onSignOut: signOut }), main));
+    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, back: route.back, lang: getLang(), setLang, onSignOut: signOut }), main));
   document.title = `${title} · ${CONFIG.appName}`;
   main.focus({ preventScroll: true });
 }

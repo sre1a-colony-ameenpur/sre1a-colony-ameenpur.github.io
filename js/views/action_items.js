@@ -39,5 +39,5 @@ export default async function render(ctx) {
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'page stack' }, h('a', { href: '#/community', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')), h('h1', {}, t('ai.title')), body);
+  return h('div', { class: 'page stack' }, h('h1', {}, t('ai.title')), body);
 }

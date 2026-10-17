@@ -8,17 +8,16 @@ import { createSheet } from './polls.js';
 export default async function render(ctx) {
   const { t } = ctx;
   const root = h('div', { class: 'page stack' });
-  const back = () => h('a', { href: '#/community', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back'));
 
   async function load() {
-    root.replaceChildren(back(), loadingRegion(2));
+    root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('polls.get', { id: ctx.params.id }, ({ poll: p, my_vote: mv, results: r }) => {
       const stateText = p.status === 'open' ? t('poll.closes', { date: dateShort(p.closes_at) }) : p.status === 'upcoming' ? t('poll.opens', { date: dateShort(p.opens_at) }) : p.status === 'cancelled' ? t('poll.cancelled') : t('poll.closed');
       const head = card(null, null, h('h2', {}, p.question),
         h('div', { class: 'row' }, h('span', { class: 'pill role' }, icon(p.type === 'secret' ? 'lock' : 'visibility', 'sm'), t(p.type === 'secret' ? 'poll.secret' : 'poll.open')), h('span', { class: 'small muted' }, stateText)),
         p.cancel_reason ? h('p', { class: 'small muted' }, p.cancel_reason) : null);
-      const parts = [back(), head];
+      const parts = [head];
       if (p.status === 'open' && !mv.voted && can('polls', 'vote')) parts.push(voteCard(ctx, p, load));
       else if (mv.voted) parts.push(card(null, null, statusPill('voted', t('poll.youVoted'))));
       parts.push(resultsCard(ctx, p, r));
@@ -26,7 +25,7 @@ export default async function render(ctx) {
       if (can('polls', 'd') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.cancelPoll'), { kind: 'danger', block: true, onClick: () => cancelSheet(ctx, p.id, load) }));
       root.replaceChildren(...parts);
       });
-    } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('poll.notFound') : friendly(e, t), load)); }
+    } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('poll.notFound') : friendly(e, t), load)); }
   }
   load();
   return root;

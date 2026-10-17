@@ -10,10 +10,9 @@ const plot = (k) => plotChip(k.replace(/^([A-Z])(\d+)$/, '$1-$2'));
 export default async function render(ctx) {
   const { t } = ctx;
   const root = h('div', { class: 'page stack' });
-  const back = () => h('a', { href: '#/community', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back'));
 
   async function load() {
-    root.replaceChildren(back(), loadingRegion(2));
+    root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('meetings.get', { id: ctx.params.id }, (d) => {
       const m = d.meeting;
@@ -24,7 +23,7 @@ export default async function render(ctx) {
         h('div', { class: 'grow' }, h('div', { class: a.status === 'done' ? 'muted' : '' }, a.text),
           h('div', { class: 'small muted' }, `${a.owner_name}${a.mine ? ` (${t('mtg.you')})` : ''} · ${t('mtg.due', { date: dateShort(a.due_date) })}`, carried ? ` · ${t('mtg.carried')}` : '')),
         a.overdue ? statusPill('overdue', t('mtg.overdue')) : a.status === 'done' ? statusPill('paid', t('mtg.done')) : null);
-      root.replaceChildren(back(),
+      root.replaceChildren(
         card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
           h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : 'mtg.scheduled')),
             can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.markHeld'), { kind: 'text', onClick: async () => { try { await ctx.api.call('meetings.update', { id: m.id, status: 'held' }); load(); } catch (e) { toast(friendly(e, t)); } } }) : null)),
@@ -38,7 +37,7 @@ export default async function render(ctx) {
           d.carried_open.length ? h('h3', {}, t('mtg.carriedTitle')) : null, ...d.carried_open.map((a) => item(a, true)),
           can('action_items', 'c') ? button(t('mtg.addItem'), { icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null));
       });
-    } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('mtg.notFound') : friendly(e, t), load)); }
+    } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('mtg.notFound') : friendly(e, t), load)); }
   }
   load();
   return root;

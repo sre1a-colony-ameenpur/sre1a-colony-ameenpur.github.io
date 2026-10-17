@@ -50,7 +50,7 @@ export function langToggle(lang, setLang) {
   return h('div', { class: 'lang', role: 'group', 'aria-label': t('lang.label') }, b('en', 'EN', 'English'), b('te', 'తె', 'తెలుగు'));
 }
 
-export function buildTopbar(s, { title, lang, setLang, onSignOut }) {
+export function buildTopbar(s, { title, back, lang, setLang, onSignOut }) {
   const session = s.session;
   const btn = h('button', { class: 'avatar-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
     'aria-label': t('menu.open', { name: session.name }), onClick: () => toggle() }, avatar(session.name));
@@ -71,7 +71,8 @@ export function buildTopbar(s, { title, lang, setLang, onSignOut }) {
     menu.querySelector('a')?.focus();
   }
   return h('header', { class: 'topbar' },
-    h('span', { class: 'brand-sm' }, crest(true)),
+    back ? h('a', { class: 'icon-btn back-btn', href: '#' + back, 'aria-label': t('common.back'), title: t('common.back') }, icon('arrow_back'))
+      : h('span', { class: 'brand-sm' }, crest(true)),
     h('div', { class: 'title', id: 'page-title' }, title),
     langToggle(lang, setLang), btn);
 }

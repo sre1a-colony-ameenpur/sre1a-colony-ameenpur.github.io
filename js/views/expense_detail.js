@@ -11,7 +11,7 @@ export default async function render(ctx) {
   const when = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : `${dateShort(iso)}, ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`; };
 
   async function load() {
-    root.replaceChildren(h('a', { href: '#/money', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')), loadingRegion(2));
+    root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('expenses.get', { id: ctx.params.id }, (got) => {
       const x = got.item, reversed = got.reversed;
@@ -30,8 +30,7 @@ export default async function render(ctx) {
       if (x.status === 'approved' && !isReversal && !reversed && can('expenses', 'c')) actions.push(button(t('exp.reverse'), { block: true, icon: 'undo', onClick: () => reverseSheet(ctx, x.id, load) }));
       if (x.status === 'approved') actions.push(h('p', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('exp.locked')));
       if (reversed) actions.push(h('p', { class: 'small muted' }, t('exp.alreadyReversed')));
-      root.replaceChildren(h('a', { href: '#/money', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back')),
-        card(null, null, h('div', { class: 'amount big' }, money(x.amount_paise)), statusPill(x.status, statusLabel(t, x.status)),
+      root.replaceChildren(card(null, null, h('div', { class: 'amount big' }, money(x.amount_paise)), statusPill(x.status, statusLabel(t, x.status)),
           h('h2', {}, x.reason), h('p', { class: 'muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`),
           x.event_id && x.event_title ? h('p', {}, icon('celebration', 'sm'), ' ', t('exp.forEvent'), ': ', hasModule('events') ? h('a', { href: `#/community/events/${x.event_id}` }, x.event_title) : x.event_title) : null,
           isReversal ? h('p', { class: 'small' }, t('exp.reversalOf', { id: x.reverses_id })) : null),

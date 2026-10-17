@@ -65,3 +65,7 @@
 main:focus { outline: none; }
 .topbar .title { font-size: 1rem; line-height: 1.25rem; }
 @media (min-width: 768px) { .topbar .title { font-size: var(--fs-h3); line-height: 1.5rem; } }
+
+/* Back arrow in the top bar on screens opened from a list or the menu (replaces the logo, like a native app). */
+.topbar .back-btn { flex: none; margin-inline-start: -8px; color: var(--c-primary); text-decoration: none; }
+@media (min-width: 768px) { .topbar .back-btn { margin-inline-start: 0; } }

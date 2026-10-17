@@ -1,6 +1,6 @@
 // Small DOM helpers and shared components (UX spec S8). No framework.
 import { t } from './i18n.js';
-import { initials } from './fmt.js';
+import { initials, relTime, fullStamp, dateShort } from './fmt.js';
 import { badgeRing } from './loader.js';
 
 // The DOM turns null/false/undefined children into the text "null". h() already skips them; make the direct calls do the same.
@@ -159,3 +159,12 @@ export function confirmSheet(title, text, { confirmLabel = t('common.confirm'), 
 
 // "Only the committee can do this" style line for a missing action.
 export const whyNot = (text) => h('p', { class: 'why' }, text);
+
+// A timestamp shown as its age ("10 secs ago"); tap it to see the full date and time, tap again to go back.
+export function when(iso) {
+  const r = relTime(iso), full = fullStamp(iso);
+  if (!full) return h('span', {}, '');
+  const rel = r.key === 'date' ? dateShort(iso) : t(r.key, { n: r.n });
+  const b = h('button', { type: 'button', class: 'when', title: full, 'aria-label': full, onClick: () => { b.textContent = b.textContent === full ? rel : full; } }, rel);
+  return b;
+}

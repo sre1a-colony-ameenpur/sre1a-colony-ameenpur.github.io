@@ -1,46 +1,54 @@
 // S2.3 Complaint detail: stage tracker, photos, comments, change status, hide.
-import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when } from '../ui.js';
 import { friendly } from '../api.js';
-import { dateShort, dateDM } from '../fmt.js';
+import { duration } from '../fmt.js';
 import { can, store } from '../store.js';
 import { plotChip } from '../ui.js';
 import { videosCard } from '../video.js';
 import { compressPhoto } from '../photo.js';
 import { STAGES, STAGE_KIND, STAGE_KEY, titleOf, whereChip } from './complaints.js';
 
+// A sentence with a tappable time inside it: the text has a {when} marker where the time goes (word order differs between languages).
+const withWhen = (text, iso) => { const [a, b = ''] = text.split('{when}'); return [a, when(iso), b]; };
 const flow = (el) => { el?.classList.add('flow'); return el; };      // even spacing between a card's children
 
 export default async function render(ctx) {
   const { t } = ctx;
   const root = h('div', { class: 'page stack' });
-  const back = () => h('a', { href: '#/issues', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back'));
 
   async function load() {
-    root.replaceChildren(back(), loadingRegion(2));
+    root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('complaints.get', { id: ctx.params.id }, (d) => {
       const c = d.complaint;
       const stageDate = (s) => (s === 'Open' ? c.raised_at : d.history.filter((x) => x.to_stage === s).map((x) => x.at)[0]);
       const idx = STAGES.indexOf(c.stage);
-      const tracker = h('ol', { class: 'tracker' }, STAGES.map((s, i) => h('li', { class: i <= idx ? 'done' : '', 'aria-current': i === idx ? 'step' : null },
-        icon(i < idx ? 'check_circle' : i === idx ? 'radio_button_checked' : 'radio_button_unchecked'), h('span', {}, t(`cmp.stage.${STAGE_KEY[s]}`)), h('small', { class: 'muted' }, stageDate(s) ? dateDM(stageDate(s)) : ''))));
-      const days = Math.max(0, Math.round(c.elapsed_ms / 86400000));
+      // A stage after the first with no history row was skipped (a complaint may jump forward), so it has no time of its own.
+      const tracker = h('ol', { class: 'tracker' }, STAGES.map((s, i) => {
+        const at = stageDate(s), skipped = i < idx && !at;
+        return h('li', { class: `${i <= idx ? 'done' : ''}${skipped ? ' skipped' : ''}`.trim(), 'aria-current': i === idx ? 'step' : null },
+          icon(skipped ? 'remove_circle_outline' : i < idx ? 'check_circle' : i === idx ? 'radio_button_checked' : 'radio_button_unchecked'),
+          h('span', {}, t(`cmp.stage.${STAGE_KEY[s]}`)),
+          h('small', { class: 'muted' }, skipped ? t('cmp.skipped') : at ? when(at) : ''));
+      }));
+      const dur = duration(c.elapsed_ms), took = t(dur.key, { n: dur.n });
       const photos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'complaint');
       const fixPhotos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'resolution');
       const commentPhotos = (cid) => d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'comment' && m.parent_id === cid);
       const next = STAGES.slice(idx + 1);
-      root.replaceChildren(back(),
+      root.replaceChildren(
         flow(card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
-          h('p', { class: 'small muted' }, t('cmp.raisedOn', { date: dateShort(c.raised_at), name: c.raised_by_name })),
+          h('p', { class: 'small muted' }, ...withWhen(t('cmp.raisedOn', { date: '{when}', name: c.raised_by_name }), c.raised_at)),
+          c.resolved_at ? h('p', { class: 'small muted' }, ...withWhen(t('cmp.resolvedOn', { date: '{when}' }), c.resolved_at)) : null,
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
             store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
           c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
             try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toast(friendly(e, t)); }
           } }) : null)),
         flow(card(t('cmp.progress'), 'timeline', tracker,
-          ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, ${dateDM(x.at)}`))),
-          h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { n: days }) : t('cmp.timeSoFar', { n: days })),
+          ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, `, when(x.at)))),
+          h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { d: took }) : t('cmp.timeSoFar', { d: took })),
           (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', block: true, onClick: () => stageSheet(ctx, c, next, load) }) : null)),
         fixPhotos.length || d.contributors?.length ? flow(card(t('cmp.fixPhotosTitle'), 'task_alt',
           fixPhotos.length ? h('div', { class: 'photo-grid' }, fixPhotos.map((m) => thumb(ctx, m.id))) : null,
@@ -48,14 +56,14 @@ export default async function render(ctx) {
         photos.length ? flow(card(t('cmp.photosTitle'), 'image', h('div', { class: 'photo-grid' }, photos.map((m) => thumb(ctx, m.id))))) : null,
         flow(videosCard(ctx, { videos: d.media.filter((m) => m.kind === 'video' && m.parent_type === 'complaint'), parentType: 'complaint', parentId: c.id, canAdd: can('complaints', 'c'), done: load })),
         flow(card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
-          ...(d.comments.length ? d.comments.map((m) => m.hidden ? h('div', { class: 'queue-item small muted', style: 'opacity:.7' }, icon('visibility_off', 'sm'), ' ', t('cmp.hiddenByCommittee'), ` · ${dateShort(m.at)}`) : h('div', { class: 'stack-sm queue-item' },
-            h('div', { class: 'row' }, avatar(m.author_name), h('div', { class: 'grow' }, h('strong', {}, m.author_name), h('div', { class: 'small muted' }, dateShort(m.at))),
+          ...(d.comments.length ? d.comments.map((m) => m.hidden ? h('div', { class: 'queue-item small muted', style: 'opacity:.7' }, icon('visibility_off', 'sm'), ' ', t('cmp.hiddenByCommittee'), ' · ', when(m.at)) : h('div', { class: 'stack-sm queue-item' },
+            h('div', { class: 'row' }, avatar(m.author_name), h('div', { class: 'grow' }, h('strong', {}, m.author_name), h('div', { class: 'small muted' }, when(m.at))),
               can('comments', 'd') ? button(t('cmp.hide'), { kind: 'text', onClick: () => hideSheet(ctx, 'comments.hide', m.id, load) }) : null),
             h('p', {}, m.body), commentPhotos(m.id).length ? h('div', { class: 'photo-grid' }, commentPhotos(m.id).map((p) => thumb(ctx, p.id))) : null)) : [h('p', { class: 'muted' }, t('cmp.noComments'))]),
           can('comments', 'c') ? commentBox(ctx, c.id, load) : null)),
         can('complaints', 'd') ? button(t('cmp.hideComplaint'), { kind: 'danger', block: true, onClick: () => hideSheet(ctx, 'complaints.hide', c.id, () => { location.hash = '#/issues'; }) }) : null);
       });
-    } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('cmp.notFound') : friendly(e, t), load)); }
+    } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('cmp.notFound') : friendly(e, t), load)); }
   }
   load();
   return root;

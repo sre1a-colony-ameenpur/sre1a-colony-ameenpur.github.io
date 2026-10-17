@@ -10,10 +10,9 @@ import { videosCard } from '../video.js';
 export default async function render(ctx) {
   const { t } = ctx;
   const root = h('div', { class: 'page stack' });
-  const back = () => h('a', { href: '#/community', class: 'btn text', style: 'align-self:flex-start' }, icon('arrow_back'), t('common.back'));
 
   async function load() {
-    root.replaceChildren(back(), loadingRegion(2));
+    root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('events.get', { id: ctx.params.id }, ({ event: e, media, spend }) => {
       const photos = media.filter((m) => m.kind === 'photo');
@@ -23,7 +22,7 @@ export default async function render(ctx) {
         const failed = await uploadPhotos(ctx, e.id, ev.target.files);
         toast(failed ? t('evt.publishedSome') : t('evt.photosAdded')); load();
       } });
-      root.replaceChildren(back(),
+      root.replaceChildren(
         photos[0] ? h('div', { class: 'cover' }, photoImg(ctx, photos[0].id, 'cover-img')) : null,
         card(null, null, h('h2', {}, e.title), h('p', { class: 'muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`), e.description ? h('p', { style: 'white-space:pre-wrap' }, e.description) : null,
           h('div', { class: 'row' },
@@ -42,7 +41,7 @@ export default async function render(ctx) {
           can('expenses', 'c') ? button(t('evt.addExpense'), { icon: 'add', block: true, onClick: () => addSheet(ctx, load, e.id) }) : null) : null,
         videosCard(ctx, { videos: media.filter((m) => m.kind === 'video'), parentType: 'event', parentId: e.id, canAdd: can('media', 'c'), done: load }));
       });
-    } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }
+    } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }
   }
   load();
   return root;

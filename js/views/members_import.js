@@ -11,8 +11,7 @@ export default function render(ctx) {
   const { t } = ctx;
   let busy = false;
   const body = h('div', { class: 'stack' });
-  const root = h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('imp.title')),
-    button(t('imp.back'), { kind: 'text', icon: 'arrow_back', href: '#/members' })), body);
+  const root = h('div', { class: 'page stack' }, h('h1', {}, t('imp.title')), body);
 
   const guide = () => card(t('imp.guideTitle'), 'list_alt', h('ol', { class: 'stack-sm', style: 'padding-inline-start:20px' },
     h('li', {}, t('imp.g1')), h('li', {}, t('imp.g2')), h('li', {}, t('imp.g3'))));

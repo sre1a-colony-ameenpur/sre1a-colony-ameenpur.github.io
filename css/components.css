@@ -215,3 +215,8 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 @keyframes br-dash{0%,100%{stroke-dasharray:8 92}50%{stroke-dasharray:46 54}}
 @keyframes br-breathe{0%,100%{transform:scale(1)}50%{transform:scale(.92)}}
 @media (prefers-reduced-motion: reduce) { .br-a1, .br-a2, .br-e { animation: none; } }
+
+/* A timestamp that reads "5 mins ago" and shows the full date and time when tapped. */
+.when { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; text-align: inherit; }
+.tracker li.skipped { color: var(--c-muted); }
+.tracker li.skipped .icon { color: var(--c-muted); }
