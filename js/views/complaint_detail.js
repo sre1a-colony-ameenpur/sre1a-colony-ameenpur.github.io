@@ -35,7 +35,7 @@ export default async function render(ctx) {
       const photos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'complaint');
       const fixPhotos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'resolution');
       const commentPhotos = (cid) => d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'comment' && m.parent_id === cid);
-      const next = STAGES.slice(idx + 1);
+      const next = STAGES.slice(idx + 1).filter((s) => s !== 'Closed');        // closing is the requester's (or the System's) call, never a stage you pick
       root.replaceChildren(
         flow(card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
@@ -50,6 +50,7 @@ export default async function render(ctx) {
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, `, when(x.at)))),
           h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { d: took }) : t('cmp.timeSoFar', { d: took })),
           (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', block: true, onClick: () => stageSheet(ctx, c, next, load) }) : null)),
+        requesterCard(ctx, c, load),
         fixPhotos.length || d.contributors?.length ? flow(card(t('cmp.fixPhotosTitle'), 'task_alt',
           fixPhotos.length ? h('div', { class: 'photo-grid' }, fixPhotos.map((m) => thumb(ctx, m.id))) : null,
           d.contributors?.length ? h('p', {}, icon('volunteer_activism', 'sm'), ' ', t('cmp.contribThanks', { names: d.contributors.map((x) => `${x.name} (${x.plot_keys.map((k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2')).join(', ')})`).join(', ') })) : null)) : null,
@@ -119,12 +120,23 @@ function assignSheet(ctx, c, done) {
   closeSheet = () => dlg.close();
 }
 
+// The person who raised the complaint closes it once it is resolved, or reopens it (also after it closed) when the problem is still there.
+function requesterCard(ctx, c, done) {
+  const { t } = ctx;
+  if (c.stage !== 'Resolved' && c.stage !== 'Closed') return null;
+  if (!c.raised_by_me) return c.stage === 'Resolved' ? flow(card(null, null, h('p', { class: 'small muted' }, icon('hourglass_top', 'sm'), ' ', t('cmp.closeWaits')))) : null;
+  const act = async (action, msg) => { try { await ctx.api.call(action, { id: c.id }); toast(t(msg)); done(); } catch (e) { toast(friendly(e, t)); } };
+  return flow(card(t('cmp.yourSay'), 'how_to_reg', h('p', {}, t(c.stage === 'Resolved' ? 'cmp.closeAsk' : 'cmp.closedReopen')),
+    c.stage === 'Resolved' ? button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, onClick: () => act('complaints.close', 'cmp.closed') }) : null,
+    button(t('cmp.reopen'), { icon: 'undo', block: true, onClick: () => act('complaints.reopen', 'cmp.reopened') })));
+}
+
 function stageSheet(ctx, c, next, done) {
   const { t } = ctx;
   const note = h('div', { role: 'alert' });
   const why = field({ id: 'st-note', label: t('cmp.stageNote'), help: t('cmp.stageNoteHelp'), maxlength: 200 });
   const picked = new Set();                                           // plot keys of the members who helped
-  const finishing = next.some((s) => s === 'Resolved' || s === 'Closed');
+  const finishing = next.includes('Resolved');
   const files = h('input', { type: 'file', accept: 'image/*', multiple: true, 'aria-label': t('cmp.fixPhotos') });
   const q = h('input', { type: 'search', class: 'map-q', placeholder: t('com.membersSearch'), 'aria-label': t('com.membersSearch'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
   const list = h('div', { class: 'stack-sm', style: 'max-height:220px;overflow:auto' });
@@ -148,7 +160,7 @@ function stageSheet(ctx, c, next, done) {
     h('div', { class: 'stack-sm' }, h('strong', { class: 'small' }, t('cmp.fixPhotos')), h('p', { class: 'small muted' }, t('cmp.fixPhotosHelp')), files)) : null;
   openSheet({ title: t('cmp.changeStatus'), body: h('div', { class: 'stack-sm' }, h('p', { class: 'small muted' }, t('cmp.forwardOnly')), why, extras, note), actions: [
     ...next.map((s) => ({ label: t(`cmp.stage.${STAGE_KEY[s]}`), kind: 'primary', keepOpen: true, onClick: async (close) => {
-      const finish = s === 'Resolved' || s === 'Closed';
+      const finish = s === 'Resolved';
       try {
         await ctx.api.call('complaints.stage', { id: c.id, stage: s, note: why.querySelector('input').value.trim(), ...(finish && picked.size ? { contributors: [...picked] } : {}) });
         let failed = 0;

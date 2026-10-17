@@ -1022,5 +1022,18 @@
  "imp.welcomeSent": "Welcome email sent to {n} new members.",
  "imp.welcomeFailed": "The welcome email could not be sent to {n} new members. Please tell them to open the app and sign in.",
  "tr.welcomeSent": "A welcome email was sent to {name}.",
- "tr.welcomeFailed": "The welcome email could not be sent to {name}. Please tell them to open the app and sign in."
+ "tr.welcomeFailed": "The welcome email could not be sent to {name}. Please tell them to open the app and sign in.",
+ "cmp.yourSay": "Is it sorted?",
+ "cmp.closeAsk": "This complaint is marked resolved. If it is really sorted, close it. If not, reopen it. If nobody does, it closes by itself.",
+ "cmp.closedReopen": "This complaint is closed. If the problem is still there, you can reopen it.",
+ "cmp.confirmClose": "Yes, close it",
+ "cmp.reopen": "Reopen",
+ "cmp.closed": "Complaint closed",
+ "cmp.reopened": "Complaint reopened",
+ "cmp.closeWaits": "Marked resolved. The person who raised it closes it, or it closes by itself after a while.",
+ "menu.settings": "Settings",
+ "set.cmpTitle": "Complaints",
+ "set.autoclose": "Close resolved complaints after (hours)",
+ "set.autocloseHelp": "A resolved complaint closes by itself this many hours after it was marked resolved, if the person who raised it has not closed it. 1 to 720.",
+ "set.hoursBad": "Enter a whole number from 1 to 720."
 }

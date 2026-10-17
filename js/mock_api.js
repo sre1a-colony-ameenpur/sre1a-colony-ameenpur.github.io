@@ -544,6 +544,20 @@ export function createMock({ delayMs = 120 } = {}) {
       if (!c.resolved_at && order.indexOf(p.stage) >= 3) c.resolved_at = new Date().toISOString();
       c.stage = p.stage; return ok({ id: c.id, stage: c.stage });
     },
+    'complaints.close': (u, p) => {
+      const c = complaints.find((x) => x.id === p.id);
+      if (!c) return fail('NOT_FOUND', 'Not found');
+      if (c.raised_by_name !== u.name) return fail('FORBIDDEN', 'Only the person who raised this complaint can do this');
+      if (c.stage !== 'Resolved') return fail('CONFLICT', 'Only a resolved complaint can be closed');
+      c.history.push({ from_stage: 'Resolved', to_stage: 'Closed', by_name: u.name, at: new Date().toISOString() }); c.stage = 'Closed'; return ok({ id: c.id, stage: c.stage });
+    },
+    'complaints.reopen': (u, p) => {
+      const c = complaints.find((x) => x.id === p.id);
+      if (!c) return fail('NOT_FOUND', 'Not found');
+      if (c.raised_by_name !== u.name) return fail('FORBIDDEN', 'Only the person who raised this complaint can do this');
+      if (c.stage !== 'Resolved' && c.stage !== 'Closed') return fail('CONFLICT', 'Only a resolved or closed complaint can be reopened');
+      c.history.push({ from_stage: c.stage, to_stage: 'Open', by_name: u.name, at: new Date().toISOString() }); c.stage = 'Open'; c.resolved_at = ''; return ok({ id: c.id, stage: c.stage });
+    },
     'complaints.hide': (u, p) => { const i = complaints.findIndex((x) => x.id === p.id); if (i < 0) return fail('NOT_FOUND', 'Not found'); complaints.splice(i, 1); return ok({ id: p.id }); },
     'comments.create': (u, p) => {
       const c = complaints.find((x) => x.id === p.complaint_id);
