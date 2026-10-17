@@ -41,7 +41,7 @@ export function statusPill(kind, label) {
 export const rolePill = (role) => h('span', { class: 'pill role' }, role);
 export const plotChip = (key) => h('span', { class: 'plot' }, key);
 export const avatar = (name, lg = false) => h('span', { class: `avatar${lg ? ' lg' : ''}`, 'aria-hidden': 'true' }, initials(name));
-export const crest = (sm = false) => h('span', { class: `crest${sm ? ' sm' : ''}`, 'aria-hidden': 'true' }, icon('home'));
+export const crest = (sm = false) => h('img', { class: `crest${sm ? ' sm' : ''}`, src: 'icons/logo.png', alt: '', 'aria-hidden': 'true' });
 
 // While an async click handler runs, disable the control and show a spinner on it; a second click cannot start a second action.
 export function whileBusy(el, run) {

@@ -7,7 +7,11 @@ const timeOf = (iso) => {
   const d = new Date(iso);
   return isNaN(d) ? '' : `${dateShort(iso)}, ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`;
 };
-const pretty = (v) => (v === null || v === undefined ? '' : JSON.stringify(v, null, 1).replace(/[{}"]/g, '').replace(/^\s*\n/gm, '').trim());
+// "amount_paise" -> "Amount Paise"
+export const humanKey = (k) => String(k).replace(/[_\-.]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim().replace(/\b\w/g, (c) => c.toUpperCase());
+const show = (v) => (v === null || v === undefined || v === '' ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v));
+// Saved values as [Human Key, value] pairs; a lone value (not an object) has no key.
+const entriesOf = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.entries(v).map(([k, x]) => [humanKey(k), show(x)]) : [['Value', show(v)]]);
 
 export default function render(ctx) {
   const { t } = ctx;
@@ -15,7 +19,7 @@ export default function render(ctx) {
   const PAGE = 50;
   let items = [], cursor = null, loadingMore = false, lastVerify = null, bad = null, q = '', person = '', action = '', from = '', to = '', open = new Set(), ticket = 0, timer = null;
   const people = new Set(), actions = new Set();                 // everything seen so far, so a filter choice never makes its own option vanish
-  const top = h('div'), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'card' }), more = h('div');
+  const top = h('div'), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'stack-sm' }), more = h('div');
   const body = h('div', { class: 'stack' }, top, filters, count, list, more);
   const root = h('div', { class: 'stack' }, body);
 
@@ -132,21 +136,30 @@ export default function render(ctx) {
     if (loadingMore) more.append(h('p', { class: 'small muted', role: 'status' }, t('audit.loadingMore')));
   }
 
+  // One card per record: the title shows alone; the chevron opens only this card (who, when, before, after).
   function row(i) {
     const key = `${i.ts}|${i.action}|${i.entity_id}`;
     const mismatch = bad?.from_ts && i.ts >= bad.from_ts;
-    const detail = h('div', { class: 'stack-sm', style: 'padding:8px 0' },
-      i.old === null && i.new === null ? h('p', { class: 'small muted' }, t('audit.noDetail')) : [
-        i.old !== null ? h('div', {}, h('div', { class: 'small muted' }, t('audit.before')), h('pre', { class: 'small', style: 'white-space:pre-wrap;margin:0' }, pretty(i.old))) : null,
-        i.new !== null ? h('div', {}, h('div', { class: 'small muted' }, t('audit.after')), h('pre', { class: 'small', style: 'white-space:pre-wrap;margin:0' }, pretty(i.new))) : null]);
-    detail.hidden = !open.has(key);
-    const head = h('button', { type: 'button', class: 'list-row', style: `width:100%;text-align:start${mismatch ? ';border-inline-start:4px solid var(--danger, #b3261e)' : ''}`, 'aria-expanded': String(open.has(key)),
-      onClick: () => { open.has(key) ? open.delete(key) : open.add(key); detail.hidden = !open.has(key); head.setAttribute('aria-expanded', String(open.has(key))); } },
-      h('div', { class: 'grow' }, h('div', {}, sentence(i)), detailOf(i) ? h('div', { class: 'small' }, detailOf(i)) : null,
-        h('div', { class: 'small muted row', style: 'gap:6px;flex-wrap:wrap' }, h('span', {}, who(i)), rolePill(i.role), h('span', {}, timeOf(i.ts)),
-          mismatch ? h('span', { class: 'pill rejected' }, t('audit.mismatch')) : null)),
-      icon('expand_more'));
-    return h('div', {}, head, detail);
+    const line = (name, ...value) => h('div', { class: 'log-line' }, h('span', { class: 'log-key' }, name, ': '), ...value);
+    const values = (title, v) => v === null || v === undefined ? null : h('div', { class: 'log-values' }, h('div', { class: 'log-key' }, `${title}:`),
+      ...entriesOf(v).map(([k, val]) => h('div', { class: 'log-pair' }, `[${k} : ${val}]`)));
+    const detail = h('div', { class: 'log-body stack-sm' },
+      line(t('audit.who'), `${who(i)} `, h('span', { class: 'pill info' }, i.role)),
+      line(t('audit.when'), timeOf(i.ts)),
+      i.old === null && i.new === null ? h('p', { class: 'small muted' }, t('audit.noDetail')) : [values(t('audit.before'), i.old), values(t('audit.after'), i.new)]);
+    const isOpen = open.has(key);
+    detail.hidden = !isOpen;
+    const chevron = icon(isOpen ? 'expand_less' : 'expand_more');
+    const head = h('button', { type: 'button', class: 'log-head', 'aria-expanded': String(isOpen),
+      onClick: () => {
+        const now = !open.has(key);
+        now ? open.add(key) : open.delete(key);
+        detail.hidden = !now; head.setAttribute('aria-expanded', String(now)); chevron.textContent = now ? 'expand_less' : 'expand_more';
+      } },
+      h('span', { class: 'grow' }, sentence(i), mismatch ? [' ', h('span', { class: 'pill bad' }, t('audit.mismatch'))] : null,
+        detailOf(i) ? h('span', { class: 'small muted log-sub' }, detailOf(i)) : null),
+      chevron);
+    return h('div', { class: `card log-card${mismatch ? ' log-bad' : ''}` }, head, detail);
   }
 
   load();

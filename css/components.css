@@ -47,9 +47,8 @@ a.list-row:hover .grow { text-decoration: underline; }
 .chips { display: flex; gap: var(--s2); flex-wrap: wrap; }
 .avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--c-primary); color: var(--c-on-primary); font-weight: 600; font-size: var(--fs-small); flex: none; }
 .avatar.lg { width: 56px; height: 56px; font-size: var(--fs-h3); }
-.crest { display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 50%; background: var(--c-accent); color: var(--c-on-accent); }
-.crest .icon { font-size: 2.5rem; }
-.crest.sm { width: 40px; height: 40px; } .crest.sm .icon { font-size: 1.5rem; }
+.crest { display: inline-block; width: 96px; height: 96px; border-radius: 50%; object-fit: cover; background: #fff; }
+.crest.sm { width: 40px; height: 40px; }
 
 /* segmented control */
 .seg { display: inline-flex; border: 1px solid var(--c-border); border-radius: var(--r); overflow-x: auto; overflow-y: hidden; background: var(--c-bg); max-width: 100%; }
@@ -186,3 +185,12 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .update-banner { position: fixed; inset-inline: var(--s2); bottom: calc(var(--tabbar-h) + var(--s2) + env(safe-area-inset-bottom)); z-index: 50; display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-primary); border-radius: var(--r); box-shadow: 0 4px 16px rgba(0,0,0,.25); }
 .update-banner .grow { flex: 1; min-width: 0; }
 @media (min-width: 768px) { .update-banner { inset-inline: auto var(--s4); bottom: var(--s4); max-width: 420px; } }
+
+/* change log: one card per record, details collapsed */
+.log-card { padding: 0; }
+.log-head { display: flex; align-items: center; gap: var(--s2); width: 100%; padding: var(--s3); background: none; border: 0; text-align: start; font: inherit; color: inherit; font-weight: 600; cursor: pointer; min-height: 48px; }
+.log-sub { display: block; font-weight: 400; }
+.log-body { padding: 0 var(--s3) var(--s3); border-top: 1px solid var(--c-border); padding-top: var(--s2); }
+.log-key { color: var(--c-muted, inherit); font-weight: 600; }
+.log-pair { overflow-wrap: anywhere; padding-inline-start: var(--s2); }
+.log-bad { border-inline-start: 4px solid var(--danger, #b3261e); }

@@ -139,9 +139,16 @@ export default function render(ctx) {
     ? h('div', { class: 'banner info', role: 'status', style: 'border-radius:12px;border:1px solid var(--c-border);margin-bottom:16px' }, icon('how_to_reg'),
       h('div', { class: 'grow' }, t('home.newPresident', { name: s.presidentName, date: dateShort(s.presidentSince) }))) : null;
 
+  // Shown when there are no cards, or every card hid itself (nothing to report / module off).
+  const none = h('p', { class: 'muted', role: 'status', hidden: true }, t('home.noUpdates'));
+  const grid = h('div', { class: 'cards wide' }, cards);
+  const sync = () => { none.hidden = !!grid.querySelector(':scope > .card'); };
+  sync();
+  new MutationObserver(sync).observe(grid, { childList: true });
+
   return h('div', { class: 'page wide' },
     newPres,
     h('div', { class: 'row', style: 'margin-bottom:16px' }, h('h1', {}, t('home.greeting', { name: first })), rolePill(s.role), s.plotKeys.map(plotChip)),
     quick.length ? h('div', { class: 'btn-row', style: 'margin-bottom:16px;flex-direction:row;flex-wrap:wrap;justify-content:flex-start' }, quick) : null,
-    h('div', { class: 'cards wide' }, cards));
+    grid, none);
 }
