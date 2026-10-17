@@ -1068,5 +1068,17 @@
  "cmp.m.closedHand": "Closed by the person who raised them",
  "cmp.m.closedAuto": "Closed automatically",
  "cmp.m.avg": "Average time to resolve: {d}",
- "cmp.m.noAvg": "No complaint was resolved this month."
+ "cmp.m.noAvg": "No complaint was resolved this month.",
+ "acc.title": "Monthly accounts",
+ "acc.thisMonth": "This month",
+ "acc.collected": "Collected",
+ "acc.spent": "Spent",
+ "acc.net": "Left over",
+ "acc.maint": "Of which maintenance",
+ "acc.feesLine": "Fees and membership: {amount}",
+ "acc.expenses": "Expenses this month",
+ "acc.noExpenses": "No approved expenses this month.",
+ "acc.reversal": "reversal",
+ "acc.byCategory": "Spent by category",
+ "acc.allTime": "All time"
 }

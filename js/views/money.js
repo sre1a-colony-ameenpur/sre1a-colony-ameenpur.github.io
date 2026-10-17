@@ -1,5 +1,5 @@
 // Money landing: one page with a segmented control (Expenses | Maintenance | Fees). Each tab is its own module.
-import { h, segmented, emptyState } from '../ui.js';
+import { h, segmented, emptyState, icon } from '../ui.js';
 import { isDevHost } from '../config.js';
 import { can, canAny, hasModule } from '../store.js';
 
@@ -23,7 +23,7 @@ export default async function render(ctx) {
     const mod = await import(tab === 'expenses' ? './expenses.js' : tab === 'maintenance' ? './maintenance.js' : './fees.js');
     body.replaceChildren(await mod.default(ctx, tab));
   }
-  const root = h('div', { class: 'page stack' }, h('h1', {}, t('nav.money')),
+  const root = h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('nav.money')), can('expenses', 'r') ? h('a', { class: 'btn', href: '#/money/accounts' }, icon('account_balance', 'sm'), t('acc.title')) : null),
     tabs.length > 1 ? segmented(tabs, lastTab, show, t('nav.money')) : null, body);
   show(lastTab);
   return root;
