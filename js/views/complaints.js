@@ -72,7 +72,7 @@ function raiseSheet(ctx, done) {
       if (!description) return warn(t('cmp.whatNeeded'));
       const payload = { description };
       if (where === 'plot') {
-        const typed = plotInput.querySelector('input').value.trim().toUpperCase().replace(/[\s-]/g, '');
+        const typed = plotInput.querySelector('input').value.trim().toUpperCase().replace(/\s/g, '');
         if (!typed) return warn(t('cmp.plotNeeded'));
         payload.plot_key = typed;
       } else payload.area = area.querySelector('select').value;

@@ -51,8 +51,8 @@ export function memberSheet(ctx, { member, items, done }) {
   };
   const addPlot = () => {
     plotErr.textContent = '';
-    const raw = val(plotIn).toUpperCase().replace(/[\s-]/g, '');
-    if (!/^[A-E]\d{1,3}$/.test(raw)) { plotErr.textContent = t('mem.plotUnknown'); return; }
+    const raw = val(plotIn).toUpperCase().replace(/\s/g, '');       // the key as written in the plots sheet, e.g. A-67/P
+    if (!/^(?=.*[A-Z])(?=.*\d)[A-Z0-9\/-]{1,20}$/.test(raw)) { plotErr.textContent = t('mem.plotUnknown'); return; }
     if (plots.includes(raw)) { plotIn.querySelector('input').value = ''; return; }
     const owner = items.find((m) => m.active && plotsOf(m).includes(raw));
     if (owner) {

@@ -19,6 +19,7 @@ function loadLeaflet() {
 }
 
 const norm = (k) => String(k || '').replace(/[\s-]/g, '').toUpperCase();
+const realKey = new Map();                       // norm(key) -> the key as written in the plots sheet (A8 -> A-8, A67P -> A-67/P); the API wants that one
 const fold = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
 const label = (key) => key.replace(/^([A-Z])(\d+)$/, '$1-$2');
 
@@ -57,7 +58,7 @@ export default function render(ctx) {
     openPanel(loadingRegion(1));
     fly(key);
     try {
-      const p = await ctx.api.call('map.profile', { plot_key: key });
+      const p = await ctx.api.call('map.profile', { plot_key: realKey.get(key) || key });
       const o = p.owner;
       openPanel(
         h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(o?.name || '?', true),
@@ -135,6 +136,7 @@ export default function render(ctx) {
       G = g; data = d;
       g.plots.forEach((p) => geom.set(norm(p.key), p));
       d.plots.forEach((p) => {
+        realKey.set(norm(p.plot_key), p.plot_key);
         if (p.owner) ownerOf.set(norm(p.plot_key), p.owner);
         if (p.x != null && p.y != null) geom.set(norm(p.plot_key), { at: [p.x, p.y] });   // positions uploaded by the President win over the bundled ones
       });
