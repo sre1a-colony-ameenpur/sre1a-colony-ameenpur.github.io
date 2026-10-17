@@ -147,12 +147,23 @@ details.acc > .acc-body { padding: 0 var(--s3) var(--s3); }
 .banner.ok { background: var(--p-ok-bg); color: var(--p-ok-fg); border-color: var(--p-ok-bd); }
 
 /* Complaints */
-/* Vertical stage tracker: reads well at 360 px and in Telugu */
-.tracker { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
-.tracker li { display: flex; align-items: center; gap: var(--s2); color: var(--c-muted); }
-.tracker li span { flex: 1; text-align: start; }
+/* Vertical stage tracker: a timeline (dot, line to the next dot, label, date). Reads well at 360 px and in Telugu. */
+.tracker { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tracker li { position: relative; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; column-gap: var(--s2); min-height: 44px; color: var(--c-muted); }
+.tracker li::before { content: ""; position: absolute; inset-inline-start: 13px; top: 50%; height: 100%; width: 2px; background: var(--c-border); }
+.tracker li:last-child::before { display: none; }
+.tracker li.done:has(+ li.done)::before { background: var(--c-primary); }
+.tracker li .icon { position: relative; z-index: 1; justify-self: center; background: var(--c-surface); border-radius: var(--r-pill); }
+.tracker li > span:not(.icon) { text-align: start; }
+.tracker li small { white-space: nowrap; }
+.tracker li.done { color: var(--c-text); }
+.tracker li.done .icon { color: var(--c-primary); }
+.tracker li[aria-current="step"] { font-weight: 700; color: var(--c-text); }
+.tracker li[aria-current="step"] > span:not(.icon) { color: var(--c-primary); }
 .tracker + p { margin-top: var(--s2); }
-.tracker li.done { color: var(--c-primary); font-weight: 600; }
+/* A card whose children are stacked with an even gap (the title already has its own bottom margin). */
+.card.flow > * + * { margin-top: var(--s2); }
+.card.flow > h2 + * { margin-top: 0; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
 .photo-btn { padding: 0; border: 1px solid var(--c-border); border-radius: var(--r); background: var(--c-bg); aspect-ratio: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .photo-thumb { width: 100%; height: 100%; object-fit: cover; }

@@ -8,6 +8,8 @@ import { videosCard } from '../video.js';
 import { compressPhoto } from '../photo.js';
 import { STAGES, STAGE_KIND, STAGE_KEY, titleOf, whereChip } from './complaints.js';
 
+const flow = (el) => { el?.classList.add('flow'); return el; };      // even spacing between a card's children
+
 export default async function render(ctx) {
   const { t } = ctx;
   const root = h('div', { class: 'page stack' });
@@ -21,36 +23,36 @@ export default async function render(ctx) {
       const stageDate = (s) => (s === 'Open' ? c.raised_at : d.history.filter((x) => x.to_stage === s).map((x) => x.at)[0]);
       const idx = STAGES.indexOf(c.stage);
       const tracker = h('ol', { class: 'tracker' }, STAGES.map((s, i) => h('li', { class: i <= idx ? 'done' : '', 'aria-current': i === idx ? 'step' : null },
-        icon(i <= idx ? 'check_circle' : 'radio_button_unchecked', 'sm'), h('span', {}, t(`cmp.stage.${STAGE_KEY[s]}`)), h('small', { class: 'muted' }, stageDate(s) ? dateDM(stageDate(s)) : ''))));
+        icon(i < idx ? 'check_circle' : i === idx ? 'radio_button_checked' : 'radio_button_unchecked'), h('span', {}, t(`cmp.stage.${STAGE_KEY[s]}`)), h('small', { class: 'muted' }, stageDate(s) ? dateDM(stageDate(s)) : ''))));
       const days = Math.max(0, Math.round(c.elapsed_ms / 86400000));
       const photos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'complaint');
       const fixPhotos = d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'resolution');
       const commentPhotos = (cid) => d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'comment' && m.parent_id === cid);
       const next = STAGES.slice(idx + 1);
       root.replaceChildren(back(),
-        card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
+        flow(card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
           h('p', { class: 'small muted' }, t('cmp.raisedOn', { date: dateShort(c.raised_at), name: c.raised_by_name })),
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
             store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
           c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
             try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toast(friendly(e, t)); }
-          } }) : null),
-        card(t('cmp.progress'), 'timeline', tracker,
+          } }) : null)),
+        flow(card(t('cmp.progress'), 'timeline', tracker,
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, ${dateDM(x.at)}`))),
           h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { n: days }) : t('cmp.timeSoFar', { n: days })),
-          (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', onClick: () => stageSheet(ctx, c, next, load) }) : null),
-        fixPhotos.length || d.contributors?.length ? card(t('cmp.fixPhotosTitle'), 'task_alt',
+          (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', block: true, onClick: () => stageSheet(ctx, c, next, load) }) : null)),
+        fixPhotos.length || d.contributors?.length ? flow(card(t('cmp.fixPhotosTitle'), 'task_alt',
           fixPhotos.length ? h('div', { class: 'photo-grid' }, fixPhotos.map((m) => thumb(ctx, m.id))) : null,
-          d.contributors?.length ? h('p', {}, icon('volunteer_activism', 'sm'), ' ', t('cmp.contribThanks', { names: d.contributors.map((x) => `${x.name} (${x.plot_keys.map((k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2')).join(', ')})`).join(', ') })) : null) : null,
-        photos.length ? card(t('cmp.photosTitle'), 'image', h('div', { class: 'photo-grid' }, photos.map((m) => thumb(ctx, m.id)))) : null,
-        videosCard(ctx, { videos: d.media.filter((m) => m.kind === 'video' && m.parent_type === 'complaint'), parentType: 'complaint', parentId: c.id, canAdd: can('complaints', 'c'), done: load }),
-        card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
+          d.contributors?.length ? h('p', {}, icon('volunteer_activism', 'sm'), ' ', t('cmp.contribThanks', { names: d.contributors.map((x) => `${x.name} (${x.plot_keys.map((k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2')).join(', ')})`).join(', ') })) : null)) : null,
+        photos.length ? flow(card(t('cmp.photosTitle'), 'image', h('div', { class: 'photo-grid' }, photos.map((m) => thumb(ctx, m.id))))) : null,
+        flow(videosCard(ctx, { videos: d.media.filter((m) => m.kind === 'video' && m.parent_type === 'complaint'), parentType: 'complaint', parentId: c.id, canAdd: can('complaints', 'c'), done: load })),
+        flow(card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
           ...(d.comments.length ? d.comments.map((m) => m.hidden ? h('div', { class: 'queue-item small muted', style: 'opacity:.7' }, icon('visibility_off', 'sm'), ' ', t('cmp.hiddenByCommittee'), ` · ${dateShort(m.at)}`) : h('div', { class: 'stack-sm queue-item' },
             h('div', { class: 'row' }, avatar(m.author_name), h('div', { class: 'grow' }, h('strong', {}, m.author_name), h('div', { class: 'small muted' }, dateShort(m.at))),
               can('comments', 'd') ? button(t('cmp.hide'), { kind: 'text', onClick: () => hideSheet(ctx, 'comments.hide', m.id, load) }) : null),
             h('p', {}, m.body), commentPhotos(m.id).length ? h('div', { class: 'photo-grid' }, commentPhotos(m.id).map((p) => thumb(ctx, p.id))) : null)) : [h('p', { class: 'muted' }, t('cmp.noComments'))]),
-          can('comments', 'c') ? commentBox(ctx, c.id, load) : null),
+          can('comments', 'c') ? commentBox(ctx, c.id, load) : null)),
         can('complaints', 'd') ? button(t('cmp.hideComplaint'), { kind: 'danger', block: true, onClick: () => hideSheet(ctx, 'complaints.hide', c.id, () => { location.hash = '#/issues'; }) }) : null);
       });
     } catch (e) { root.replaceChildren(back(), errorState(e.code === 'NOT_FOUND' ? t('cmp.notFound') : friendly(e, t), load)); }
