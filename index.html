@@ -25,18 +25,35 @@
   <style>
     /* First paint, before the scripts have run: replaced as soon as the app draws its first screen. */
     .boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; font: 500 1rem/1.5 'Noto Sans', system-ui, sans-serif; color: #5b6670; }
-    .boot img { width: 96px; height: 96px; border-radius: 50%; }
-    .boot i { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #1f5fa8; border-top-color: transparent; animation: boot-spin .8s linear infinite; }
-    @keyframes boot-spin { to { transform: rotate(360deg); } }
-    @media (prefers-color-scheme: dark) { .boot { color: #9aa5ae; } .boot i { border-color: #8ab4f0; border-top-color: transparent; } }
-    @media (prefers-reduced-motion: reduce) { .boot i { animation-duration: 3s; } }
+    @media (prefers-color-scheme: dark) { .boot { color: #9aa5ae; } }
+    .br-a1{transform-box:fill-box;transform-origin:50% 50%;animation:br-spin 1.4s linear infinite,br-dash 2.8s ease-in-out infinite}
+    .br-a2{transform-box:fill-box;transform-origin:50% 50%;animation:br-spin 2.2s linear infinite reverse}
+    .br-e{transform-box:fill-box;transform-origin:50% 50%;animation:br-breathe 2.8s ease-in-out infinite}
+    @keyframes br-spin{to{transform:rotate(360deg)}}
+    @keyframes br-dash{0%,100%{stroke-dasharray:8 92}50%{stroke-dasharray:46 54}}
+    @keyframes br-breathe{0%,100%{transform:scale(1)}50%{transform:scale(.92)}}
+    @media (prefers-reduced-motion: reduce) { .br-a1, .br-a2, .br-e { animation: none; } }
   </style>
 </head>
 <body>
   <div id="app" role="presentation">
     <div class="boot" role="status" aria-live="polite">
-      <img src="icons/logo.png" alt="Sai Ram Enclave Phase 1A">
-      <i aria-hidden="true"></i>
+      <svg viewBox="0 0 120 120" width="120" height="120" aria-hidden="true">
+  <circle cx="60" cy="60" r="41" fill="#fff"/>
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#e3e9f7" stroke-width="5"/>
+  <circle cx="60" cy="60" r="45" fill="none" stroke="#e4f2e6" stroke-width="3"/>
+  <circle class="br-a1" cx="60" cy="60" r="52" pathLength="100" fill="none" stroke="#1D3F9A" stroke-width="5" stroke-linecap="round" stroke-dasharray="8 92"/>
+  <circle class="br-a2" cx="60" cy="60" r="45" pathLength="100" fill="none" stroke="#2E8B3E" stroke-width="3" stroke-linecap="round" stroke-dasharray="22 78"/>
+  <g class="br-e">
+    <circle cx="60" cy="47" r="9" fill="#FDB813"/>
+    <path d="M60 48 L75 61 V77 H45 V61 Z" fill="#fff"/>
+    <path d="M47 59 V76 H73 V59" fill="none" stroke="#1D3F9A" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M41 63 L60 47 L79 63" fill="none" stroke="#1D3F9A" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="55" y="62" width="4.5" height="4.5" fill="#1D3F9A"/><rect x="60.5" y="62" width="4.5" height="4.5" fill="#1D3F9A"/>
+    <rect x="55" y="67.5" width="4.5" height="4.5" fill="#1D3F9A"/><rect x="60.5" y="67.5" width="4.5" height="4.5" fill="#1D3F9A"/>
+    <path d="M44 82 Q60 77 76 82" fill="none" stroke="#6DB33F" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
       <span>Loading… · లోడ్ అవుతోంది…</span>
     </div>
   </div>

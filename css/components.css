@@ -177,7 +177,7 @@ a.card > .cover { border-radius: 0; }
 .btn.busy::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent; animation: spin .8s linear infinite; flex: none; }
 dialog.busy-overlay { border: 0; padding: 0; background: transparent; max-width: none; max-height: none; width: 100%; height: 100%; margin: 0; }
 dialog.busy-overlay::backdrop { background: var(--c-scrim); }
-.busy-box { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; gap: var(--s2); color: #fff; font-weight: 600; cursor: progress; }
+.busy-box { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s3); color: #fff; font-weight: 600; cursor: progress; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner, .btn.busy::before { animation-duration: 3s; } }
 
@@ -194,3 +194,13 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .log-key { color: var(--c-muted, inherit); font-weight: 600; }
 .log-pair { overflow-wrap: anywhere; padding-inline-start: var(--s2); }
 .log-bad { border-inline-start: 4px solid var(--danger, #b3261e); }
+
+/* Badge Ring loader */
+.badge-ring { flex: none; }
+.br-a1{transform-box:fill-box;transform-origin:50% 50%;animation:br-spin 1.4s linear infinite,br-dash 2.8s ease-in-out infinite}
+.br-a2{transform-box:fill-box;transform-origin:50% 50%;animation:br-spin 2.2s linear infinite reverse}
+.br-e{transform-box:fill-box;transform-origin:50% 50%;animation:br-breathe 2.8s ease-in-out infinite}
+@keyframes br-spin{to{transform:rotate(360deg)}}
+@keyframes br-dash{0%,100%{stroke-dasharray:8 92}50%{stroke-dasharray:46 54}}
+@keyframes br-breathe{0%,100%{transform:scale(1)}50%{transform:scale(.92)}}
+@media (prefers-reduced-motion: reduce) { .br-a1, .br-a2, .br-e { animation: none; } }

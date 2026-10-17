@@ -1,6 +1,7 @@
 // Small DOM helpers and shared components (UX spec S8). No framework.
 import { t } from './i18n.js';
 import { initials } from './fmt.js';
+import { badgeRing } from './loader.js';
 
 // The DOM turns null/false/undefined children into the text "null". h() already skips them; make the direct calls do the same.
 for (const m of typeof Element === 'undefined' ? [] : ['replaceChildren', 'append', 'prepend']) {
@@ -71,7 +72,7 @@ export const busy = {
   start() {
     if (++busyCount > 1 || typeof document === 'undefined') return;
     busyDlg = h('dialog', { class: 'busy-overlay', 'aria-label': t('common.working') },
-      h('div', { class: 'busy-box', role: 'status' }, h('span', { class: 'spinner', 'aria-hidden': 'true' }), t('common.working')));
+      h('div', { class: 'busy-box', role: 'status' }, badgeRing(96), t('common.working')));
     busyDlg.addEventListener('cancel', (e) => e.preventDefault());
     document.body.append(busyDlg);
     busyDlg.showModal();
