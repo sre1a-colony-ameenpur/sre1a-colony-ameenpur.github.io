@@ -253,3 +253,10 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .when { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; text-align: inherit; }
 .tracker li.skipped { color: var(--c-muted); }
 .tracker li.skipped .icon { color: var(--c-muted); }
+
+/* Reports: roles against reports */
+.rep-table { border-collapse: collapse; min-width: 100%; font-size: var(--fs-small, 0.875rem); }
+.rep-table th, .rep-table td { padding: 8px 10px; border-bottom: 1px solid var(--c-border); text-align: center; vertical-align: middle; }
+.rep-table thead th { font-weight: 600; min-width: 96px; }
+.rep-table tbody th { text-align: start; white-space: nowrap; font-weight: 600; position: sticky; inset-inline-start: 0; background: var(--c-bg); }
+.rep-table input[type="checkbox"] { width: 22px; height: 22px; }

@@ -1,6 +1,11 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-23',
+    title: { en: 'Reports', te: 'నివేదికలు' },
+    items: [
+      { en: 'Download accounts, expenses, maintenance, payments, issues and meeting reports as Excel or PDF, for one month, the last 3 or 6 months, or the last year. The President decides who can download which report.', te: 'లెక్కలు, ఖర్చులు, నిర్వహణ, చెల్లింపులు, ఫిర్యాదులు, సమావేశాల నివేదికలను ఎక్సెల్ లేదా PDFగా డౌన్‌లోడ్ చేయండి: ఒక నెల, గత 3 లేదా 6 నెలలు, లేదా గత సంవత్సరం. ఏ నివేదికను ఎవరు డౌన్‌లోడ్ చేయవచ్చో అధ్యక్షులు నిర్ణయిస్తారు.' },
+    ] },
   { date: '2026-10-22',
     title: { en: 'Stay signed in on your phone', te: 'ఫోన్‌లో సైన్ ఇన్ అయి ఉండండి' },
     items: [

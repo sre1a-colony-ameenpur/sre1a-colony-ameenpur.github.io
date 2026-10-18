@@ -22,12 +22,15 @@ function unseenRelease() {
   try { return localStorage.getItem('sre.whatsNewSeen') !== latestRelease(); } catch { return false; }
 }
 
+const REPORT_ENTITIES = ['report_accounts', 'report_expenses', 'report_maintenance', 'report_payments', 'report_issues', 'report_meetings'];
+
 // Avatar menu items by caps, in the S7.0 order. Items a role cannot use are absent.
 export function menuItems(s) {
   const view = (e) => (can(e, 'c', s) || can(e, 'u', s) || can(e, 'd', s) ? '' : t('menu.viewOnly'));
   return [
     { path: '/profile', icon: 'person', label: 'menu.profile', show: true },
     { path: '/gallery', icon: 'photo_library', label: 'menu.gallery', show: true },
+    { path: '/reports', icon: 'assessment', label: 'menu.reports', show: REPORT_ENTITIES.some((e) => can(e, 'r', s)) },
     { path: '/documents', icon: 'menu_book', label: 'menu.documents', show: true },
     { path: '/members', icon: 'group', label: 'menu.members', hint: view('members'), show: can('members', 'r', s) },
     { path: '/roles', icon: 'admin_panel_settings', label: 'menu.roles', hint: view('roles_config'), show: can('roles_config', 'r', s) },

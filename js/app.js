@@ -39,6 +39,7 @@ const routes = [
   { path: '/members', back: '/home', title: 'menu.members', needs: ['members', 'r'], load: lazy('./views/members.js') }, { path: '/members/import', back: '/members', title: 'imp.title', needs: ['members', 'c'], load: lazy('./views/members_import.js') }, { path: '/roles', back: '/home', title: 'menu.roles', needs: ['roles_config', 'r'], load: lazy('./views/roles.js') },
   { path: '/plots', back: '/home', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/plots.js') }, { path: '/plots/layout', back: '/plots', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/layout.js') }, { path: '/audit', back: '/home', title: 'menu.audit', needs: ['audit', 'r'], load: lazy('./views/audit.js') },
   { path: '/gallery', back: '/home', title: 'menu.gallery', load: lazy('./views/gallery.js') },
+  { path: '/reports', back: '/home', title: 'menu.reports', load: lazy('./views/reports.js') },
   { path: '/documents', back: '/home', title: 'menu.documents', load: lazy('./views/documents.js') },
   { path: '/settings', back: '/home', title: 'menu.settings', needs: ['handover', 'c'], load: lazy('./views/settings.js') },
   { path: '/handover', back: '/home', title: 'menu.handover', needs: ['handover', 'c'], load: lazy('./views/handover.js') },
@@ -68,7 +69,7 @@ if (mock) {
 
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken(), onVersion: noteBackendVersion });
-const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory|importSheet|monthly|pending|results|video|check|[pP]review)$/;      // reads: no blocking overlay, and the stored answers are kept
+const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory|importSheet|monthly|pending|results|video|check|catalog|file|[pP]review)$/;      // reads: no blocking overlay, and the stored answers are kept
 // A floating "Loading" bar just under the header while data is fetched in the background (stored answers are shown first, see swr.js).
 const syncText = h('span', {});
 const syncDot = h('div', { class: 'sync-bar', role: 'status', hidden: true }, syncText, h('span', { class: 'spinner', 'aria-hidden': 'true' }));
