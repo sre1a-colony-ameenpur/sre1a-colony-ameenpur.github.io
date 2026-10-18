@@ -1,9 +1,10 @@
 // S2.1 Complaints list and S2.2 raise a complaint. Detail is complaint_detail.js.
+import { pendingBody } from '../pending.js';
 import { withCamera } from '../camera.js';
 import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
-import { compressPhoto } from '../photo.js';
+import { compressPhoto, photoWithThumb } from '../photo.js';
 
 export const STAGES = ['Open', 'Acknowledged', 'In progress', 'Resolved', 'Closed'];
 export const STAGE_KIND = { Open: 'open', Acknowledged: 'ack', 'In progress': 'progress', Resolved: 'resolved', Closed: 'closed' };
@@ -14,9 +15,14 @@ export const titleOf = (c) => String(c.description).split('\n')[0].slice(0, 80);
 export const daysAgo = (iso, now = Date.now()) => Math.max(0, Math.floor((now - Date.parse(iso)) / 86400000));
 export const whereChip = (t, c) => (c.plot_key ? plotChip(c.plot_key.replace(/^([A-Z])(\d+)$/, '$1-$2')) : h('span', { class: 'plot' }, `${t('cmp.commonArea')}: ${t(`cmp.area.${AREA_KEY[c.area] || 'other'}`)}`));
 
+let initialFilter = 'all';
+export const setIssuesFilter = (group) => { initialFilter = group; };      // the Pending tiles open the list already filtered
+
 export default async function render(ctx) {
   const { t } = ctx;
-  let filter = 'all', items = [], cursor = null, total = 0, busy = false, timer = null;
+  let filter = initialFilter;
+  initialFilter = 'all';
+  let items = [], cursor = null, total = 0, busy = false, timer = null;
   const list = h('div', { class: 'stack-sm' }), more = h('div');
   const q = h('input', { type: 'search', class: 'map-q', placeholder: t('cmp.search'), 'aria-label': t('cmp.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
   q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { items = []; load(); }, 350); });     // the server searches every complaint
@@ -44,10 +50,14 @@ export default async function render(ctx) {
       busy = false; draw();
     } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
+  const GROUPS = ['all', 'open', 'progress', 'resolved', 'closed'];
+  const seg = segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], filter, (v) => { filter = v; items = []; load(); }, t('exp.filter'));
+  const pick = (group) => seg.querySelectorAll('button')[GROUPS.indexOf(group)]?.click();        // the Pending tiles set the filter like a tap on the chip
+  const pendingBox = h('div', { class: 'card' }, h('h2', { class: 'card-title' }, icon('pending_actions'), t('pend.title')), h('div', { class: 'skel line', style: 'width:60%;margin-top:8px' }));
+  ctx.api.swr('complaints.pending', {}, (d) => pendingBox.replaceChildren(h('h2', { class: 'card-title' }, icon('pending_actions'), t('pend.title')), ...pendingBody(t, d, pick).filter(Boolean))).catch(() => pendingBox.remove());
   load();
   return h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('a', { class: 'btn', href: '#/issues/monthly' }, icon('insights', 'sm'), t('cmp.monthly'))),
-    segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], 'all', (v) => { filter = v; items = []; load(); }, t('exp.filter')),
-    q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
+    pendingBox, seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
 }
 
 function raiseSheet(ctx, done) {
@@ -83,7 +93,7 @@ function raiseSheet(ctx, done) {
         const { id } = await ctx.api.call('complaints.create', payload);
         let failed = 0;
         for (const f of files.files) {
-          try { await ctx.api.call('media.addPhoto', { parentType: 'complaint', parentId: id, jpegBase64: await compressPhoto(f, { maxBase64: 1400000 }) }); } catch { failed++; }
+          try { await ctx.api.call('media.addPhoto', { parentType: 'complaint', parentId: id, ...(await photoWithThumb(f)) }); } catch { failed++; }
         }
         close(); toast(failed ? t('cmp.raisedSomePhotos') : t('cmp.raised')); done();
       } catch (e) { warn(e.code === 'INVALID' ? t('cmp.plotUnknown') : friendly(e, t)); }

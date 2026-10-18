@@ -180,6 +180,9 @@ details.acc > .acc-body { padding: 0 var(--s3) var(--s3); }
 .card.flow > h2 + * { margin-top: 0; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
 .photo-btn { padding: 0; border: 1px solid var(--c-border); border-radius: var(--r); background: var(--c-bg); aspect-ratio: 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.gallery-grid { grid-template-columns: repeat(3, 1fr); }
+.play-badge { position: absolute; inset: auto 4px 4px auto; color: #fff; text-shadow: 0 1px 3px rgb(0 0 0 / 70%); }
+.photo-btn { position: relative; }
 .photo-thumb { width: 100%; height: 100%; object-fit: cover; }
 
 /* Community */

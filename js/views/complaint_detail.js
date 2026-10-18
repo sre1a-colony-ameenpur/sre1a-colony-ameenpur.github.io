@@ -6,7 +6,7 @@ import { duration } from '../fmt.js';
 import { can, store } from '../store.js';
 import { plotChip } from '../ui.js';
 import { videosCard } from '../video.js';
-import { compressPhoto } from '../photo.js';
+import { compressPhoto, photoWithThumb } from '../photo.js';
 import { STAGES, STAGE_KIND, STAGE_KEY, titleOf, whereChip } from './complaints.js';
 
 // A sentence with a tappable time inside it: the text has a {when} marker where the time goes (word order differs between languages).
@@ -91,7 +91,7 @@ function commentBox(ctx, complaintId, done) {
     const body = text.value.trim(); if (!body) return;
     try {
       const { id } = await ctx.api.call('comments.create', { complaint_id: complaintId, body });
-      if (file.files[0]) { try { await ctx.api.call('media.addPhoto', { parentType: 'comment', parentId: id, jpegBase64: await compressPhoto(file.files[0], { maxBase64: 1400000 }) }); } catch { toast(t('cmp.photoFailed')); } }
+      if (file.files[0]) { try { await ctx.api.call('media.addPhoto', { parentType: 'comment', parentId: id, ...(await photoWithThumb(file.files[0])) }); } catch { toast(t('cmp.photoFailed')); } }
       done();
     } catch (e) { toast(friendly(e, t)); }
   } }));
@@ -166,7 +166,7 @@ function stageSheet(ctx, c, next, done) {
         await ctx.api.call('complaints.stage', { id: c.id, stage: s, note: why.querySelector('input').value.trim(), ...(finish && picked.size ? { contributors: [...picked] } : {}) });
         let failed = 0;
         if (finish) for (const f of [...files.files].slice(0, 3)) {
-          try { await ctx.api.call('media.addPhoto', { parentType: 'resolution', parentId: c.id, jpegBase64: await compressPhoto(f, { maxBase64: 1400000 }) }); } catch { failed++; }
+          try { await ctx.api.call('media.addPhoto', { parentType: 'resolution', parentId: c.id, ...(await photoWithThumb(f)) }); } catch { failed++; }
         }
         close(); toast(failed ? t('cmp.photoFailed') : t('common.saved')); done();
       } catch (e) { note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }

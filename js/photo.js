@@ -41,3 +41,11 @@ export async function compressPhoto(file, { max = 1600, quality = 0.8, maxBase64
   }
   throw new Error('photo too large');
 }
+
+// A photo for the private categories (complaints, comments, fixes): the optimised picture plus a ~240 px thumbnail the gallery grid shows.
+export async function photoWithThumb(file, { maxBase64 = 1400000 } = {}) {
+  const jpegBase64 = await compressPhoto(file, { maxBase64 });
+  let thumbBase64 = '';
+  try { thumbBase64 = await compressPhoto(file, { max: 240, quality: 0.6, maxBase64: 28000 }); } catch { /* no thumbnail: the gallery asks for one later */ }
+  return thumbBase64 ? { jpegBase64, thumbBase64 } : { jpegBase64 };
+}

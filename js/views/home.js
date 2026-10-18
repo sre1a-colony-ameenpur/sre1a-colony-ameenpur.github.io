@@ -1,4 +1,5 @@
 // S1 Home. Each card loads on its own and appears only if `caps` allows reading it.
+import { pendingBody } from '../pending.js';
 import { h, icon, button, statusPill, plotChip, rolePill, errorState } from '../ui.js';
 import { friendly, ApiError } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
@@ -35,7 +36,7 @@ function lazyCard(ctx, { title, ic, load, render, cls = '' }) {
 // if some card needs it, so switched-off modules cost nothing. Retry on a failed card or group asks again.
 const GROUP = { 'maintenance.mine': 'money', 'dues.mine': 'money', 'maintenance.totals': 'money', 'expenses.list': 'money',
   'polls.list': 'community', 'meetings.list': 'community', 'actionItems.list': 'community',
-  'complaints.list': 'around', 'events.list': 'around', 'plotRequests.list': 'around' };
+  'complaints.list': 'around', 'complaints.pending': 'around', 'events.list': 'around', 'plotRequests.list': 'around' };
 
 function homeData(api) {
   const pending = {}, latest = {};
@@ -124,6 +125,9 @@ export default function render(ctx) {
     cards.push(lazyCard(ctx, { title: t('home.complaints.title'), ic: 'report', load: async () => (await home('complaints.list')).items.filter((c) => c.stage !== 'Closed').slice(0, 2),
       render: (list) => [...(list.length ? list.map((c) => h('a', { class: 'list-row', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))) : [h('p', { class: 'muted' }, t('home.complaints.none'))]),
         link('#/issues', t('common.viewAll'))] }));
+  }
+  if (r('complaints')) {
+    cards.push(lazyCard(ctx, { title: t('pend.title'), ic: 'pending_actions', load: () => home('complaints.pending'), render: (d) => [...pendingBody(t, d), link('#/issues', t('common.viewAll'))] }));
   }
   if (r('events')) {
     cards.push(lazyCard(ctx, { title: t('home.event.title'), ic: 'celebration', load: async () => (await home('events.list')).items.filter((e) => e.upcoming).slice(0, 1),

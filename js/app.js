@@ -38,6 +38,7 @@ const routes = [
   { path: '/map', title: 'nav.map', needs: ['map_profile', 'r'], load: lazy('./views/map.js') },
   { path: '/members', back: '/home', title: 'menu.members', needs: ['members', 'r'], load: lazy('./views/members.js') }, { path: '/members/import', back: '/members', title: 'imp.title', needs: ['members', 'c'], load: lazy('./views/members_import.js') }, { path: '/roles', back: '/home', title: 'menu.roles', needs: ['roles_config', 'r'], load: lazy('./views/roles.js') },
   { path: '/plots', back: '/home', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/plots.js') }, { path: '/plots/layout', back: '/plots', title: 'menu.plots', needs: ['plots', 'r'], load: lazy('./views/layout.js') }, { path: '/audit', back: '/home', title: 'menu.audit', needs: ['audit', 'r'], load: lazy('./views/audit.js') },
+  { path: '/gallery', back: '/home', title: 'menu.gallery', load: lazy('./views/gallery.js') },
   { path: '/documents', back: '/home', title: 'menu.documents', load: lazy('./views/documents.js') },
   { path: '/settings', back: '/home', title: 'menu.settings', needs: ['handover', 'c'], load: lazy('./views/settings.js') },
   { path: '/handover', back: '/home', title: 'menu.handover', needs: ['handover', 'c'], load: lazy('./views/handover.js') },
@@ -174,8 +175,10 @@ async function renderRoute(r) {
   if (!r?.route) return;
   const route = r.route;
   const mod = await route.load();
+  if (current !== r) return;                    // a newer navigation started while this view was loading: drawing now would put an old screen over the new one
   const c = ctx();
   const view = await mod.default(c);
+  if (current !== r) return;
   const dev = mock ? devbar(ss.get('sre.devPick') || (s.status === 'in' ? 'member' : 'member'), pickMock) : null;
   if (route.bare) {
     root.replaceChildren(dev, view);

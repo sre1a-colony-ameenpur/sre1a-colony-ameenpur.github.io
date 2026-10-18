@@ -27,6 +27,7 @@ export function menuItems(s) {
   const view = (e) => (can(e, 'c', s) || can(e, 'u', s) || can(e, 'd', s) ? '' : t('menu.viewOnly'));
   return [
     { path: '/profile', icon: 'person', label: 'menu.profile', show: true },
+    { path: '/gallery', icon: 'photo_library', label: 'menu.gallery', show: true },
     { path: '/documents', icon: 'menu_book', label: 'menu.documents', show: true },
     { path: '/members', icon: 'group', label: 'menu.members', hint: view('members'), show: can('members', 'r', s) },
     { path: '/roles', icon: 'admin_panel_settings', label: 'menu.roles', hint: view('roles_config'), show: can('roles_config', 'r', s) },
