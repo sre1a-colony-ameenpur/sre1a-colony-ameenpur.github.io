@@ -5,7 +5,7 @@ import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
-import { h, icon, button, toast, toastError, busy, setMyPhoto } from './ui.js';
+import { h, icon, button, toast, toastError, busy, setMyPhoto, setCustomRoles } from './ui.js';
 import { createSwr } from './swr.js';
 import { registerPwa, noteBackendVersion } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
@@ -123,6 +123,7 @@ async function loadSession() {
   try {
     const session = await api.call('session.get');
     session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
+    setCustomRoles(session.customRoles);
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
     if (!mock) auth.keepSession((a, p) => client.call(a, p));   // not awaited: a 30-day sign-in for the phone
     loadMyPhoto(session);       // not awaited: the photo never holds up sign-in

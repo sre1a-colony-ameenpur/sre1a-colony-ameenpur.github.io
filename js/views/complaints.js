@@ -6,7 +6,7 @@ import { can } from '../store.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
 
 export const STAGES = ['Open', 'Acknowledged', 'In progress', 'Resolved', 'Closed'];
-export const STAGE_KIND = { Open: 'open', Acknowledged: 'ack', 'In progress': 'progress', Resolved: 'resolved', Closed: 'closed' };
+export const STAGE_KIND = { Open: 'cmpOpen', Acknowledged: 'cmpAck', 'In progress': 'cmpProgress', Resolved: 'resolved', Closed: 'closed' };
 export const STAGE_KEY = { Open: 'open', Acknowledged: 'ack', 'In progress': 'progress', Resolved: 'resolved', Closed: 'closed' };
 export const AREAS = ['Park', 'Gate', 'Roads', 'Street lights', 'Water', 'Drainage', 'Security', 'Other'];
 export const AREA_KEY = { Park: 'park', Gate: 'gate', Roads: 'roads', 'Street lights': 'lights', Water: 'water', Drainage: 'drainage', Security: 'security', Other: 'other' };

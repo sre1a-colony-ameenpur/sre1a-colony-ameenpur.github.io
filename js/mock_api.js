@@ -219,6 +219,7 @@ export function createMock({ delayMs = 120 } = {}) {
       return ok({
         name: u.name, email: u.email, hasPhoto: mockPhotos.has(u.email), role: gone ? 'Member' : u.role, plotKeys: u.plotKeys, showMobile: !!u.showMobile, language: 'en', caps: gone ? CAPS.member : u.caps,
         presidentName: ho ? ho.name : MOCK_USERS.president.name, presidentSince: ho ? ho.at : '',
+        customRoles: [],
       });
     },
     'map.plots': async () => {

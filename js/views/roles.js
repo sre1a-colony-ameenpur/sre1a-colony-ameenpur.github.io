@@ -1,6 +1,6 @@
 // S6.3 Roles and permissions: pick a role, see who holds it, toggle Create / Read / Update / Delete per record type.
 // Phone-first: one role at a time. From 960 px wide, all roles side by side in one table. The server enforces the locked rights too.
-import { h, card, button, field, plotChip, avatar, rolePill, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
+import { h, card, button, field, plotChip, avatar, rolePill, setCustomRoles, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { dashKey } from './members.js';
@@ -26,7 +26,7 @@ export default function render(ctx) {
     try {
       await ctx.api.swrMany([['roles.get'], ['roles.holders'], ['roles.list']], ([g, hs, ds], { stale }) => {
         if (data && changes().length && !stale) { holders = hs.items; defs = ds; return; }          // never replace ticks the President has not saved yet
-        data = g; holders = hs.items; defs = ds;
+        data = g; holders = hs.items; defs = ds; setCustomRoles(ds.items.filter((x) => !x.builtin).map((x) => x.role));
         if (!g.roles.includes(role)) role = 'Member';
         saved = JSON.parse(JSON.stringify(g.matrix)); working = JSON.parse(JSON.stringify(g.matrix));
         draw();

@@ -271,6 +271,7 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .tip[hidden] { display: none; }
 
 /* Role pills: one colour per role, derived from the hue in --rh (see rolePill in ui.js) */
+.pill.role-member { background: var(--p-off-bg); border-color: var(--p-off-bd); color: var(--p-off-fg); }
 .pill.role-c { background: hsl(var(--rh) 80% 91%); border-color: hsl(var(--rh) 50% 42%); color: hsl(var(--rh) 70% 20%); }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .pill.role-c { background: hsl(var(--rh) 38% 17%); border-color: hsl(var(--rh) 50% 58%); color: hsl(var(--rh) 70% 84%); }

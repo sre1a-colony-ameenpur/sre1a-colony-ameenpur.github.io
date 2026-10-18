@@ -33,26 +33,32 @@ export const icon = (name, cls = '') => h('span', { class: `icon ${cls}`.trim(),
 const STATUS = {
   pending: ['warn', 'schedule'], due: ['warn', 'schedule'], approved: ['ok', 'check_circle'], paid: ['ok', 'check_circle'],
   rejected: ['bad', 'cancel'], overdue: ['bad', 'error'], open: ['info', 'radio_button_unchecked'], ack: ['info', 'visibility'], progress: ['warn', 'autorenew'],
+  cmpOpen: ['bad', 'radio_button_unchecked'], cmpAck: ['warn', 'visibility'], cmpProgress: ['info', 'autorenew'],      // Issues: five stages, five colours
   resolved: ['ok', 'task_alt'], closed: ['off', 'lock'], partly: ['warn', 'timelapse'], unpaid: ['bad', 'error'], voted: ['ok', 'check_circle'],
 };
 export function statusPill(kind, label) {
   const [cls, ic] = STATUS[kind] || ['off', 'info'];
   return h('span', { class: `pill ${cls}` }, icon(ic, 'sm'), label || t(`status.${kind}`));
 }
-// Each role has its own colour: fixed hues for the built-in roles, and a hue picked from the rest of the wheel by the name for roles the President creates.
-// Member stays neutral. The hue is a CSS variable; components.css derives the light and dark colours from it.
+// Each role has its own colour. The built-in roles have fixed hues; the roles the President creates take the next spare hue in the order they were created
+// (the session lists them), so no two roles share a colour until the spare hues run out. Member is a quiet grey. The hue is a CSS variable;
+// components.css derives the light and dark colours from it.
 const ROLE_HUES = { President: 275, 'Vice President': 215, 'General Secretary': 170, 'Joint Secretary': 135, Treasurer: 28 };
-const SPARE_HUES = [0, 330, 55, 95, 190, 250, 305, 12];
+const SPARE_HUES = [0, 52, 85, 195, 245, 305, 335, 110];
+let customOrder = [];
+export function setCustomRoles(names) { customOrder = Array.isArray(names) ? names.slice() : []; }
 export function roleHue(role) {
   if (role === 'Member' || !role) return null;
   if (ROLE_HUES[role] !== undefined) return ROLE_HUES[role];
-  let n = 0;
+  const i = customOrder.indexOf(role);
+  if (i >= 0) return i < SPARE_HUES.length ? SPARE_HUES[i] : Math.round((20 + i * 137.5) % 360);
+  let n = 0;                                                  // not in the list (yet): a steady hue from the name
   for (const ch of String(role)) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
   return SPARE_HUES[n % SPARE_HUES.length];
 }
 export const rolePill = (role) => {
   const hue = roleHue(role);
-  return h('span', hue === null ? { class: 'pill role' } : { class: 'pill role role-c', style: `--rh:${hue}` }, role);
+  return h('span', hue === null ? { class: 'pill role role-member' } : { class: 'pill role role-c', style: `--rh:${hue}` }, role);
 };
 export const plotChip = (key) => h('span', { class: 'plot' }, key);
 // Your own avatar (mine = true) shows your profile photo once it is loaded, and is updated in place when it changes; others show initials.
