@@ -230,6 +230,9 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 /* update banner (PWA): sits above the bottom tab bar on phones */
 .update-banner { position: fixed; inset-inline: var(--s2); bottom: calc(var(--tabbar-h) + var(--s2) + env(safe-area-inset-bottom)); z-index: 50; display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-primary); border-radius: var(--r); box-shadow: 0 4px 16px rgba(0,0,0,.25); }
 .update-banner .grow { flex: 1; min-width: 0; }
+.update-banner { padding-inline-end: 44px; }
+.update-banner .icon-btn { position: absolute; top: 4px; inset-inline-end: 4px; width: 32px; height: 32px; }   /* close: top corner, out of the row */
+.update-banner .icon-btn .icon { font-size: 1.25rem; }
 @media (min-width: 768px) { .update-banner { inset-inline: auto var(--s4); bottom: var(--s4); max-width: 420px; } }
 
 /* change log: one card per record, details collapsed */
