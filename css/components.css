@@ -271,15 +271,16 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .tip[hidden] { display: none; }
 
 /* Role pills: one colour per role. --rh is the hue; the tone class says how it is drawn: t0 soft fill, t1 deeper solid fill, t2 pale with a dashed outline (see roleColour in ui.js) */
-.pill.role-member { background: var(--p-off-bg); border-color: var(--p-off-bd); color: var(--p-off-fg); }
-.pill.role-t0 { background: hsl(var(--rh) 80% 91%); border-color: hsl(var(--rh) 50% 42%); color: hsl(var(--rh) 70% 20%); }
-.pill.role-t1 { background: hsl(var(--rh) 62% 34%); border-color: hsl(var(--rh) 62% 26%); color: #fff; }
-.pill.role-t2 { background: hsl(var(--rh) 70% 97%); border: 1px dashed hsl(var(--rh) 45% 55%); color: hsl(var(--rh) 55% 28%); }
+.pill.role { font-weight: 600; }
+.pill.role-member { background: var(--p-off-bg); border-color: var(--p-off-bd); color: var(--p-off-fg); font-weight: 500; }
+.pill.role-t0 { background: hsl(var(--rh) 90% 88%); border-color: hsl(var(--rh) 65% 40%); color: hsl(var(--rh) 80% 18%); }
+.pill.role-t1 { background: hsl(var(--rh) 70% 33%); border-color: hsl(var(--rh) 70% 24%); color: #fff; }
+.pill.role-t2 { background: hsl(var(--rh) 80% 97%); border: 1px dashed hsl(var(--rh) 55% 48%); color: hsl(var(--rh) 65% 26%); }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .pill.role-t0 { background: hsl(var(--rh) 38% 17%); border-color: hsl(var(--rh) 50% 58%); color: hsl(var(--rh) 70% 84%); }
-  :root:not([data-theme="light"]) .pill.role-t1 { background: hsl(var(--rh) 55% 40%); border-color: hsl(var(--rh) 60% 55%); color: #fff; }
-  :root:not([data-theme="light"]) .pill.role-t2 { background: hsl(var(--rh) 30% 10%); border: 1px dashed hsl(var(--rh) 45% 50%); color: hsl(var(--rh) 45% 72%); }
+  :root:not([data-theme="light"]) .pill.role-t0 { background: hsl(var(--rh) 55% 25%); border-color: hsl(var(--rh) 70% 58%); color: hsl(var(--rh) 90% 88%); }
+  :root:not([data-theme="light"]) .pill.role-t1 { background: hsl(var(--rh) 70% 45%); border-color: hsl(var(--rh) 75% 62%); color: #fff; }
+  :root:not([data-theme="light"]) .pill.role-t2 { background: hsl(var(--rh) 35% 12%); border: 1px dashed hsl(var(--rh) 60% 55%); color: hsl(var(--rh) 70% 76%); }
 }
-:root[data-theme="dark"] .pill.role-t0 { background: hsl(var(--rh) 38% 17%); border-color: hsl(var(--rh) 50% 58%); color: hsl(var(--rh) 70% 84%); }
-:root[data-theme="dark"] .pill.role-t1 { background: hsl(var(--rh) 55% 40%); border-color: hsl(var(--rh) 60% 55%); color: #fff; }
-:root[data-theme="dark"] .pill.role-t2 { background: hsl(var(--rh) 30% 10%); border: 1px dashed hsl(var(--rh) 45% 50%); color: hsl(var(--rh) 45% 72%); }
+:root[data-theme="dark"] .pill.role-t0 { background: hsl(var(--rh) 55% 25%); border-color: hsl(var(--rh) 70% 58%); color: hsl(var(--rh) 90% 88%); }
+:root[data-theme="dark"] .pill.role-t1 { background: hsl(var(--rh) 70% 45%); border-color: hsl(var(--rh) 75% 62%); color: #fff; }
+:root[data-theme="dark"] .pill.role-t2 { background: hsl(var(--rh) 35% 12%); border: 1px dashed hsl(var(--rh) 60% 55%); color: hsl(var(--rh) 70% 76%); }

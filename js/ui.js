@@ -40,10 +40,11 @@ export function statusPill(kind, label) {
   const [cls, ic] = STATUS[kind] || ['off', 'info'];
   return h('span', { class: `pill ${cls}` }, icon(ic, 'sm'), label || t(`status.${kind}`));
 }
-// Each role has its own colour, spread over the whole colour wheel. There are 12 hues, 30 degrees apart, handed out in an order that keeps neighbours far apart.
-// The first 12 roles get 12 different hues; roles 13 to 24 reuse the hues in a deeper tone (solid fill) and roles 25 to 36 in a paler tone (dashed outline), so up
-// to 36 roles stay tellable apart. The built-in roles hold the first places, the roles the President creates follow in the order they were created (the session
-// lists them), so a role keeps its colour while the roles before it stay. Member is a quiet grey. components.css turns hue and tone into colours.
+// Each role has its own colour. Nine hues that are clearly different to the eye (purple, red, yellow, green, blue, magenta, orange, lime, cyan), handed out in an
+// order that keeps neighbours far apart. The first 9 roles get the 9 hues in a soft fill; roles 10 to 18 reuse them as a deeper solid fill, roles 19 to 27 as a pale
+// fill with a dashed outline, so up to 27 roles stay tellable apart. The built-in roles hold the first places, the roles the President creates follow in the order
+// they were created (the session lists them), so a role keeps its colour while the roles before it stay. Member is a quiet grey. components.css draws hue and tone.
+const HUES = [270, 355, 48, 145, 215, 315, 25, 85, 188];
 const BUILT_IN = ['President', 'Vice President', 'General Secretary', 'Joint Secretary', 'Treasurer'];
 let customOrder = [];
 export function setCustomRoles(names) { customOrder = Array.isArray(names) ? names.slice() : []; }
@@ -54,12 +55,12 @@ function roleSlot(role) {
   if (i >= 0) return BUILT_IN.length + i;
   let n = 0;                                                  // not in the list (yet): a steady place from the name
   for (const ch of String(role)) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
-  return BUILT_IN.length + (n % 31);
+  return BUILT_IN.length + (n % 22);
 }
 export function roleColour(role) {
   if (role === 'Member' || !role) return null;
   const slot = roleSlot(role);
-  return { hue: (270 + ((slot * 5) % 12) * 30) % 360, tone: Math.floor(slot / 12) % 3 };
+  return { hue: HUES[slot % HUES.length], tone: Math.floor(slot / HUES.length) % 3 };
 }
 export const roleHue = (role) => roleColour(role)?.hue ?? null;
 export const rolePill = (role) => {
