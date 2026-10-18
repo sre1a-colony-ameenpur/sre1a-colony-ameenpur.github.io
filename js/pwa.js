@@ -24,13 +24,19 @@ export async function promptInstall() {
 }
 export const onInstallChange = (f) => { installSubs.add(f); return () => installSubs.delete(f); };
 
-// `apply` runs when the member taps Update.
-function showUpdateBanner(apply) {
-  if (document.getElementById('update-banner')) return;
+// `apply` runs when the member taps Update. The close icon hides the bar for this visit (a member in the middle of something can carry on);
+// it stays hidden for the same update, and comes back on the next visit or when a newer update appears. `key` names the update.
+const dismissed = new Set();
+function showUpdateBanner(apply, key = 'web') {
+  if (document.getElementById('update-banner') || dismissed.has(key)) return;
   const btn = button(t('pwa.update'), { kind: 'primary', icon: 'refresh', onClick: () => { btn.disabled = true; apply(); } });
-  document.body.append(h('div', { id: 'update-banner', class: 'update-banner', role: 'status' },
-    icon('system_update'), h('span', { class: 'grow' }, t('pwa.updateReady')), btn));
+  const bar = h('div', { id: 'update-banner', class: 'update-banner', role: 'status' },
+    icon('system_update'), h('span', { class: 'grow' }, t('pwa.updateReady')), btn,
+    h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('common.close'), title: t('common.close'), onClick: () => { dismissed.add(key); bar.remove(); } }, icon('close')));
+  document.body.append(bar);
 }
+const workerIds = new WeakMap();
+const workerKey = (w) => { if (!workerIds.has(w)) workerIds.set(w, 'web:' + (workerIds.size + Math.random().toString(36).slice(2, 6))); return workerIds.get(w); };
 const applyWorker = (worker) => () => worker.postMessage('SKIP_WAITING');      // the page reloads when the new worker takes control
 
 // The backend puts its version on every answer. The first one is remembered; a different one later means the backend was released,
@@ -44,7 +50,7 @@ export function noteBackendVersion(v) {
     try { localStorage.setItem(BE_KEY, v); } catch { /* the bar may return once */ }
     const reg = await navigator.serviceWorker?.getRegistration?.();
     if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING'); else location.reload();
-  });
+  }, 'be:' + v);
 }
 
 const CHECK_MS = 30000;
@@ -59,7 +65,7 @@ export async function checkForUpdates() {
     const w = reg.installing;
     await new Promise((done) => { const f = () => { if (w.state === 'installed' || w.state === 'redundant') { w.removeEventListener('statechange', f); done(); } }; w.addEventListener('statechange', f); f(); });
   }
-  if (reg.waiting && navigator.serviceWorker.controller) { showUpdateBanner(applyWorker(reg.waiting)); return 'ready'; }
+  if (reg.waiting && navigator.serviceWorker.controller) { dismissed.delete(workerKey(reg.waiting)); showUpdateBanner(applyWorker(reg.waiting), workerKey(reg.waiting)); return 'ready'; }
   return 'latest';
 }
 
@@ -88,10 +94,10 @@ export async function registerPwa() {
     // A worker that fails to install (a file did not download) is dropped by the browser; look again soon.
     let retries = 0;
     const watch = (w) => w.addEventListener('statechange', () => {
-      if (w.state === 'installed' && navigator.serviceWorker.controller) { retries = 0; showUpdateBanner(applyWorker(w)); }
+      if (w.state === 'installed' && navigator.serviceWorker.controller) { retries = 0; showUpdateBanner(applyWorker(w), workerKey(w)); }
       else if (w.state === 'redundant' && !reg.waiting && retries < 5) setTimeout(() => { retries++; reg.update().catch(() => {}); }, 3000 * 2 ** retries);
     });
-    if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(applyWorker(reg.waiting));
+    if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(applyWorker(reg.waiting), workerKey(reg.waiting));
     reg.addEventListener('updatefound', () => reg.installing && watch(reg.installing));
     // Look for a new release when the app is opened, whenever it comes back to the front, and every 30 seconds while it is in front.
     const check = () => reg.update().catch(() => {});
