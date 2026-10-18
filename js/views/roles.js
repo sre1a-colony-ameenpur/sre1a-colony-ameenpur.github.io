@@ -49,7 +49,37 @@ export default function render(ctx) {
       ...(hd.length ? hd.map((x) => h('div', { class: 'row' }, avatar(x.member.name), h('strong', {}, x.member.name), x.member.plot_keys.map((k) => plotChip(dashKey(k)))))
         : [h('div', { class: 'row' }, statusPill('closed', t('roles.vacant')), h('span', { class: 'small muted' }, t('roles.nobody')))]),
       role === 'President' ? null : h('a', { class: 'small', href: '#/members' }, t('roles.change')),
+      role !== 'President' && can('roles_config', 'u') ? editButton() : null,
       role !== 'President' && can('roles_config', 'd') ? deleteButton() : null);
+  }
+
+  // The President may rename a role she created and switch it between one holder and several.
+  function editButton() {
+    const d = defs.items.find((x) => x.role === role);
+    return !d || d.builtin ? null : button(t('roles.edit'), { icon: 'edit', onClick: () => editRoleSheet(d) });
+  }
+  function editRoleSheet(d) {
+    let one = d.single_holder;
+    const name = field({ id: 'er-name', label: t('roles.newName'), maxlength: 40, value: d.role });
+    const holdSeg = h('div', { class: 'seg', role: 'group', 'aria-label': t('roles.holderMode') }, [[true, t('roles.oneHolder')], [false, t('roles.manyHolders')]].map(([v, label]) =>
+      h('button', { type: 'button', 'aria-pressed': String(v === one), onClick: (e) => { one = v; holdSeg.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); } }, label)));
+    const note = h('div', { role: 'alert' });
+    openSheet({ title: t('roles.editTitle', { role: d.role }), body: h('div', { class: 'stack' }, name, holdSeg, note), actions: [
+      { label: t('roles.editSave'), kind: 'primary', keepOpen: true, onClick: async (close) => {
+        const v = name.querySelector('input').value.trim().replace(/\s+/g, ' ');
+        if (!v) { note.replaceChildren(h('div', { class: 'banner warn' }, t('roles.nameNeeded'))); return; }
+        const payload = { name: d.role };
+        if (v !== d.role) payload.newName = v;
+        if (one !== d.single_holder) payload.singleHolder = one;
+        if (Object.keys(payload).length === 1) { close(); toast(t('roles.nothingChanged')); return; }
+        try {
+          const r = await ctx.api.call('roles.update', payload);
+          close(); toast(t('roles.updated')); role = r.role; load();
+        } catch (e) {
+          const n = e.extra?.details?.holders;
+          note.replaceChildren(h('div', { class: 'banner warn' }, e.code === 'CONFLICT' ? (n ? t('roles.holdersBlock', { n }) : t('roles.nameTaken')) : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t)));
+        }
+      } }, { label: t('common.cancel') }] });
   }
 
   // The President creates every role except Member and President, and may delete one nobody holds.
@@ -119,7 +149,8 @@ export default function render(ctx) {
     };
     return h('div', { style: 'overflow-x:auto', class: 'card' }, h('table', { class: 'roles-matrix', style: 'border-collapse:collapse;width:100%' },
       h('thead', {}, h('tr', {}, h('th', { scope: 'col', style: 'text-align:start;min-width:220px' }, t('roles.record')),
-        cols.map((r) => h('th', { scope: 'col', style: 'text-align:center;min-width:120px;vertical-align:bottom' }, h('div', {}, r), h('div', { class: 'small muted', style: 'font-weight:normal' }, holderOf(r)))))),
+        cols.map((r) => h('th', { scope: 'col', style: 'text-align:center;min-width:120px;vertical-align:bottom' }, h('div', {}, r), h('div', { class: 'small muted', style: 'font-weight:normal' }, holderOf(r)),
+          can('roles_config', 'u') && defs.items.some((x) => x.role === r && !x.builtin) ? button('', { kind: 'text', icon: 'edit', 'aria-label': `${t('roles.edit')}: ${r}`, onClick: () => editRoleSheet(defs.items.find((x) => x.role === r)) }) : null)))),
       h('tbody', {}, ORDER.filter((e) => data.entities.includes(e)).map((e) => h('tr', { style: 'border-top:1px solid var(--c-border)' },
         h('th', { scope: 'row', style: 'text-align:start;font-weight:normal;padding:6px 8px 6px 0' }, t(`roles.e.${e}`), PRESIDENT_ONLY[e] ? h('div', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('roles.presidentOnly')) : null),
         cols.map((r) => cell(r, e)))))));
