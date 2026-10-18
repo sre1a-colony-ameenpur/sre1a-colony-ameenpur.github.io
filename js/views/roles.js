@@ -1,6 +1,6 @@
 // S6.3 Roles and permissions: pick a role, see who holds it, toggle Create / Read / Update / Delete per record type.
 // Phone-first: one role at a time. From 960 px wide, all roles side by side in one table. The server enforces the locked rights too.
-import { h, card, button, field, plotChip, avatar, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
+import { h, card, button, field, plotChip, avatar, rolePill, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { dashKey } from './members.js';
@@ -43,9 +43,9 @@ export default function render(ctx) {
 
   function holderStrip() {
     const hd = holders.filter((x) => x.role === role && x.member);
-    if (role === 'Member') return h('p', { class: 'small muted' }, t('roles.everyone'));
+    if (role === 'Member') return h('div', { class: 'stack-sm' }, rolePill(role), h('p', { class: 'small muted' }, t('roles.everyone')));
     return h('div', { class: 'stack-sm', style: 'padding-bottom:12px' },
-      h('div', { class: 'muted small' }, t('roles.holds')),
+      h('div', { class: 'row' }, rolePill(role), h('span', { class: 'muted small' }, t('roles.holds'))),
       ...(hd.length ? hd.map((x) => h('div', { class: 'row' }, avatar(x.member.name), h('strong', {}, x.member.name), x.member.plot_keys.map((k) => plotChip(dashKey(k)))))
         : [h('div', { class: 'row' }, statusPill('closed', t('roles.vacant')), h('span', { class: 'small muted' }, t('roles.nobody')))]),
       role === 'President' ? null : h('a', { class: 'small', href: '#/members' }, t('roles.change')),
@@ -149,7 +149,7 @@ export default function render(ctx) {
     };
     return h('div', { style: 'overflow-x:auto', class: 'card' }, h('table', { class: 'roles-matrix', style: 'border-collapse:collapse;width:100%' },
       h('thead', {}, h('tr', {}, h('th', { scope: 'col', style: 'text-align:start;min-width:220px' }, t('roles.record')),
-        cols.map((r) => h('th', { scope: 'col', style: 'text-align:center;min-width:120px;vertical-align:bottom' }, h('div', {}, r), h('div', { class: 'small muted', style: 'font-weight:normal' }, holderOf(r)),
+        cols.map((r) => h('th', { scope: 'col', style: 'text-align:center;min-width:120px;vertical-align:bottom' }, h('div', {}, rolePill(r)), h('div', { class: 'small muted', style: 'font-weight:normal' }, holderOf(r)),
           can('roles_config', 'u') && defs.items.some((x) => x.role === r && !x.builtin) ? button('', { kind: 'text', icon: 'edit', 'aria-label': `${t('roles.edit')}: ${r}`, onClick: () => editRoleSheet(defs.items.find((x) => x.role === r)) }) : null)))),
       h('tbody', {}, ORDER.filter((e) => data.entities.includes(e)).map((e) => h('tr', { style: 'border-top:1px solid var(--c-border)' },
         h('th', { scope: 'row', style: 'text-align:start;font-weight:normal;padding:6px 8px 6px 0' }, t(`roles.e.${e}`), PRESIDENT_ONLY[e] ? h('div', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('roles.presidentOnly')) : null),

@@ -618,7 +618,7 @@
  "mem.needPlot": "Add at least one plot.",
  "mem.remove": "Remove member",
  "mem.removeTitle": "Remove {name}?",
- "mem.removeText": "They will lose access immediately. Their records stay.",
+ "mem.removeText": "They will lose access to the app immediately. Their payments, complaints and other records stay. To bring them back later, add them again; the membership fee is charged again.",
  "mem.removedToast": "Member removed",
  "mem.roleTitle": "Change role?",
  "mem.roleText": "{name} will become {role} from now on. Their screens change on their next action. Nothing is sent to them.",

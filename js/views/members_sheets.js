@@ -134,7 +134,8 @@ export function memberSheet(ctx, { member, items, done }) {
     body: h('div', { class: 'stack' }, email, former, name, mobile,
       h('div', { class: 'stack-sm' }, h('div', { class: 'label small', style: 'font-weight:500' }, t('mem.plots')), plotBox,
         editing ? h('p', { class: 'small muted' }, t('mem.plotsReadonly')) : [plotIn, button(t('mem.addPlotBtn'), { icon: 'add', onClick: addPlot }), plotErr, feePlot]),
-      editing ? null : [joinBox, date], role, h('p', { class: 'small muted' }, t('mem.noEmailSent')), note, removeBtn) });
+      editing ? null : [joinBox, date], role, h('p', { class: 'small muted' }, t('mem.noEmailSent')), note),
+    footer: removeBtn });
 }
 
 // Role change: confirm, then setRole; a held one-holder role asks to replace. Returns true when the role changed.

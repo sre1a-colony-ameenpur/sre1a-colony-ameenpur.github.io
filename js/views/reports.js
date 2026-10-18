@@ -1,6 +1,6 @@
 // Reports: download one of the reports the President has allowed this role, for a month or the last 3, 6 or 12 months, as Excel or PDF.
 // The President also sees "Who can download": roles against reports, one tick per cell, saved at once.
-import { h, card, button, icon, toast, errorState, loadingRegion, emptyState, toastError } from '../ui.js';
+import { h, card, button, icon, rolePill, toast, errorState, loadingRegion, emptyState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { getLang } from '../i18n.js';
@@ -73,7 +73,7 @@ export default function render(ctx) {
       access.replaceChildren(card(t('rep.access.title'), 'admin_panel_settings', h('p', { class: 'small muted' }, t('rep.access.help')),
         h('div', { style: 'overflow-x:auto' }, h('table', { class: 'rep-table' },
           h('thead', {}, h('tr', {}, h('th', {}, t('rep.access.role')), g.reports.map((r) => h('th', {}, title(r))))),
-          h('tbody', {}, g.roles.map((role) => h('tr', {}, h('th', { scope: 'row' }, role), g.reports.map((r) => cell(role, r)))))))));
+          h('tbody', {}, g.roles.map((role) => h('tr', {}, h('th', { scope: 'row' }, rolePill(role)), g.reports.map((r) => cell(role, r)))))))));
     } catch (e) { access.replaceChildren(errorState(friendly(e, t), loadAccess)); }
   }
 

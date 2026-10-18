@@ -1,5 +1,5 @@
 // S6.6 President handover wizard: choose the new President, review, account checklist, type HANDOVER, success. One call to members.handover.
-import { h, button, card, avatar, plotChip, emptyState, errorState, loadingRegion, icon, toast, toastError } from '../ui.js';
+import { h, button, card, avatar, plotChip, rolePill, emptyState, errorState, loadingRegion, icon, toast, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 
 const norm = (s) => String(s).toLowerCase().replace(/[\s-]/g, '');
@@ -39,7 +39,7 @@ export default function render(ctx) {
     const drawList = () => {
       const rows = members.filter((m) => m.email !== me && m.role !== 'President' && (!q || norm(`${m.name} ${m.plot_keys}`).includes(norm(q))));
       list.replaceChildren(...(rows.length ? rows.slice(0, 40).map((m) => h('button', { type: 'button', class: 'list-row', style: 'width:100%;text-align:start', 'aria-pressed': String(pick?.email === m.email),
-        onClick: () => { pick = m; draw(); } }, avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'small muted row', style: 'gap:6px' }, m.role, keysOf(m).map((k) => plotChip(dashKey(k))))),
+        onClick: () => { pick = m; draw(); } }, avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'small muted row', style: 'gap:6px' }, rolePill(m.role), keysOf(m).map((k) => plotChip(dashKey(k))))),
         pick?.email === m.email ? icon('check_circle') : null)) : [emptyState(t('ho.none'), 'person_search')]));
     };
     search.addEventListener('input', (e) => { q = e.target.value; drawList(); });

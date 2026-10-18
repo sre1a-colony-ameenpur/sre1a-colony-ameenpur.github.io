@@ -269,3 +269,10 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 /* Tooltip opened by an info button (Roles) */
 .tip { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; box-shadow: 0 4px 16px rgb(0 0 0 / .25); }
 .tip[hidden] { display: none; }
+
+/* Role pills: one colour per role, derived from the hue in --rh (see rolePill in ui.js) */
+.pill.role-c { background: hsl(var(--rh) 80% 91%); border-color: hsl(var(--rh) 50% 42%); color: hsl(var(--rh) 70% 20%); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pill.role-c { background: hsl(var(--rh) 38% 17%); border-color: hsl(var(--rh) 50% 58%); color: hsl(var(--rh) 70% 84%); }
+}
+:root[data-theme="dark"] .pill.role-c { background: hsl(var(--rh) 38% 17%); border-color: hsl(var(--rh) 50% 58%); color: hsl(var(--rh) 70% 84%); }

@@ -39,7 +39,21 @@ export function statusPill(kind, label) {
   const [cls, ic] = STATUS[kind] || ['off', 'info'];
   return h('span', { class: `pill ${cls}` }, icon(ic, 'sm'), label || t(`status.${kind}`));
 }
-export const rolePill = (role) => h('span', { class: 'pill role' }, role);
+// Each role has its own colour: fixed hues for the built-in roles, and a hue picked from the rest of the wheel by the name for roles the President creates.
+// Member stays neutral. The hue is a CSS variable; components.css derives the light and dark colours from it.
+const ROLE_HUES = { President: 275, 'Vice President': 215, 'General Secretary': 170, 'Joint Secretary': 135, Treasurer: 28 };
+const SPARE_HUES = [0, 330, 55, 95, 190, 250, 305, 12];
+export function roleHue(role) {
+  if (role === 'Member' || !role) return null;
+  if (ROLE_HUES[role] !== undefined) return ROLE_HUES[role];
+  let n = 0;
+  for (const ch of String(role)) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
+  return SPARE_HUES[n % SPARE_HUES.length];
+}
+export const rolePill = (role) => {
+  const hue = roleHue(role);
+  return h('span', hue === null ? { class: 'pill role' } : { class: 'pill role role-c', style: `--rh:${hue}` }, role);
+};
 export const plotChip = (key) => h('span', { class: 'plot' }, key);
 // Your own avatar (mine = true) shows your profile photo once it is loaded, and is updated in place when it changes; others show initials.
 let myPhoto = '';
@@ -142,7 +156,7 @@ export function toast(msg, ms = 3500, kind) {
 export const toastError = (msg, ms = 6000) => toast(msg, ms, 'error');
 
 // Sheet: <dialog> gives focus trap and Esc. Resolves nothing; actions close it themselves.
-export function openSheet({ title, body, actions = [], wide = false, onClose }) {
+export function openSheet({ title, body, actions = [], wide = false, onClose, footer }) {
   const dlg = h('dialog', { class: `sheet${wide ? ' wide' : ''}`, 'aria-labelledby': 'sheet-title' });
   const close = () => dlg.close();
   // The sheet stays open, with its buttons disabled, until the action finishes; it closes only after it succeeds.
@@ -153,7 +167,8 @@ export function openSheet({ title, body, actions = [], wide = false, onClose }) 
     try { await a.onClick?.(close); if (!a.keepOpen && dlg.open) close(); } finally { lock(false); }
   } }));
   dlg.append(h('div', { class: 'sheet-in' },
-    h('h2', { id: 'sheet-title' }, title), body, acts.length ? h('div', { class: 'btn-row' }, acts) : null));
+    h('h2', { id: 'sheet-title' }, title), body, acts.length ? h('div', { class: 'btn-row' }, acts) : null,
+    footer ? h('div', { class: 'sheet-footer', style: 'margin-top:24px;padding-top:16px;border-top:1px solid var(--c-border)' }, footer) : null));   // e.g. a destructive action, kept apart below Save and Cancel
   dlg.addEventListener('close', () => { dlg.remove(); onClose?.(); });
   dlg.addEventListener('click', (e) => { if (e.target === dlg) close(); });
   document.body.append(dlg);
@@ -166,7 +181,7 @@ export function confirmSheet(title, text, { confirmLabel = t('common.confirm'), 
   return new Promise((resolve) => {
     let answer = false;
     openSheet({
-      title, body: h('p', {}, text), onClose: () => resolve(answer),
+      title, body: danger ? h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('warning'), h('div', { class: 'grow' }, text)) : h('p', {}, text), onClose: () => resolve(answer),
       actions: [
         { label: confirmLabel, kind: danger ? 'danger solid' : 'primary', onClick: () => { answer = true; } },
         { label: t('common.cancel') },

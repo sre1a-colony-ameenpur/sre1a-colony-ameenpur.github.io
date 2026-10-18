@@ -144,7 +144,7 @@ export default function render(ctx) {
     const values = (title, v) => v === null || v === undefined ? null : h('div', { class: 'log-values' }, h('div', { class: 'log-key' }, `${title}:`),
       ...entriesOf(v).map(([k, val]) => h('div', { class: 'log-pair' }, `[${k} : ${val}]`)));
     const detail = h('div', { class: 'log-body stack-sm' },
-      line(t('audit.who'), `${who(i)} `, h('span', { class: 'pill info' }, i.role)),
+      line(t('audit.who'), `${who(i)} `, rolePill(i.role)),
       line(t('audit.when'), timeOf(i.ts)),
       i.old === null && i.new === null ? h('p', { class: 'small muted' }, t('audit.noDetail')) : [values(t('audit.before'), i.old), values(t('audit.after'), i.new)]);
     const isOpen = open.has(key);

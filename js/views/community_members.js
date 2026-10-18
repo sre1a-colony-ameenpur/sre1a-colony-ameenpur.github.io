@@ -17,7 +17,7 @@ export default async function render(ctx) {
 
   const call = (m) => (m?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${String(m.mobile).replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${m.name}` }) : null);
   const row = (m, extra) => h('div', { class: 'list-row' }, avatar(m.name),
-    h('div', { class: 'grow' }, extra ? h('div', { class: 'muted small' }, extra) : null, h('div', {}, m.name),
+    h('div', { class: 'grow' }, extra ? h('div', {}, rolePill(extra)) : null, h('div', {}, m.name),
       h('div', { class: 'row small' }, (m.plot_keys || []).map((k) => plotChip(label(k))), m.role && m.role !== 'Member' && !extra ? rolePill(m.role) : null)), call(m));
 
   const complete = () => !cursor && !serverQ;                    // everything is here: search locally
@@ -29,7 +29,7 @@ export default async function render(ctx) {
   function draw() {
     const list = visible(), searching = !!q.value.trim();
     head.replaceChildren(...(committee.length && !searching ? [h('h2', {}, t('map.committee')), h('div', { class: 'card' }, committee.map((i) => (i.member ? row(i.member, i.role)
-      : h('div', { class: 'list-row' }, h('span', { class: 'avatar off', 'aria-hidden': 'true' }, '–'), h('div', { class: 'grow' }, h('div', { class: 'muted small' }, i.role), h('div', { class: 'muted' }, t('map.vacant'))))))),
+      : h('div', { class: 'list-row' }, h('span', { class: 'avatar off', 'aria-hidden': 'true' }, '–'), h('div', { class: 'grow' }, h('div', {}, rolePill(i.role)), h('div', { class: 'muted' }, t('map.vacant'))))))),
       h('h2', {}, `${t('map.members')} (${total})`)] : [h('h2', {}, `${t('map.members')} (${searching ? list.length : total})`)]));
     box.replaceChildren(...(list.length ? [h('div', { class: 'card' }, list.map((m) => row(m)))] : [emptyState(t('com.membersNone'), 'group')]));
     more.replaceChildren(...(cursor ? [button(t('audit.more'), { block: true, onClick: () => load(true) })] : []));

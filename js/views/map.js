@@ -100,7 +100,7 @@ export default function render(ctx) {
       const { items } = await ctx.api.call('map.committee');
       openPanel(h('h2', {}, t('map.committee')), ...items.map((i) => h('div', { class: 'list-row' },
         i.member ? avatar(i.member.name) : h('span', { class: 'avatar off', 'aria-hidden': 'true' }, '–'),
-        h('div', { class: 'grow' }, h('div', { class: 'muted small' }, i.role),
+        h('div', { class: 'grow' }, h('div', {}, rolePill(i.role)),
           i.member ? h('div', {}, i.member.name) : h('div', { class: 'muted' }, t('map.vacant')),
           i.member ? h('div', { class: 'row small' }, i.member.plot_keys.map((k) => plotChip(label(norm(k))))) : null),
         i.member?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${i.member.mobile.replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${i.member.name}` }) : null)));
