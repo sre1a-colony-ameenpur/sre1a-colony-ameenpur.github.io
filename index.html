@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/components.css">
@@ -58,6 +58,13 @@
     </div>
   </div>
   <noscript>This app needs JavaScript.</noscript>
+  <script>
+    // Icons are letters turned into pictures by a font. Until that font is here they are hidden (see .icon in components.css), never shown as words.
+    (function () {
+      var d = document.documentElement, ready = function () { d.classList.add('icons-ready'); };
+      if (document.fonts && document.fonts.load) document.fonts.load('24px "Material Symbols Outlined"', 'home').then(ready, function () {});      // a failed download leaves the icons blank rather than showing their names
+    })();
+  </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script type="module" src="js/app.js"></script>
 </body>
