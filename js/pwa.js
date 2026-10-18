@@ -29,7 +29,7 @@ export const onInstallChange = (f) => { installSubs.add(f); return () => install
 const dismissed = new Set();
 function showUpdateBanner(apply, key = 'web') {
   if (document.getElementById('update-banner') || dismissed.has(key)) return;
-  const btn = button(t('pwa.update'), { kind: 'primary', icon: 'refresh', onClick: () => { btn.disabled = true; apply(); } });
+  const btn = button(t('pwa.update'), { kind: 'primary', icon: 'refresh', onClick: async () => { btn.disabled = true; try { await apply(); } finally { setTimeout(() => { btn.disabled = false; }, 6000); } } });   // enabled again if nothing happened
   const bar = h('div', { id: 'update-banner', class: 'update-banner', role: 'status' },
     icon('system_update'), h('span', { class: 'grow' }, t('pwa.updateReady')), btn,
     h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('common.close'), title: t('common.close'), onClick: () => { dismissed.add(key); bar.remove(); } }, icon('close')));
@@ -37,7 +37,19 @@ function showUpdateBanner(apply, key = 'web') {
 }
 const workerIds = new WeakMap();
 const workerKey = (w) => { if (!workerIds.has(w)) workerIds.set(w, 'web:' + (workerIds.size + Math.random().toString(36).slice(2, 6))); return workerIds.get(w); };
-const applyWorker = (worker) => () => worker.postMessage('SKIP_WAITING');      // the page reloads when the new worker takes control
+// What Update does. It does not use the worker the bar was made for: a newer release may have replaced that one (it is then redundant and ignores the message),
+// while the bar from the older release is still showing. So it asks the registration for the worker that is waiting NOW. With none waiting (it already took over, or
+// the bar is stale) it reloads. If the page is still here a few seconds after the message (the worker did not answer), it reloads anyway.
+let reloading = false;
+const reloadOnce = () => { if (!reloading) { reloading = true; location.reload(); } };
+export async function applyUpdate() {
+  let waiting = null;
+  try { waiting = (registration || await navigator.serviceWorker?.getRegistration?.())?.waiting || null; } catch { waiting = null; }
+  if (!waiting) { reloadOnce(); return; }
+  waiting.postMessage('SKIP_WAITING');                         // the page reloads when the new worker takes control (controllerchange)
+  setTimeout(reloadOnce, 4000);
+}
+const applyWorker = () => applyUpdate;
 
 // The backend puts its version on every answer. The first one is remembered; a different one later means the backend was released,
 // so offer the update. The remembered version moves on only when the member taps Update, so an ignored bar comes back next time.
@@ -48,8 +60,7 @@ export function noteBackendVersion(v) {
   if (!seen || seen === v) return;
   showUpdateBanner(async () => {
     try { localStorage.setItem(BE_KEY, v); } catch { /* the bar may return once */ }
-    const reg = await navigator.serviceWorker?.getRegistration?.();
-    if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING'); else location.reload();
+    await applyUpdate();
   }, 'be:' + v);
 }
 
@@ -65,7 +76,7 @@ export async function checkForUpdates() {
     const w = reg.installing;
     await new Promise((done) => { const f = () => { if (w.state === 'installed' || w.state === 'redundant') { w.removeEventListener('statechange', f); done(); } }; w.addEventListener('statechange', f); f(); });
   }
-  if (reg.waiting && navigator.serviceWorker.controller) { dismissed.delete(workerKey(reg.waiting)); showUpdateBanner(applyWorker(reg.waiting), workerKey(reg.waiting)); return 'ready'; }
+  if (reg.waiting && navigator.serviceWorker.controller) { dismissed.delete(workerKey(reg.waiting)); showUpdateBanner(applyWorker(), workerKey(reg.waiting)); return 'ready'; }
   return 'latest';
 }
 
@@ -84,9 +95,9 @@ export async function currentBuild() {
 export async function registerPwa() {
   if (!('serviceWorker' in navigator)) return;
   // The first install takes control of the open page without a reload; a later change of worker is an update, so reload into it.
-  let controlled = !!navigator.serviceWorker.controller, reloading = false;
+  let controlled = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (controlled && !reloading) { reloading = true; location.reload(); }
+    if (controlled) reloadOnce();
     controlled = true;
   });
   try {
@@ -94,10 +105,10 @@ export async function registerPwa() {
     // A worker that fails to install (a file did not download) is dropped by the browser; look again soon.
     let retries = 0;
     const watch = (w) => w.addEventListener('statechange', () => {
-      if (w.state === 'installed' && navigator.serviceWorker.controller) { retries = 0; showUpdateBanner(applyWorker(w), workerKey(w)); }
+      if (w.state === 'installed' && navigator.serviceWorker.controller) { retries = 0; showUpdateBanner(applyWorker(), workerKey(w)); }
       else if (w.state === 'redundant' && !reg.waiting && retries < 5) setTimeout(() => { retries++; reg.update().catch(() => {}); }, 3000 * 2 ** retries);
     });
-    if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(applyWorker(reg.waiting), workerKey(reg.waiting));
+    if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(applyWorker(), workerKey(reg.waiting));
     reg.addEventListener('updatefound', () => reg.installing && watch(reg.installing));
     // Look for a new release when the app is opened, whenever it comes back to the front, and every 30 seconds while it is in front.
     const check = () => reg.update().catch(() => {});

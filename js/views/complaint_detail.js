@@ -121,15 +121,30 @@ function assignSheet(ctx, c, done) {
   closeSheet = () => dlg.close();
 }
 
-// The person who raised the complaint closes it once it is resolved, or reopens it (also after it closed) when the problem is still there.
+// The person who raised the complaint decides once it is resolved: close it, or reopen it when the problem is still there (the reopen asks first and takes an
+// optional reason). Once it is closed nobody can reopen it, so the card shows only while it is Resolved.
 function requesterCard(ctx, c, done) {
   const { t } = ctx;
-  if (c.stage !== 'Resolved' && c.stage !== 'Closed') return null;
-  if (!c.raised_by_me) return c.stage === 'Resolved' ? flow(card(null, null, h('p', { class: 'small muted' }, icon('hourglass_top', 'sm'), ' ', t('cmp.closeWaits')))) : null;
-  const act = async (action, msg) => { try { await ctx.api.call(action, { id: c.id }); toast(t(msg)); done(); } catch (e) { toastError(friendly(e, t)); } };
-  return flow(card(t('cmp.yourSay'), 'how_to_reg', h('p', {}, t(c.stage === 'Resolved' ? 'cmp.closeAsk' : 'cmp.closedReopen')),
-    c.stage === 'Resolved' ? button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, onClick: () => act('complaints.close', 'cmp.closed') }) : null,
-    button(t('cmp.reopen'), { icon: 'undo', block: true, onClick: () => act('complaints.reopen', 'cmp.reopened') })));
+  if (c.stage !== 'Resolved') return null;
+  if (!c.raised_by_me) return flow(card(null, null, h('p', { class: 'small muted' }, icon('hourglass_top', 'sm'), ' ', t('cmp.closeWaits'))));
+  const close = async () => { try { await ctx.api.call('complaints.close', { id: c.id }); toast(t('cmp.closed')); done(); } catch (e) { toastError(friendly(e, t)); } };
+  return flow(card(t('cmp.yourSay'), 'how_to_reg', h('p', {}, t('cmp.closeAsk')),
+    button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, onClick: close }),
+    button(t('cmp.reopen'), { icon: 'undo', block: true, onClick: () => reopenSheet(ctx, c, done) })));
+}
+
+// Asks before reopening; the reason is optional and goes into the history next to the new status.
+function reopenSheet(ctx, c, done) {
+  const { t } = ctx;
+  const why = field({ id: 'ro-note', label: t('cmp.reopenNote'), help: t('cmp.reopenNoteHelp'), maxlength: 200 });
+  openSheet({ title: t('cmp.reopenTitle'), body: h('div', { class: 'stack-sm' }, h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('warning'), h('div', { class: 'grow' }, t('cmp.reopenText'))), why), actions: [
+    { label: t('cmp.reopen'), kind: 'primary', keepOpen: true, onClick: async (close) => {
+      try {
+        const note = why.querySelector('input').value.trim();
+        await ctx.api.call('complaints.reopen', { id: c.id, ...(note ? { note } : {}) });
+        close(); toast(t('cmp.reopened')); done();
+      } catch (e) { toastError(friendly(e, t)); }
+    } }, { label: t('common.cancel') }] });
 }
 
 function stageSheet(ctx, c, next, done) {
