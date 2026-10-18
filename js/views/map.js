@@ -1,4 +1,4 @@
-// S5 Map: pan/zoom colony layout with owner name chips, search, Members and Committee lists, right slide-in profile.
+// S5 Map: pan/zoom colony layout with owner name chips, search, Members and Committee lists, right slide-in profile (opened by tapping a chip; Members and search only fly to the plot).
 // Geometry (map/plots.json, tiles) holds no names; names and roles come from map.plots at run time.
 import { h, icon, button, rolePill, plotChip, avatar, emptyState, errorState, loadingRegion, toast } from '../ui.js';
 import { friendly } from '../api.js';
@@ -21,6 +21,7 @@ function loadLeaflet() {
 const norm = (k) => String(k || '').replace(/[\s-]/g, '').toUpperCase();
 const realKey = new Map();                       // norm(key) -> the key as written in the plots sheet (A8 -> A-8, A67P -> A-67/P); the API wants that one
 const fold = (s) => String(s || '').toLowerCase().replace(/\s+/g, '');
+const PLOT_HALF = 28;                             // half the side of the highlight square in map pixels (plots sit ~72 px apart)
 const label = (key) => key.replace(/^([A-Z])(\d+)$/, '$1-$2');
 
 export default function render(ctx) {
@@ -49,7 +50,9 @@ export default function render(ctx) {
   function fly(key) {
     if (!hasPos(key)) { toast(t('map.noPosition')); return false; }
     sel.clearLayers();
-    L.circleMarker(ll(geom.get(key).at), { radius: 26, color: '#f59e0b', weight: 3, fill: false, interactive: false }).addTo(sel);
+    const [x, y] = geom.get(key).at, r = PLOT_HALF;
+    const green = getComputedStyle(document.documentElement).getPropertyValue('--c-ok').trim() || '#2f855a';
+    L.rectangle([ll([x - r, y - r]), ll([x + r, y + r])], { color: green, weight: 3, fillColor: green, fillOpacity: 0.35, interactive: false }).addTo(sel);   // geometry has centres only, so the plot area is drawn as a square of typical plot size
     map.flyTo(ll(geom.get(key).at), G.maxz, { duration: 0.6 });
     return true;
   }
@@ -75,8 +78,8 @@ export default function render(ctx) {
     return h('button', { type: 'button', class: 'list-row map-row', onClick: () => {
       const k = m.plot_keys.map(norm).find(hasPos) || norm(m.plot_keys[0]);
       if (!k) return;
-      if (!hasPos(k)) { toast(t('map.noPosition')); return; }
-      showProfile(k);
+      closePanel();
+      fly(k);
     } }, avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'row small' }, m.plot_keys.map((k) => plotChip(label(norm(k)))))),
     m.role !== 'Member' ? rolePill(m.role) : null);
   }
@@ -122,7 +125,7 @@ export default function render(ctx) {
     const hits = [];
     data.plots.forEach((p) => { const k = norm(p.plot_key); if (fold(p.plot_label + k).includes(f)) hits.push({ key: k, text: p.plot_label || label(k), sub: p.owner?.name || t('map.noOwner') }); });
     data.members.forEach((m) => { if (fold(m.name).includes(f) && m.plot_keys[0]) hits.push({ key: norm(m.plot_keys[0]), text: m.name, sub: m.plot_keys.map((k) => label(norm(k))).join(', ') }); });
-    results.replaceChildren(...hits.slice(0, 8).map((x) => h('button', { type: 'button', class: 'map-hit', onClick: () => { results.hidden = true; q.value = ''; showProfile(x.key); } },
+    results.replaceChildren(...hits.slice(0, 8).map((x) => h('button', { type: 'button', class: 'map-hit', onClick: () => { results.hidden = true; q.value = ''; fly(x.key); } },
       h('span', {}, x.text), h('small', { class: 'muted' }, x.sub))));
     if (!hits.length) results.replaceChildren(h('div', { class: 'map-hit muted' }, t('map.none')));
     results.hidden = false;
