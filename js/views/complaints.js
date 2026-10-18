@@ -1,6 +1,6 @@
 // S2.1 Complaints list and S2.2 raise a complaint. Detail is complaint_detail.js.
 import { withCamera } from '../camera.js';
-import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
+import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
@@ -93,7 +93,7 @@ function raiseSheet(ctx, done) {
           try { await ctx.api.call('media.addPhoto', { parentType: 'complaint', parentId: id, ...(await photoWithThumb(f)) }); } catch { failed++; }
         }
         close(); toast(failed ? t('cmp.raisedSomePhotos') : t('cmp.raised')); done();
-      } catch (e) { warn(e.code === 'INVALID' ? t('cmp.plotUnknown') : friendly(e, t)); }
+      } catch (e) { toastError(e.code === 'INVALID' ? t('cmp.plotUnknown') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 

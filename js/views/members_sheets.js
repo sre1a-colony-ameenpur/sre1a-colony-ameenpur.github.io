@@ -1,5 +1,5 @@
 // S6.2 Add / edit member sheet, role change and replace-holder confirmations, remove confirmation.
-import { h, button, field, openSheet, confirmSheet, toast, icon } from '../ui.js';
+import { h, button, field, openSheet, confirmSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
 import { can, store, hasModule } from '../store.js';
@@ -121,12 +121,12 @@ export function memberSheet(ctx, { member, items, done }) {
       else if (mailed) toast(t('mem.welcomeSent', { email: val(email) }), 6000);
       else toast(t('mem.welcomeFailed', { name: n }), 12000, 'warning');
       done();
-    } catch (e) { showErr(friendly(e, t)); }
+    } catch (e) { toastError(friendly(e, t)); }
   }
 
   const removeBtn = editing && can('members', 'd') && !target && !self ? button(t('mem.remove'), { kind: 'danger', block: true, icon: 'person_remove', onClick: async () => {
     if (!(await confirmSheet(t('mem.removeTitle', { name: member.name }), t('mem.removeText'), { confirmLabel: t('mem.remove'), danger: true }))) return;
-    try { await ctx.api.call('members.remove', { email: member.email }); document.querySelector('dialog.sheet')?.close(); toast(t('mem.removedToast')); done(); } catch (e) { showErr(friendly(e, t)); }
+    try { await ctx.api.call('members.remove', { email: member.email }); document.querySelector('dialog.sheet')?.close(); toast(t('mem.removedToast')); done(); } catch (e) { toastError(friendly(e, t)); }
   } }) : null;
 
   openSheet({ title: editing ? t('mem.edit') : t('mem.add'), wide: true,

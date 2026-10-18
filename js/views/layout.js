@@ -1,6 +1,6 @@
 // S6.5 Layout: President uploads the plot list made by the layout tool, previews what changes and which members have a plot
 // that is not on the layout, then applies it. Committee roles with plots:r can see the current check.
-import { h, card, plotChip, button, statusPill, emptyState, errorState, loadingRegion, confirmSheet, toast, icon } from '../ui.js';
+import { h, card, plotChip, button, statusPill, emptyState, errorState, loadingRegion, confirmSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 
@@ -52,7 +52,7 @@ export default function render(ctx) {
   async function apply() {
     if (!await confirmSheet(t('layout.applyTitle'), t('layout.applyText'), { confirmLabel: t('layout.apply') })) return;
     try { await ctx.api.call('layout.import', { plots: candidate }); toast(t('layout.applied')); candidate = null; showCurrent(); }
-    catch (e) { toast(friendly(e, t)); }
+    catch (e) { toastError(friendly(e, t)); }
   }
 
   const input = h('input', { type: 'file', accept: 'application/json,.json', id: 'layout-file', class: 'sr-only' });

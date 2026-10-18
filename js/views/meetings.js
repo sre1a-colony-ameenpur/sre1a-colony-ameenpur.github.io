@@ -1,5 +1,5 @@
 // S4.4 Meetings list (upcoming highlighted, open action items) and new meeting sheet.
-import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { whenShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -53,6 +53,6 @@ function newSheet(ctx, done) {
       const tm = time.querySelector('input').value;
       if (!tm) { note.replaceChildren(h('div', { class: 'banner warn' }, t('mtg.timeNeeded'))); return; }
       try { await ctx.api.call('meetings.create', { date: date.querySelector('input').value, time: tm, place: pl, agenda: agenda.querySelector('textarea').value.trim() }); close(); toast(t('mtg.created')); done(); }
-      catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

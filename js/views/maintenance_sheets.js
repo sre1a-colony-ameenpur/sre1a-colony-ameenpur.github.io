@@ -1,6 +1,6 @@
 // Sheets for maintenance: record a payment (S3.7), raise dues (S3.12), edit a due (S3.13), change the fee (S3.8), view a proof.
 import { withCamera } from '../camera.js';
-import { h, card, button, field, openSheet, toast, icon, plotChip, loadingRegion, statusPill, errorState } from '../ui.js';
+import { h, card, button, field, openSheet, toast, icon, plotChip, loadingRegion, statusPill, errorState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -31,7 +31,7 @@ export function memberPicker(ctx, id = 'mp', onPick) {
           picked.replaceChildren(h('strong', {}, m.name), ...m.plot_keys.map((k) => plotChip(label(k))));
           results.replaceChildren(); e.target.value = ''; if (onPick) onPick(chosen);
         } }, h('div', { class: 'grow' }, m.name), ...m.plot_keys.map((k) => plotChip(label(k))))));
-      } catch (err) { results.replaceChildren(h('p', { class: 'small muted' }, friendly(err, t))); }
+      } catch (err) { toastError(friendly(err, t)); results.replaceChildren(h('p', { class: 'small muted' }, friendly(err, t))); }
     }, 250);
   });
   return { el: h('div', { class: 'stack-sm' }, input, results, picked), get: () => chosen };
@@ -75,7 +75,7 @@ export function recordPaymentSheet(ctx, done) {
         h('input', { type: 'radio', name: 'rp-due', style: 'width:24px;height:24px', onChange: () => {
           dueChosen = d; amount.querySelector('input').value = String(d.outstanding_paise / 100); note.replaceChildren(); } }),
         h('span', { class: 'grow' }, d.title, h('div', { class: 'small muted' }, t('mt.dueBy', { date: dateShort(d.due_date) }))), h('strong', {}, money(d.outstanding_paise)))));
-    } catch (e) { duesBox.replaceChildren(h('p', { class: 'small muted' }, friendly(e, t))); }
+    } catch (e) { toastError(friendly(e, t)); duesBox.replaceChildren(h('p', { class: 'small muted' }, friendly(e, t))); }
   }
 
   openSheet({ title: t('mt.record'), body: h('div', { class: 'stack' }, hasModule('fees') ? h('div', { class: 'field' }, h('label', {}, t('mt.paymentFor')), seg) : null, picker.el,
@@ -95,7 +95,7 @@ export function recordPaymentSheet(ctx, done) {
         if (purpose === 'maint') await ctx.api.call('maintenance.payments.create', { plotKey: who.plotKey, months: [...picked].sort(), amountPaise: paise, proofJpegBase64: proof });
         else await ctx.api.call('dues.payments.create', { dueId: dueChosen.id, amountPaise: paise, proofJpegBase64: proof });
         close(); toast(t('mt.recorded')); done();
-      } catch (e) { warn(friendly(e, t)); }
+      } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -112,7 +112,7 @@ export function raiseDuesSheet(ctx, defaultMonth, done) {
       const p = await ctx.api.call('maintenance.dues.preview', { month: sel.value });
       preview.textContent = p.amount_paise == null ? t('mt.noRate')
         : t('mt.preview', { n: p.will_create, amount: money(p.amount_paise), skip: p.already_have, nop: p.no_plot });
-    } catch (e) { preview.textContent = friendly(e, t); }
+    } catch (e) { toastError(friendly(e, t)); preview.textContent = friendly(e, t); }
   }
   sel.addEventListener('change', refresh); refresh();
   openSheet({ title: t('mt.raise'), body: h('div', { class: 'stack' },
@@ -125,7 +125,7 @@ export function raiseDuesSheet(ctx, defaultMonth, done) {
       const payload = { month: sel.value };
       if (scope === 'one') { const w = picker.get(); if (!w) return warn(t('mt.pickMember')); payload.plotKey = w.plotKey; }
       try { const r = await ctx.api.call('maintenance.dues.raise', payload); close(); toast(t('mt.raisedToast', { n: r.created })); done(); }
-      catch (e) { warn(friendly(e, t)); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -145,7 +145,7 @@ export function editDueSheet(ctx, row, month, done) {
       if (!(p >= 0)) return warn(t('exp.amountNeeded'));
       if (!why) return warn(t('exp.reasonNeeded'));
       try { await ctx.api.call('maintenance.dues.update', { plotKey: row.plots[0], month, amountPaise: p, reason: why }); close(); toast(t('common.saved')); done(); }
-      catch (e) { warn(e.code === 'IMMUTABLE' ? t('mt.locked') : friendly(e, t)); }
+      catch (e) { toastError(e.code === 'IMMUTABLE' ? t('mt.locked') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -161,7 +161,7 @@ export function feeSheet(ctx, lastRaised, done) {
       const p = rupeesToPaise(amount.querySelector('input').value);
       if (!(p >= 0)) return warn(t('exp.amountNeeded'));
       try { await ctx.api.call('maintenance.rates.set', { amountPaise: p, fromMonth: sel.value }); close(); toast(t('common.saved')); done(); }
-      catch (e) { warn(friendly(e, t)); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -172,7 +172,7 @@ export async function proofSheet(ctx, id) {
   try {
     const { jpegBase64 } = await ctx.api.call('maintenance.payments.proof', { id, size: 'full' });
     body.replaceChildren(h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: t('exp.proof'), style: 'width:100%' }));
-  } catch (e) { body.replaceChildren(h('p', {}, friendly(e, t))); }
+  } catch (e) { toastError(friendly(e, t)); body.replaceChildren(h('p', {}, friendly(e, t))); }
 }
 
 // Reverse a confirmed payment (maintenance or fee): a reversing entry cancels it, the original stays on record. `action` is the API verb.
@@ -185,7 +185,7 @@ export function reversePaymentSheet(ctx, action, p, done) {
       const why = reason.querySelector('input').value.trim();
       if (!why) return warn(t('exp.reasonNeeded'));
       try { await ctx.api.call(action, { id: p.id, reason: why }); close(); toast(t('mt.reversedToast')); done(); }
-      catch (e) { warn(friendly(e, t)); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -253,6 +253,6 @@ export function removedPaymentSheet(ctx, row, done) {
         if (chosen.key === 'maint') await ctx.api.call('maintenance.payments.create', { removedRef: row.ref, months: row.unpaid_months, amountPaise: paise, proofJpegBase64: proof });
         else await ctx.api.call('dues.payments.create', { dueId: chosen.key, amountPaise: paise, proofJpegBase64: proof });
         close(); toast(t('mt.recorded')); done();
-      } catch (e) { warn(friendly(e, t)); }
+      } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

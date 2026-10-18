@@ -1,6 +1,6 @@
 // Sheets for fees: raise a request (S3.10), request detail with recipients (S3.11), cancel/edit, record a fee payment, membership fee amount, proof.
 import { withCamera } from '../camera.js';
-import { h, button, field, openSheet, toast, icon, plotChip, segmented, statusPill, loadingRegion, errorState } from '../ui.js';
+import { h, button, field, openSheet, toast, icon, plotChip, segmented, statusPill, loadingRegion, errorState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -54,7 +54,7 @@ export function raiseRequestSheet(ctx, done) {
         payload = { kind: 'request', title: ttl, description: desc.querySelector('textarea').value.trim(), amountPaise: paise, deadline: dl, audience: who };
         if (who === 'selected') { payload.memberPlotKeys = chosen.get(); if (!payload.memberPlotKeys.length) return warn(t('fee.pickSome')); }
       }
-      try { await ctx.api.call('feeRequests.create', payload); close(); toast(t('fee.raised')); done(); } catch (e) { warn(e.code === 'CONFLICT' ? t('fee.alreadyHas') : friendly(e, t)); }
+      try { await ctx.api.call('feeRequests.create', payload); close(); toast(t('fee.raised')); done(); } catch (e) { toastError(e.code === 'CONFLICT' ? t('fee.alreadyHas') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -90,7 +90,7 @@ function cancelSheet(ctx, requestId, done) {
   openSheet({ title: t('fee.cancelRequest'), body: h('div', { class: 'stack' }, h('p', {}, t('fee.cancelNote')), reason, note), actions: [
     { label: t('fee.cancelRequest'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
       const why = reason.querySelector('input').value.trim(); if (!why) return warn(t('exp.reasonNeeded'));
-      try { await ctx.api.call('feeRequests.cancel', { requestId, reason: why }); close(); toast(t('fee.cancelledToast')); done(); } catch (e) { warn(friendly(e, t)); }
+      try { await ctx.api.call('feeRequests.cancel', { requestId, reason: why }); close(); toast(t('fee.cancelledToast')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -102,7 +102,7 @@ function cancelDueSheet(ctx, d, done) {
   openSheet({ title: t('fee.cancelDue'), body: h('div', { class: 'stack' }, h('p', {}, t('fee.cancelDueNote', { name: d.member_name, amount: money(d.amount_paise) })), reason, note), actions: [
     { label: t('fee.cancelDue'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
       const why = reason.querySelector('input').value.trim(); if (!why) return warn(t('exp.reasonNeeded'));
-      try { await ctx.api.call('dues.cancel', { dueId: d.id, reason: why }); close(); toast(t('fee.dueCancelled')); done(); } catch (e) { warn(friendly(e, t)); }
+      try { await ctx.api.call('dues.cancel', { dueId: d.id, reason: why }); close(); toast(t('fee.dueCancelled')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -120,7 +120,7 @@ function editRequestSheet(ctx, r, done) {
       try {
         await ctx.api.call('feeRequests.update', { requestId: r.id, title: title.querySelector('input').value.trim(), amountPaise: paise, deadline: deadline.querySelector('input').value, reason: why });
         close(); toast(t('common.saved')); done();
-      } catch (e) { warn(e.code === 'IMMUTABLE' ? t('fee.locked') : friendly(e, t)); }
+      } catch (e) { toastError(e.code === 'IMMUTABLE' ? t('fee.locked') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -136,7 +136,7 @@ export function recordFeePaymentSheet(ctx, due, done) {
       const paise = rupeesToPaise(amount.querySelector('input').value);
       if (!(paise > 0)) return warn(t('exp.amountNeeded')); if (!file.files[0]) return warn(t('exp.proofNeeded'));
       try { await ctx.api.call('dues.payments.create', { dueId: due.id, amountPaise: paise, proofJpegBase64: await compressPhoto(file.files[0]) }); close(); toast(t('mt.recorded')); done(); }
-      catch (e) { warn(friendly(e, t)); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -150,7 +150,7 @@ export function membershipRateSheet(ctx, category, done) {
       const paise = rupeesToPaise(amount.querySelector('input').value);
       if (!(paise >= 0) || amount.querySelector('input').value.trim() === '') return warn(t('exp.amountNeeded'));
       try { await ctx.api.call('membership.rates.set', { category, amountPaise: paise, fromDate: from.querySelector('input').value }); close(); toast(t('common.saved')); done(); }
-      catch (e) { warn(friendly(e, t)); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -161,5 +161,5 @@ export async function feeProofSheet(ctx, id) {
   try {
     const { jpegBase64 } = await ctx.api.call('dues.payments.proof', { id, size: 'full' });
     body.replaceChildren(h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: t('exp.proof'), style: 'width:100%' }));
-  } catch (e) { body.replaceChildren(h('p', {}, friendly(e, t))); }
+  } catch (e) { toastError(friendly(e, t)); body.replaceChildren(h('p', {}, friendly(e, t))); }
 }

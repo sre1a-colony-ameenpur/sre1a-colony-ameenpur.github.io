@@ -1,6 +1,6 @@
 // Reports: download one of the reports the President has allowed this role, for a month or the last 3, 6 or 12 months, as Excel or PDF.
 // The President also sees "Who can download": roles against reports, one tick per cell, saved at once.
-import { h, card, button, icon, toast, errorState, loadingRegion, emptyState } from '../ui.js';
+import { h, card, button, icon, toast, errorState, loadingRegion, emptyState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { getLang } from '../i18n.js';
@@ -52,7 +52,7 @@ export default function render(ctx) {
       saveFile(r);
       toast(t('rep.done', { name: r.filename }));
       if (r.truncated) toast(t('rep.cut'), 6000);
-    } catch (e) { toast(friendly(e, t), 6000); }
+    } catch (e) { toastError(friendly(e, t), 6000); }
     busy = false; msg.textContent = ''; drawWhen();
   }
 
@@ -65,7 +65,7 @@ export default function render(ctx) {
         const box = h('input', { type: 'checkbox', checked: !!g.grants[role][rep.key], 'aria-label': `${role}: ${title(rep)}`, onChange: async () => {
           const want = box.checked; box.disabled = true;
           try { await ctx.api.call('reports.access.set', { role, report: rep.key, allowed: want }); g.grants[role][rep.key] = want; toast(t('rep.access.saved')); }
-          catch (e) { box.checked = !want; toast(friendly(e, t), 6000); }
+          catch (e) { box.checked = !want; toastError(friendly(e, t), 6000); }
           box.disabled = false;
         } });
         return h('td', {}, box);

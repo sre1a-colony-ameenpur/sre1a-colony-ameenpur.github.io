@@ -1,5 +1,5 @@
 // S4.7 Polls list and S4.8 create poll. Voting and results are in poll_detail.js.
-import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
+import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -69,6 +69,6 @@ export function createSheet(ctx, done, poll = null) {
       if (isNaN(o) || isNaN(c) || c <= o) return warn(t('poll.windowBad'));
       const body = { question: q, options, type, resultDisplay: display, opensAt: o.toISOString(), closesAt: c.toISOString() };
       try { await ctx.api.call(poll ? 'polls.update' : 'polls.create', poll ? { id: poll.id, ...body } : body); close(); toast(t(poll ? 'poll.edited' : 'poll.created')); done(); }
-      catch (e) { warn(e.code === 'IMMUTABLE' && poll ? t('poll.hasVotes') : friendly(e, t)); }
+      catch (e) { toastError(e.code === 'IMMUTABLE' && poll ? t('poll.hasVotes') : friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

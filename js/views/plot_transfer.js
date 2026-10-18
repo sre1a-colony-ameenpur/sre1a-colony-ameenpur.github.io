@@ -1,5 +1,5 @@
 // S6.7 Transfer a plot: plot and owner, receiver, review (dry run), confirm. Calls plots.transferPreview then plots.transfer.
-import { h, button, field, plotChip, openSheet, toast, icon, emptyState } from '../ui.js';
+import { h, button, field, plotChip, openSheet, toast, icon, emptyState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -12,7 +12,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 export async function transferSheet(ctx, { plot, done }) {
   const { t } = ctx;
   let members = [];
-  try { members = (await ctx.api.call('members.list')).items.filter((m) => m.active); } catch (e) { toast(friendly(e, t)); return; }
+  try { members = (await ctx.api.call('members.list')).items.filter((m) => m.active); } catch (e) { toastError(friendly(e, t)); return; }
   const key = plot.plot_key;
   const owner = members.find((m) => keysOf(m).includes(key));
   const st = { step: 1, kind: owner ? 'existing' : 'new', pick: null, q: '', preview: null };
@@ -47,11 +47,11 @@ export async function transferSheet(ctx, { plot, done }) {
     err('');
     if (st.kind === 'existing' && !st.pick) return err(t('tr.needPick'));
     if (st.kind === 'new' && (!v(nm.name) || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v(nm.email)))) return err(t('tr.needNew'));
-    try { st.preview = await ctx.api.call('plots.transferPreview', payload()); st.step = 3; render(); } catch (e) { err(friendly(e, t)); }
+    try { st.preview = await ctx.api.call('plots.transferPreview', payload()); st.step = 3; render(); } catch (e) { toastError(friendly(e, t)); }
   }
   async function confirm() {
     err('');
-    try { st.result = await ctx.api.call('plots.transfer', payload()); st.step = 5; render(); done(); } catch (e) { err(friendly(e, t)); }
+    try { st.result = await ctx.api.call('plots.transfer', payload()); st.step = 5; render(); done(); } catch (e) { toastError(friendly(e, t)); }
   }
 
   function body() {

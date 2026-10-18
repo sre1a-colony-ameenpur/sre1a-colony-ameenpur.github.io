@@ -1,5 +1,5 @@
 // S4.5 Meeting detail: agenda, attendance, notes, action items.
-import { h, card, button, field, statusPill, avatar, plotChip, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, card, button, field, statusPill, avatar, plotChip, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, whenShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -18,7 +18,7 @@ export default async function render(ctx) {
       const m = d.meeting;
       const item = (a, carried) => h('div', { class: 'list-row' },
         can('action_items', 'u') ? h('input', { type: 'checkbox', checked: a.status === 'done', style: 'width:24px;height:24px', 'aria-label': t('mtg.markDone'), onChange: async (e) => {
-          try { await ctx.api.call('actionItems.update', { id: a.id, status: e.target.checked ? 'done' : 'open' }); load(); } catch (err) { e.target.checked = !e.target.checked; toast(friendly(err, t)); }
+          try { await ctx.api.call('actionItems.update', { id: a.id, status: e.target.checked ? 'done' : 'open' }); load(); } catch (err) { e.target.checked = !e.target.checked; toastError(friendly(err, t)); }
         } }) : null,
         h('div', { class: 'grow' }, h('div', { class: a.status === 'done' ? 'muted' : '' }, a.text),
           h('div', { class: 'small muted' }, `${a.owner_name}${a.mine ? ` (${t('mtg.you')})` : ''} · ${t('mtg.due', { date: dateShort(a.due_date) })}`, carried ? ` · ${t('mtg.carried')}` : '')),
@@ -26,7 +26,7 @@ export default async function render(ctx) {
       root.replaceChildren(
         card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
           h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : 'mtg.scheduled')),
-            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.markHeld'), { kind: 'text', onClick: async () => { try { await ctx.api.call('meetings.update', { id: m.id, status: 'held' }); load(); } catch (e) { toast(friendly(e, t)); } } }) : null)),
+            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.markHeld'), { kind: 'text', onClick: async () => { try { await ctx.api.call('meetings.update', { id: m.id, status: 'held' }); load(); } catch (e) { toastError(friendly(e, t)); } } }) : null)),
         card(t('mtg.agenda'), 'format_list_numbered', agendaLines(m.agenda).length ? h('ol', { class: 'agenda' }, agendaLines(m.agenda).map((l) => h('li', {}, l))) : h('p', { class: 'muted' }, t('mtg.noAgenda'))),
         card(`${t('mtg.attendance')} (${d.attendees.length})`, 'groups',
           d.attendees.length ? h('div', { class: 'stack-sm' }, d.attendees.map((a) => h('div', { class: 'row' }, avatar(a.name), h('span', { class: 'grow' }, a.name), a.plot_keys.map(plot)))) : h('p', { class: 'muted' }, t('mtg.noAttendance')),
@@ -51,7 +51,7 @@ async function attendanceSheet(ctx, id, current, done) {
   const here = new Set(current.map((a) => a.plot_keys[0]));
   openSheet({ title: t('mtg.editAttendance'), wide: true, body, actions: [
     { label: t('mt.save'), kind: 'primary', keepOpen: true, onClick: async (close) => {
-      try { await ctx.api.call('attendance.set', { meeting_id: id, plotKeys: [...here] }); close(); toast(t('common.saved')); done(); } catch (e) { toast(friendly(e, t)); }
+      try { await ctx.api.call('attendance.set', { meeting_id: id, plotKeys: [...here] }); close(); toast(t('common.saved')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
   try {
     const members = await memberList(ctx);
@@ -74,7 +74,7 @@ function notesSheet(ctx, m, done) {
   const ta = h('textarea', { rows: 8, maxlength: 5000, 'aria-label': t('mtg.notes') }); ta.value = m.notes || '';
   openSheet({ title: t('mtg.editNotes'), body: h('div', { class: 'stack' }, ta, h('p', { class: 'small muted' }, t('mtg.notesNote'))), actions: [
     { label: t('mt.save'), kind: 'primary', keepOpen: true, onClick: async (close) => {
-      try { await ctx.api.call('meetings.update', { id: m.id, notes: ta.value.trim() }); close(); toast(t('common.saved')); done(); } catch (e) { toast(friendly(e, t)); }
+      try { await ctx.api.call('meetings.update', { id: m.id, notes: ta.value.trim() }); close(); toast(t('common.saved')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -90,6 +90,6 @@ async function itemSheet(ctx, meetingId, done) {
       const tx = text.querySelector('input').value.trim();
       if (!tx || !sel.value) { note.replaceChildren(h('div', { class: 'banner warn' }, t('mtg.itemNeeded'))); return; }
       try { await ctx.api.call('actionItems.create', { meeting_id: meetingId, text: tx, owner_plot_key: sel.value, due_date: due.querySelector('input').value }); close(); toast(t('common.saved')); done(); }
-      catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

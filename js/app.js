@@ -5,7 +5,7 @@ import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
-import { h, icon, button, toast, busy, setMyPhoto } from './ui.js';
+import { h, icon, button, toast, toastError, busy, setMyPhoto } from './ui.js';
 import { createSwr } from './swr.js';
 import { registerPwa, noteBackendVersion } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
@@ -209,7 +209,12 @@ function banners() {
 
 const router = createRouter({
   routes, getState: () => store.get(), canFn: (e, v) => can(e, v),
-  onRoute: (r) => renderRoute(r).catch((e) => { root.replaceChildren(h('p', { class: 'page' }, friendly(e, t))); console.error(e); }),
+  onRoute: (r) => renderRoute(r).catch((e) => { toastError(friendly(e, t)); root.replaceChildren(h('p', { class: 'page' }, friendly(e, t))); console.error(e); }),
+});
+
+// Safety net: a failed request nobody caught still tells the member, as a red toast, instead of failing silently.
+window.addEventListener('unhandledrejection', (ev) => {
+  if (ev.reason instanceof ApiError) { toastError(friendly(ev.reason, t)); ev.preventDefault(); }
 });
 
 // ---- start ----

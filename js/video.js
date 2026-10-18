@@ -2,7 +2,7 @@
 // the browser sends the file straight to YouTube, and only the video id is stored. Played in the app with no address and no share button
 // (a deterrent, not security: unlisted only means "not searchable").
 import { withCamera } from './camera.js';
-import { h, button, card, openSheet, toast, icon } from './ui.js';
+import { h, button, card, openSheet, toast, icon, toastError } from './ui.js';
 import { friendly } from './api.js';
 
 const ORIGINS = ['https://sre1a-colony-ameenpur.github.io', 'http://localhost:8080', 'http://127.0.0.1:8080'];
@@ -49,7 +49,7 @@ export function addVideoSheet(ctx, { parentType, parentId, done }) {
         close(); toast(r.processing ? t('vid.processing') : t('vid.added')); done?.();
       } catch (e) {
         bar.hidden = true;
-        note.replaceChildren(h('div', { class: 'banner warn' }, e.code === 'INVALID' && e.extra?.details?.max_mb ? t('vid.tooBig', { mb: e.extra.details.max_mb }) : e.code ? friendly(e, t) : t('vid.failed')));
+        toastError(e.code === 'INVALID' && e.extra?.details?.max_mb ? t('vid.tooBig', { mb: e.extra.details.max_mb }) : e.code ? friendly(e, t) : t('vid.failed'));
       }
     } }, { label: t('common.cancel') }] });
 }
@@ -83,7 +83,7 @@ export async function playVideo(ctx, mediaId) {
       events: { onError: () => { note.textContent = t('vid.playerError'); },
         onStateChange: (e) => { pp.lastChild.textContent = e.data === 1 ? t('vid.pause') : t('vid.play'); } } });
     return dlg;
-  } catch (e) { toast(e.code ? friendly(e, t) : t('vid.playerError')); }
+  } catch (e) { toastError(e.code ? friendly(e, t) : t('vid.playerError')); }
 }
 
 // A card with the videos of one record and an "Add a video" button. `videos` are media rows with kind 'video' (they never carry the YouTube id).

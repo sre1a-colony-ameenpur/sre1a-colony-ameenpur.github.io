@@ -1,6 +1,6 @@
 // S2.3 Complaint detail: stage tracker, photos, comments, change status, hide.
 import { withCamera } from '../camera.js';
-import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when } from '../ui.js';
+import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { duration } from '../fmt.js';
 import { can, store } from '../store.js';
@@ -45,7 +45,7 @@ export default async function render(ctx) {
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
             store.get().session?.role === 'President' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
           c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
-            try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toast(friendly(e, t)); }
+            try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toastError(friendly(e, t)); }
           } }) : null)),
         flow(card(t('cmp.progress'), 'timeline', tracker,
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, `, when(x.at)))),
@@ -77,7 +77,7 @@ function thumb(ctx, id) {
     try {
       const { jpegBase64 } = await ctx.api.call('media.photo', { id, size: 'full' });
       openSheet({ title: ctx.t('cmp.photo'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: ctx.t('cmp.photo'), style: 'width:100%' }), actions: [{ label: ctx.t('common.close') }] });
-    } catch (e) { toast(friendly(e, ctx.t)); }
+    } catch (e) { toastError(friendly(e, ctx.t)); }
   } }, img);
   ctx.api.call('media.photo', { id, size: 'thumb' }).then((d) => { img.src = `data:image/jpeg;base64,${d.jpegBase64}`; }).catch(() => { btn.replaceChildren(icon('broken_image')); });
   return btn;
@@ -93,7 +93,7 @@ function commentBox(ctx, complaintId, done) {
       const { id } = await ctx.api.call('comments.create', { complaint_id: complaintId, body });
       if (file.files[0]) { try { await ctx.api.call('media.addPhoto', { parentType: 'comment', parentId: id, ...(await photoWithThumb(file.files[0])) }); } catch { toast(t('cmp.photoFailed')); } }
       done();
-    } catch (e) { toast(friendly(e, t)); }
+    } catch (e) { toastError(friendly(e, t)); }
   } }));
 }
 
@@ -105,7 +105,7 @@ function assignSheet(ctx, c, done) {
   const list = h('div', { class: 'stack-sm' });
   const norm = (v) => String(v).toLowerCase().replace(/[\s-]/g, '');
   const pick = async (payload, close) => {
-    try { await ctx.api.call('complaints.assign', { id: c.id, ...payload }); close(); toast(t('cmp.assigned')); done(); } catch (e) { toast(friendly(e, t)); }
+    try { await ctx.api.call('complaints.assign', { id: c.id, ...payload }); close(); toast(t('cmp.assigned')); done(); } catch (e) { toastError(friendly(e, t)); }
   };
   let closeSheet = () => {};
   function draw() {
@@ -115,7 +115,7 @@ function assignSheet(ctx, c, done) {
       avatar(m.name), h('div', { class: 'grow' }, h('div', {}, m.name), h('div', { class: 'row small' }, m.plot_keys.map((k) => plotChip(String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2'))))))));
   }
   q.addEventListener('input', draw);
-  ctx.api.swr('members.directory', {}, (r) => { all = r.items; draw(); }).catch((e) => toast(friendly(e, t)));
+  ctx.api.swr('members.directory', {}, (r) => { all = r.items; draw(); }).catch((e) => toastError(friendly(e, t)));
   const dlg = openSheet({ title: t('cmp.assignTitle'), body: h('div', { class: 'stack' }, q, list), actions: [
     { label: t('cmp.assignPresident'), keepOpen: true, onClick: (close) => pick({ toPresident: true }, close) }, { label: t('common.cancel') }] });
   closeSheet = () => dlg.close();
@@ -126,7 +126,7 @@ function requesterCard(ctx, c, done) {
   const { t } = ctx;
   if (c.stage !== 'Resolved' && c.stage !== 'Closed') return null;
   if (!c.raised_by_me) return c.stage === 'Resolved' ? flow(card(null, null, h('p', { class: 'small muted' }, icon('hourglass_top', 'sm'), ' ', t('cmp.closeWaits')))) : null;
-  const act = async (action, msg) => { try { await ctx.api.call(action, { id: c.id }); toast(t(msg)); done(); } catch (e) { toast(friendly(e, t)); } };
+  const act = async (action, msg) => { try { await ctx.api.call(action, { id: c.id }); toast(t(msg)); done(); } catch (e) { toastError(friendly(e, t)); } };
   return flow(card(t('cmp.yourSay'), 'how_to_reg', h('p', {}, t(c.stage === 'Resolved' ? 'cmp.closeAsk' : 'cmp.closedReopen')),
     c.stage === 'Resolved' ? button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, onClick: () => act('complaints.close', 'cmp.closed') }) : null,
     button(t('cmp.reopen'), { icon: 'undo', block: true, onClick: () => act('complaints.reopen', 'cmp.reopened') })));
@@ -154,7 +154,7 @@ function stageSheet(ctx, c, next, done) {
   function drawChosen() { chosen.textContent = picked.size ? all.filter((m) => picked.has(m.plot_keys?.[0])).map((m) => m.name).join(', ') : t('cmp.contribNone'); }
   if (finishing) {
     q.addEventListener('input', drawList);
-    ctx.api.swr('members.directory', {}, (r) => { all = r.items; drawList(); drawChosen(); }).catch((e) => toast(friendly(e, t)));
+    ctx.api.swr('members.directory', {}, (r) => { all = r.items; drawList(); drawChosen(); }).catch((e) => toastError(friendly(e, t)));
   }
   const extras = finishing ? h('div', { class: 'stack-sm' }, h('strong', {}, t('cmp.resolveExtras')),
     h('div', { class: 'stack-sm' }, h('div', {}, h('strong', { class: 'small' }, t('cmp.contribTitle')), h('p', { class: 'small muted' }, t('cmp.contribHelp'))), q, list, chosen),
@@ -169,7 +169,7 @@ function stageSheet(ctx, c, next, done) {
           try { await ctx.api.call('media.addPhoto', { parentType: 'resolution', parentId: c.id, ...(await photoWithThumb(f)) }); } catch { failed++; }
         }
         close(); toast(failed ? t('cmp.photoFailed') : t('common.saved')); done();
-      } catch (e) { note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }
+      } catch (e) { toastError(friendly(e, t)); }
     } })), { label: t('common.cancel') }] });
 }
 
@@ -181,6 +181,6 @@ function hideSheet(ctx, action, id, done) {
     { label: t('cmp.hide'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
       const why = reason.querySelector('input').value.trim();
       if (!why) { note.replaceChildren(h('div', { class: 'banner warn' }, t('exp.reasonNeeded'))); return; }
-      try { await ctx.api.call(action, { id, reason: why }); close(); toast(t('cmp.hidden')); done(); } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      try { await ctx.api.call(action, { id, reason: why }); close(); toast(t('cmp.hidden')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

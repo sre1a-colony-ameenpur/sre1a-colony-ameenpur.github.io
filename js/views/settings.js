@@ -1,5 +1,5 @@
 // President settings: the number of hours a resolved complaint waits before the System closes it.
-import { h, button, card, field, toast, errorState, loadingRegion } from '../ui.js';
+import { h, button, card, field, toast, errorState, loadingRegion, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 
 export default function render(ctx) {
@@ -16,7 +16,7 @@ export default function render(ctx) {
       body.replaceChildren(card(t('set.cmpTitle'), 'forum', input, note, button(t('mem.save'), { kind: 'primary', block: true, onClick: async () => {
         const n = Number(input.querySelector('input').value.trim());
         if (!Number.isInteger(n) || n < 1 || n > 720) return note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, t('set.hoursBad')));
-        try { await ctx.api.call('complaints.settings.set', { autoclose_hours: n }); note.replaceChildren(); toast(t('common.saved')); } catch (e) { note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }
+        try { await ctx.api.call('complaints.settings.set', { autoclose_hours: n }); note.replaceChildren(); toast(t('common.saved')); } catch (e) { toastError(friendly(e, t)); }
       } })));
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }

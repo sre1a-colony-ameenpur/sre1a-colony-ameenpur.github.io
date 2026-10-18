@@ -1,6 +1,6 @@
 // S6.3 Roles and permissions: pick a role, see who holds it, toggle Create / Read / Update / Delete per record type.
 // Phone-first: one role at a time. From 960 px wide, all roles side by side in one table. The server enforces the locked rights too.
-import { h, card, button, field, plotChip, avatar, openSheet, toast, errorState, loadingRegion, icon, statusPill } from '../ui.js';
+import { h, card, button, field, plotChip, avatar, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { dashKey } from './members.js';
@@ -77,7 +77,7 @@ export default function render(ctx) {
           close(); toast(t('roles.updated')); role = r.role; load();
         } catch (e) {
           const n = e.extra?.details?.holders;
-          note.replaceChildren(h('div', { class: 'banner warn' }, e.code === 'CONFLICT' ? (n ? t('roles.holdersBlock', { n }) : t('roles.nameTaken')) : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t)));
+          toastError(e.code === 'CONFLICT' ? (n ? t('roles.holdersBlock', { n }) : t('roles.nameTaken')) : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t));
         }
       } }, { label: t('common.cancel') }] });
   }
@@ -92,7 +92,7 @@ export default function render(ctx) {
   function confirmDelete(name) {
     openSheet({ title: t('roles.deleteTitle', { role: name }), body: h('p', {}, t('roles.deleteBody')), actions: [
       { label: t('roles.delete'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
-        try { await ctx.api.call('roles.delete', { name }); close(); toast(t('roles.deleted')); role = 'Member'; load(); } catch (e) { close(); toast(friendly(e, t)); }
+        try { await ctx.api.call('roles.delete', { name }); close(); toast(t('roles.deleted')); role = 'Member'; load(); } catch (e) { close(); toastError(friendly(e, t)); }
       } }, { label: t('common.cancel') }] });
   }
   function newRoleSheet() {
@@ -111,7 +111,7 @@ export default function render(ctx) {
         try {
           const r = await ctx.api.call('roles.create', { name: v, singleHolder: one, preset: preset.querySelector('select').value || undefined });
           close(); toast(t('roles.created')); role = r.role; load();
-        } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, e.code === 'CONFLICT' ? t('roles.nameTaken') : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t))); }
+        } catch (e) { toastError(e.code === 'CONFLICT' ? t('roles.nameTaken') : e.code === 'INVALID' ? t('roles.nameBad') : friendly(e, t)); }
       } }, { label: t('common.cancel') }] });
   }
 
@@ -177,7 +177,7 @@ export default function render(ctx) {
             await ctx.api.call('roles.set', { role: c.role, entity: c.entity, c: g.includes('c'), r: g.includes('r'), u: g.includes('u'), d: g.includes('d') });
           }
           close(); toast(t('common.saved')); load();
-        } catch (e) { close(); toast(friendly(e, t)); load(); }
+        } catch (e) { close(); toastError(friendly(e, t)); load(); }
       } },
       { label: t('common.cancel') }] });
   }

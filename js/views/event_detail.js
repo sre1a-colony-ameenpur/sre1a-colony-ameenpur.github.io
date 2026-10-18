@@ -1,6 +1,6 @@
 // S4.2 Event detail: details, photo grid with full-size viewer, add photos, edit and hide for allowed roles.
 import { withCamera } from '../camera.js';
-import { h, card, button, field, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, card, button, field, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
 import { can } from '../store.js';
@@ -52,7 +52,7 @@ async function viewer(ctx, id) {
   try {
     const { jpegBase64 } = await ctx.api.call('media.photo', { id, size: 'full' });
     openSheet({ title: ctx.t('cmp.photo'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: ctx.t('cmp.photo'), style: 'width:100%' }), actions: [{ label: ctx.t('common.close') }] });
-  } catch (e) { toast(friendly(e, ctx.t)); }
+  } catch (e) { toastError(friendly(e, ctx.t)); }
 }
 
 function editSheet(ctx, e, done) {
@@ -67,7 +67,7 @@ function editSheet(ctx, e, done) {
     { label: t('mt.save'), kind: 'primary', keepOpen: true, onClick: async (close) => {
       const ttl = title.querySelector('input').value.trim(); if (!ttl) { note.replaceChildren(h('div', { class: 'banner warn' }, t('fee.titleNeeded'))); return; }
       try { await ctx.api.call('events.update', { id: e.id, title: ttl, date: date.querySelector('input').value, place: place.querySelector('input').value.trim(), description: desc.querySelector('textarea').value.trim() }); close(); toast(t('common.saved')); done(); }
-      catch (err) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(err, t))); }
+      catch (err) { toastError(friendly(err, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -78,6 +78,6 @@ function hideSheet(ctx, id) {
   openSheet({ title: t('cmp.hide'), body: h('div', { class: 'stack' }, h('p', { class: 'small muted' }, t('cmp.hideNote')), reason, note), actions: [
     { label: t('cmp.hide'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
       const why = reason.querySelector('input').value.trim(); if (!why) { note.replaceChildren(h('div', { class: 'banner warn' }, t('exp.reasonNeeded'))); return; }
-      try { await ctx.api.call('events.hide', { id, reason: why }); close(); toast(t('cmp.hidden')); location.hash = '#/community'; } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      try { await ctx.api.call('events.hide', { id, reason: why }); close(); toast(t('cmp.hidden')); location.hash = '#/community'; } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

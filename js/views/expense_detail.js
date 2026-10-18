@@ -1,5 +1,5 @@
 // S3.3 Expense detail: amount, status, proof screenshot, timeline, approve/reject/reverse by role.
-import { h, card, button, field, statusPill, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, card, button, field, statusPill, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -50,7 +50,7 @@ export default async function render(ctx) {
         try {
           const full = await ctx.api.call('expenses.proof', { id, size: 'full' });
           openSheet({ title: t('exp.proof'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${full.jpegBase64}`, alt: t('exp.proof'), style: 'width:100%' }), actions: [{ label: t('common.close') }] });
-        } catch (e) { toast(friendly(e, t)); }
+        } catch (e) { toastError(friendly(e, t)); }
       });
       box.replaceChildren(img);
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), () => showProof(box, id))); }
@@ -68,6 +68,6 @@ function reverseSheet(ctx, id, done) {
       const text = reason.querySelector('input').value.trim();
       if (!text) { note.replaceChildren(h('div', { class: 'banner warn' }, t('exp.reasonNeeded'))); return; }
       try { await ctx.api.call('expenses.reverse', { id, reason: text }); close(); toast(t('exp.reversed')); done(); }
-      catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

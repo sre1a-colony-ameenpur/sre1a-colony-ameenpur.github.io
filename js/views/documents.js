@@ -1,5 +1,5 @@
 // Bylaws and EC rules: one PDF per document. Everyone reads; the President uploads, and a new upload replaces the old file.
-import { h, card, button, toast, icon, errorState, loadingRegion, emptyState } from '../ui.js';
+import { h, card, button, toast, icon, errorState, loadingRegion, emptyState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { store } from '../store.js';
@@ -27,7 +27,7 @@ export default function render(ctx) {
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
       holder.replaceChildren(h('a', { class: 'btn primary block', href: url, target: '_blank', rel: 'noopener' }, icon('picture_as_pdf'), t('doc.open')),
         h('a', { class: 'btn block', href: url, download: `${slot}.pdf` }, icon('download'), t('doc.download')));
-    } catch (e) { holder.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, friendly(e, t))); }
+    } catch (e) { toastError(friendly(e, t)); }
   }
 
   function uploadControl(it) {
@@ -35,7 +35,7 @@ export default function render(ctx) {
       const f = input.files[0]; if (!f) return;
       if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) return toast(t('doc.pdfOnly'));
       if (f.size > MAX_BYTES) return toast(t('doc.tooBig'));
-      try { await ctx.api.call('documents.upload', { slot: it.slot, pdfBase64: await toBase64(f) }); toast(t('doc.saved')); load(); } catch (e) { toast(friendly(e, t)); }
+      try { await ctx.api.call('documents.upload', { slot: it.slot, pdfBase64: await toBase64(f) }); toast(t('doc.saved')); load(); } catch (e) { toastError(friendly(e, t)); }
     } });
     return h('div', {}, input, h('label', { class: 'btn block', for: input.id }, icon('upload_file'), t(it.has_file ? 'doc.replace' : 'doc.upload')));
   }

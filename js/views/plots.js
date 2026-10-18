@@ -1,5 +1,5 @@
 // S6.4 Plots: list of every plot with its owner, category (President changes it), history and Transfer; plus the President's queue of plot change requests.
-import { h, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, confirmSheet, toast, icon, segmented } from '../ui.js';
+import { h, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, confirmSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -75,14 +75,14 @@ export default function render(ctx) {
   }
   async function approve(r) {
     if (!(await confirmSheet(t('plots.req.approveTitle'), t('plots.req.approveText', { name: r.member_name, plot: dashKey(r.plot_key) }), { confirmLabel: t('plots.req.approve') }))) return;
-    try { await ctx.api.call('plotRequests.approve', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toast(friendly(e, t)); loadRequests(); }
+    try { await ctx.api.call('plotRequests.approve', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toastError(friendly(e, t)); loadRequests(); }
   }
   function rejectSheet(r) {
     const reason = h('textarea', { id: 'rej-reason', maxlength: 200, rows: 3 });
     openSheet({ title: t('plots.req.rejectTitle'), body: h('div', { class: 'field' }, h('label', { for: 'rej-reason' }, t('plots.req.reason')), reason),
       actions: [{ label: t('plots.req.reject'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
         if (!reason.value.trim()) { reason.focus(); return toast(t('plots.req.reasonNeeded')); }
-        try { await ctx.api.call('plotRequests.reject', { id: r.id, reason: reason.value.trim() }); close(); toast(t('common.saved')); } catch (e) { toast(friendly(e, t)); }
+        try { await ctx.api.call('plotRequests.reject', { id: r.id, reason: reason.value.trim() }); close(); toast(t('common.saved')); } catch (e) { toastError(friendly(e, t)); }
         loadRequests();
       } }, { label: t('common.cancel') }] });
   }
@@ -98,7 +98,7 @@ function plotSheet(ctx, p, done) {
   const cat = h('div');
   const drawCat = (cur) => cat.replaceChildren(can('plots', 'u') && ctx.store.get().session.role === 'President'
     ? segmented(CATS.map((c) => [c, t(`plots.cat.${c}`)]), cur, async (v) => {
-      try { await ctx.api.call('plots.update', { plotKey: p.plot_key, category: v }); p.category = v; toast(t('common.saved')); done(); } catch (e) { toast(friendly(e, t)); drawCat(p.category); }
+      try { await ctx.api.call('plots.update', { plotKey: p.plot_key, category: v }); p.category = v; toast(t('common.saved')); done(); } catch (e) { toastError(friendly(e, t)); drawCat(p.category); }
     }, t('plots.category')) : h('span', {}, p.category ? t(`plots.cat.${p.category}`) : t('plots.cat.none')));
   drawCat(p.category);
   if (can('plot_transfer', 'r')) {

@@ -1,5 +1,5 @@
 // S7.1 My profile: read-only details, language, appearance, plot change requests, sign out.
-import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion, setMyPhoto } from '../ui.js';
+import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion, setMyPhoto, toastError } from '../ui.js';
 import { pickPhoto, compressPhoto } from '../photo.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
@@ -42,7 +42,7 @@ export default function render(ctx) {
           h('div', { class: 'small muted' }, dateShort(r.requested_at))),
         statusPill(r.status === 'Pending' ? 'pending' : r.status === 'Approved' ? 'approved' : r.status === 'Rejected' ? 'rejected' : 'closed', t(`req.status.${r.status}`)),
         r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
-          try { await ctx.api.call('plotRequests.cancel', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toast(friendly(e, t)); }
+          try { await ctx.api.call('plotRequests.cancel', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toastError(friendly(e, t)); }
         } }) : null)) : [emptyState(t('req.none'), 'inbox')]));
     } catch (e) { reqBox.replaceChildren(errorState(friendly(e, t), loadRequests)); }
   }
@@ -62,7 +62,7 @@ function requestSheet(ctx, done) {
       await ctx.api.call('plotRequests.create', { action, plotKey: input.querySelector('input').value.trim().toUpperCase() });
       close(); toast(t('req.sent')); done();
     } catch (e) {
-      note.append(h('div', { class: 'banner warn', style: 'border-radius:12px' }, e.extra?.details?.owner ? t('req.ownedByOther') : friendly(e, t)));
+      toastError(e.extra?.details?.owner ? t('req.ownedByOther') : friendly(e, t));
     }
   } };
   openSheet({ title: t('profile.requestPlot'), actions: [send, { label: t('common.cancel') }],
@@ -79,7 +79,7 @@ function mobileSwitch(ctx, s) {
       await ctx.api.call('members.setMobileVisibility', { show });
       store.set({ session: { ...store.get().session, showMobile: show } });
       toast(t('common.saved'));
-    } catch (e) { box.checked = !show; toast(friendly(e, t)); }
+    } catch (e) { box.checked = !show; toastError(friendly(e, t)); }
   });
   return h('div', { class: 'stack-sm' },
     h('label', { class: 'row', for: 'show-mobile' }, box, h('span', { class: 'grow' }, t('profile.showMobileLabel'))),
@@ -99,7 +99,7 @@ function photoSheet(ctx) {
       await ctx.api.call('profile.setPhoto', { jpegBase64 });
       setMyPhoto(`data:image/jpeg;base64,${jpegBase64}`);
       toast(t('profile.photoSaved'));
-    } catch (e) { toast(friendly(e, t)); }
+    } catch (e) { toastError(friendly(e, t)); }
   };
   openSheet({ title: t('profile.photoTitle'), body: h('div', { class: 'stack-sm' }, h('p', { class: 'small muted' }, t('profile.photoHelp')), note), actions: [
     { label: t('profile.takePhoto'), kind: 'primary', keepOpen: true, onClick: choose('user') },

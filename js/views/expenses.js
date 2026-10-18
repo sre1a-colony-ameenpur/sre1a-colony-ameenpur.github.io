@@ -1,6 +1,6 @@
 // S3.1 Expenses list (with S3.4 approvals queue and S3.2 add sheet). Detail is expense_detail.js.
 import { withCamera } from '../camera.js';
-import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
+import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -20,11 +20,11 @@ export function rejectSheet(ctx, id, done) {
       const text = reason.querySelector('input').value.trim();
       if (!text) { note.replaceChildren(h('div', { class: 'banner warn' }, t('exp.reasonNeeded'))); return; }
       try { await ctx.api.call('expenses.reject', { id, reason: text }); close(); toast(t('exp.rejected')); done(); }
-      catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 export async function approve(ctx, id, done) {
-  try { await ctx.api.call('expenses.approve', { id }); toast(ctx.t('exp.approved')); done(); } catch (e) { toast(friendly(e, ctx.t)); }
+  try { await ctx.api.call('expenses.approve', { id }); toast(ctx.t('exp.approved')); done(); } catch (e) { toastError(friendly(e, ctx.t)); }
 }
 
 export default async function render(ctx) {
@@ -68,7 +68,7 @@ export default async function render(ctx) {
   }
   async function loadList(older = false) {
     busy = true;
-    try { await fetchPage(older); busy = false; draw(); } catch (e) { busy = false; toast(friendly(e, t)); }
+    try { await fetchPage(older); busy = false; draw(); } catch (e) { busy = false; toastError(friendly(e, t)); }
   }
   async function load() {
     if (!items.length) box.replaceChildren(loadingRegion(3));
@@ -122,7 +122,7 @@ export function addSheet(ctx, done, eventId = '') {
         const b64 = await compressPhoto(file.files[0]);
         await ctx.api.call('expenses.create', { date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why, event_id: event.querySelector('select').value, proof_jpeg_base64: b64 });
         close(); toast(t(autoOk ? 'exp.addedApproved' : 'exp.submitted')); done();
-      } catch (e) { warn(friendly(e, t)); }
+      } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }
 
@@ -147,6 +147,6 @@ export function editSheet(ctx, x, done) {
       try {
         await ctx.api.call('expenses.update', { id: x.id, date: date.querySelector('input').value, amount_paise: paise, category: cat.querySelector('select').value, reason: why, ...(event.hidden ? {} : { event_id: event.querySelector('select').value }) });
         close(); toast(t('exp.edited')); done();
-      } catch (e) { warn(friendly(e, t)); }
+      } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

@@ -1,5 +1,5 @@
 // S6.6 President handover wizard: choose the new President, review, account checklist, type HANDOVER, success. One call to members.handover.
-import { h, button, card, avatar, plotChip, emptyState, errorState, loadingRegion, icon, toast } from '../ui.js';
+import { h, button, card, avatar, plotChip, emptyState, errorState, loadingRegion, icon, toast, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 
 const norm = (s) => String(s).toLowerCase().replace(/[\s-]/g, '');
@@ -77,7 +77,7 @@ export default function render(ctx) {
       // Drive refused to change who can edit the members sheet: the handover did not happen, and the screen says so and why.
       const d = e.extra?.details;
       if (d?.reason === 'sheet_access') { failNote = t(d.step === 'grant' ? 'ho.failGrant' : 'ho.failRevoke', { name: d.name }); draw(); }
-      else toast(friendly(e, t));
+      else toastError(friendly(e, t));
     } finally { busy = false; }
   }
 

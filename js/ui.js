@@ -119,6 +119,7 @@ export function emptyState(text, ic = 'inbox', action) {
   return h('div', { class: 'state' }, icon(ic), h('p', {}, text), action);
 }
 export function errorState(text, onRetry) {
+  toastError(text);                         // every failure is also a toast; the panel stays so the page can offer Try again
   return h('div', { class: 'state bad', role: 'alert' }, icon('error'), h('p', {}, text),
     onRetry && button(t('common.retry'), { icon: 'refresh', onClick: onRetry }));
 }
@@ -126,14 +127,19 @@ export const skeletonCard = () => h('div', { class: 'skel card', 'aria-hidden': 
 export const loadingRegion = (n = 3) => h('div', { class: 'stack', 'aria-busy': 'true', 'aria-label': t('common.loading') },
   Array.from({ length: n }, skeletonCard));
 
-// Toast: short, polite, auto-hides.
+// Toast: short, polite, auto-hides. kind 'warning' is amber, 'error' is red (a failed request). The same text is never stacked twice.
 export function toast(msg, ms = 3500, kind) {
   let box = document.getElementById('toasts');
   if (!box) { box = h('div', { id: 'toasts', class: 'toasts', 'aria-live': 'polite' }); document.body.append(box); }
-  const el = h('div', { class: kind === 'warning' ? 'toast warn' : 'toast', role: 'status' }, icon(kind === 'warning' ? 'warning' : 'check_circle', 'sm'), msg);
+  if ([...box.children].some((el) => el.dataset.msg === String(msg))) return;
+  const cls = kind === 'warning' ? 'toast warn' : kind === 'error' ? 'toast bad' : 'toast';
+  const el = h('div', { class: cls, role: kind === 'error' ? 'alert' : 'status' }, icon(kind === 'warning' ? 'warning' : kind === 'error' ? 'error' : 'check_circle', 'sm'), msg);
+  el.dataset.msg = String(msg);
   box.append(el);
   setTimeout(() => el.remove(), ms);
 }
+// A server or network error shown to the member: red, stays a little longer.
+export const toastError = (msg, ms = 6000) => toast(msg, ms, 'error');
 
 // Sheet: <dialog> gives focus trap and Esc. Resolves nothing; actions close it themselves.
 export function openSheet({ title, body, actions = [], wide = false, onClose }) {

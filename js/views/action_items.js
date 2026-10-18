@@ -1,5 +1,5 @@
 // S4.6 Action items overview: every open action item across meetings, grouped Overdue / Due soon / Later, with a "Mine" filter.
-import { h, card, statusPill, emptyState, errorState, loadingRegion, toast, icon, segmented } from '../ui.js';
+import { h, card, statusPill, emptyState, errorState, loadingRegion, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -15,7 +15,7 @@ export default async function render(ctx) {
   function row(a) {
     return h('div', { class: 'list-row' },
       can('action_items', 'u') ? h('input', { type: 'checkbox', style: 'width:24px;height:24px', 'aria-label': t('mtg.markDone'), onChange: async (e) => {
-        try { await ctx.api.call('actionItems.update', { id: a.id, status: 'done' }); toast(t('common.saved')); load(); } catch (err) { e.target.checked = false; toast(friendly(err, t)); }
+        try { await ctx.api.call('actionItems.update', { id: a.id, status: 'done' }); toast(t('common.saved')); load(); } catch (err) { e.target.checked = false; toastError(friendly(err, t)); }
       } }) : null,
       h('div', { class: 'grow' }, h('div', {}, a.text),
         h('div', { class: 'small muted' }, `${a.owner_name}${a.mine ? ` (${t('mtg.you')})` : ''} · ${t('mtg.due', { date: dateShort(a.due_date) })}`),

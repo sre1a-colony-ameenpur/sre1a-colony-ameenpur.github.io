@@ -1,6 +1,6 @@
 // Gallery: every photo and video by category, filtered by what it belongs to, by photos or videos, and by month. Thirty at a time.
 // Event and meeting photos load straight from Google (public links); other photos use the small picture stored with them, or ask for it.
-import { h, button, icon, errorState, loadingRegion, emptyState, openSheet, toast } from '../ui.js';
+import { h, button, icon, errorState, loadingRegion, emptyState, openSheet, toast, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { playVideo } from '../video.js';
 
@@ -61,7 +61,7 @@ export default function render(ctx) {
         img.src = src; img.alt = p.item_title || '';
         // Warm the next picture so a step forward is quick.
         const nx = list[pos + 1]; if (nx && nx.public_url) new Image().src = nx.public_url.replace('sz=w400', 'sz=w1600');
-      } catch (e) { if (mine === token) { spin.replaceChildren(icon('broken_image')); toast(friendly(e, t)); } }
+      } catch (e) { if (mine === token) { spin.replaceChildren(icon('broken_image')); toastError(friendly(e, t)); } }
     }
     async function step(d) {
       if (d > 0 && pos === photos().length - 1 && cursor) await load(true);       // reached the last loaded photo: fetch the next page

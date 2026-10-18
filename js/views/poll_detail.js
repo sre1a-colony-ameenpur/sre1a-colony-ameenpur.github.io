@@ -1,5 +1,5 @@
 // S4.9 Poll voting and S4.10 results.
-import { h, card, button, statusPill, errorState, loadingRegion, openSheet, toast, icon, field } from '../ui.js';
+import { h, card, button, statusPill, errorState, loadingRegion, openSheet, toast, icon, field, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -40,7 +40,7 @@ function voteCard(ctx, p, done) {
     openSheet({ title: t('poll.confirmTitle', { option: chosen.text }), body: h('p', {}, t('poll.confirmText')), actions: [
       { label: t('poll.confirmYes'), kind: 'primary', keepOpen: true, onClick: async (close) => {
         try { await ctx.api.call('polls.vote', { pollId: p.id, optionId: chosen.option_id }); close(); toast(t('poll.thanks')); done(); }
-        catch (e) { close(); toast(e.code === 'ALREADY_VOTED' ? t('poll.youVoted') : friendly(e, t)); done(); }
+        catch (e) { close(); toastError(e.code === 'ALREADY_VOTED' ? t('poll.youVoted') : friendly(e, t)); done(); }
       } }, { label: t('common.cancel') }] });
   }
   return card(t('poll.yourVote'), 'how_to_vote', ...radios, h('p', { class: 'small muted' }, t('poll.oneVote'), p.type === 'secret' ? ` ${t('poll.choiceSecret')}` : ''), btn);
@@ -68,6 +68,6 @@ function cancelSheet(ctx, id, done) {
   openSheet({ title: t('poll.cancelPoll'), body: h('div', { class: 'stack' }, reason, note), actions: [
     { label: t('poll.cancelPoll'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
       const why = reason.querySelector('input').value.trim(); if (!why) { note.replaceChildren(h('div', { class: 'banner warn' }, t('exp.reasonNeeded'))); return; }
-      try { await ctx.api.call('polls.cancel', { id, reason: why }); close(); toast(t('poll.cancelledToast')); done(); } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      try { await ctx.api.call('polls.cancel', { id, reason: why }); close(); toast(t('poll.cancelledToast')); done(); } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

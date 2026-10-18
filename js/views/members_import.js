@@ -1,5 +1,5 @@
 // S6.8 Load members from a sheet (President): check the sheet, read every problem in plain words, then load. Nothing is saved until the sheet is clean.
-import { h, button, card, statusPill, errorState, confirmSheet, icon, toast } from '../ui.js';
+import { h, button, card, statusPill, errorState, confirmSheet, icon, toast, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money } from '../fmt.js';
 
@@ -74,9 +74,9 @@ export default function render(ctx) {
     } catch (e) {
       const d = e?.extra?.details;
       if (d?.rows) { toast(t('imp.nothing')); show(d); }
-      else if (total.loaded.length) { toast(friendly(e, t)); body.replaceChildren(card(t('imp.partialTitle'), 'warning', h('p', {}, t('imp.partial', { n: total.loaded.length })),
+      else if (total.loaded.length) { toastError(friendly(e, t)); body.replaceChildren(card(t('imp.partialTitle'), 'warning', h('p', {}, t('imp.partial', { n: total.loaded.length })),
         h('p', { class: 'small muted' }, t('imp.partialAgain'))), button(t('imp.checkAgain'), { kind: 'primary', block: true, onClick: runCheck })); }
-      else { toast(friendly(e, t)); show(await ctx.api.call('members.importCheck')); }
+      else { toastError(friendly(e, t)); show(await ctx.api.call('members.importCheck')); }
     } finally { busy = false; }
   }
 

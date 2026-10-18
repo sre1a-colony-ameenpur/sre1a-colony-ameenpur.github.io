@@ -1,6 +1,6 @@
 // S4.1 Events list (cover photo, upcoming first) and S4.3 new event.
 import { withCamera } from '../camera.js';
-import { h, button, field, emptyState, errorState, loadingRegion, openSheet, toast, icon } from '../ui.js';
+import { h, button, field, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -62,6 +62,6 @@ function newSheet(ctx, done) {
         const { id } = await ctx.api.call('events.create', { title: ttl, date: date.querySelector('input').value, place: place.querySelector('input').value.trim(), description: desc.querySelector('textarea').value.trim() });
         const failed = await uploadPhotos(ctx, id, files.files);
         close(); toast(failed ? t('evt.publishedSome') : t('evt.published')); done();
-      } catch (e) { note.replaceChildren(h('div', { class: 'banner warn' }, friendly(e, t))); }
+      } catch (e) { toastError(friendly(e, t)); }
     } }, { label: t('common.cancel') }] });
 }

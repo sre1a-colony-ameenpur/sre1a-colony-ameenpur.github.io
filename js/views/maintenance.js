@@ -1,5 +1,5 @@
 // Money > Maintenance. S3.5 my plot (every member) plus S3.6 committee month view, payments to confirm (S3.4) and fee settings (S3.8).
-import { h, card, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
+import { h, card, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -102,7 +102,7 @@ function committee(ctx) {
         h('div', { class: 'row' },
           p.has_proof ? button(t('mt.proof'), { kind: 'text', icon: 'image', onClick: () => proofSheet(ctx, p.id) }) : null,
           can('payment_confirmation', 'u') && !p.mine ? button(t('mt.confirm'), { kind: 'primary', onClick: async () => {
-            try { await ctx.api.call('maintenance.payments.confirm', { id: p.id }); toast(t('mt.confirmed')); load(); } catch (e) { toast(friendly(e, t)); }
+            try { await ctx.api.call('maintenance.payments.confirm', { id: p.id }); toast(t('mt.confirmed')); load(); } catch (e) { toastError(friendly(e, t)); }
           } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null))))) : h('div')));
     } catch (e) { queue.replaceChildren(errorState(friendly(e, t), loadQueue)); }
   }
