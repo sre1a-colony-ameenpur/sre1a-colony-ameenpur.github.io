@@ -1,5 +1,4 @@
 // S2.1 Complaints list and S2.2 raise a complaint. Detail is complaint_detail.js.
-import { pendingBody } from '../pending.js';
 import { withCamera } from '../camera.js';
 import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented } from '../ui.js';
 import { friendly } from '../api.js';
@@ -50,14 +49,12 @@ export default async function render(ctx) {
       busy = false; draw();
     } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
-  const GROUPS = ['all', 'open', 'progress', 'resolved', 'closed'];
   const seg = segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], filter, (v) => { filter = v; items = []; load(); }, t('exp.filter'));
-  const pick = (group) => seg.querySelectorAll('button')[GROUPS.indexOf(group)]?.click();        // the Pending tiles set the filter like a tap on the chip
-  const pendingBox = h('div', { class: 'card' }, h('h2', { class: 'card-title' }, icon('pending_actions'), t('pend.title')), h('div', { class: 'skel line', style: 'width:60%;margin-top:8px' }));
-  ctx.api.swr('complaints.pending', {}, (d) => pendingBox.replaceChildren(h('h2', { class: 'card-title' }, icon('pending_actions'), t('pend.title')), ...pendingBody(t, d, pick).filter(Boolean))).catch(() => pendingBox.remove());
   load();
-  return h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('a', { class: 'btn', href: '#/issues/monthly' }, icon('insights', 'sm'), t('cmp.monthly'))),
-    pendingBox, seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
+  return h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('div', { class: 'row' },
+    h('a', { class: 'icon-btn', href: '#/issues/pending', 'aria-label': t('pend.title'), title: t('pend.title') }, icon('pending_actions')),
+    h('a', { class: 'icon-btn', href: '#/issues/monthly', 'aria-label': t('cmp.monthly'), title: t('cmp.monthly') }, icon('insights')))),
+    seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
 }
 
 function raiseSheet(ctx, done) {
