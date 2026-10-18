@@ -123,6 +123,7 @@ async function loadSession() {
     const session = await api.call('session.get');
     session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
+    if (!mock) auth.keepSession((a, p) => client.call(a, p));   // not awaited: a 30-day sign-in for the phone
     loadMyPhoto(session);       // not awaited: the photo never holds up sign-in
     if (!ls.get('sre.lang') && session.language && session.language !== getLang()) await loadLang(session.language);
   } catch (e) {

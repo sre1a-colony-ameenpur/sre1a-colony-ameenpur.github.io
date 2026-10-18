@@ -1,6 +1,11 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-22',
+    title: { en: 'Stay signed in on your phone', te: 'ఫోన్‌లో సైన్ ఇన్ అయి ఉండండి' },
+    items: [
+      { en: 'The app now keeps you signed in for 30 days, also when added to the home screen. The Google sign-in button also looks right in dark mode.', te: 'యాప్ ఇప్పుడు 30 రోజులు సైన్ ఇన్ అయి ఉంచుతుంది, హోమ్ స్క్రీన్‌కు జోడించినప్పుడు కూడా. గూగుల్ సైన్ ఇన్ బటన్ డార్క్ మోడ్‌లో కూడా బాగా కనిపిస్తుంది.' },
+    ] },
   { date: '2026-10-21',
     title: { en: 'Pending issues and the photo gallery', te: 'పెండింగ్ ఫిర్యాదులు, ఫోటో గ్యాలరీ' },
     items: [
