@@ -1,6 +1,6 @@
 // S7.2 Help: one accordion open at a time (details with the same name).
-import { h, icon, card, button } from '../ui.js';
-import { installState, promptInstall, onInstallChange } from '../pwa.js';
+import { h, icon, card, button, toast } from '../ui.js';
+import { installState, promptInstall, onInstallChange, checkForUpdates, currentBuild } from '../pwa.js';
 
 const SECTIONS = ['signin', 'complaint', 'vote', 'maintenance', 'broken'];
 const FALLBACK_STEPS = ['s1', 's2', 's3', 's4'];
@@ -18,6 +18,19 @@ function installCard(t) {
   return card(t('help.install.title'), 'install_mobile', body);
 }
 
+// "Check for updates": looks for a new release now; the Update bar appears if there is one.
+function updateCard(t) {
+  const build = h('p', { class: 'small muted' });
+  currentBuild().then((b) => { if (b) build.textContent = t('help.update.build', { build: b }); });
+  const btn = button(t('help.update.button'), { icon: 'refresh', onClick: async () => {
+    btn.disabled = true;
+    const r = await checkForUpdates();
+    btn.disabled = false;
+    if (r !== 'ready') toast(t(r === 'latest' ? 'help.update.latest' : 'help.update.unsupported'));
+  } });
+  return card(t('help.update.title'), 'system_update', h('div', { class: 'stack-sm' }, h('p', {}, t('help.update.text')), build, btn));
+}
+
 export default function render(ctx) {
   const { t, store } = ctx;
   const pres = store.get().session?.presidentName;
@@ -31,6 +44,7 @@ export default function render(ctx) {
           h('ol', {}, FALLBACK_STEPS.map((k) => h('li', {}, t(`help.fallback.${k}`)))),
           h('p', {}, t('help.fallback.note')))))),
     h('div', { style: 'margin-top:16px' }, installCard(t)),
+    h('div', { style: 'margin-top:16px' }, updateCard(t)),
     h('div', { style: 'margin-top:16px' }, card(t('help.stuck.title'), 'support_agent',
       h('p', {}, pres ? t('help.stuck.named', { name: pres }) : t('help.stuck.text')))));
 }

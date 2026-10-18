@@ -7,7 +7,7 @@ import { createAuth, decodeJwt } from './auth.js';
 import { createRouter } from './router.js';
 import { h, icon, button, toast, busy, setMyPhoto } from './ui.js';
 import { createSwr } from './swr.js';
-import { registerPwa } from './pwa.js';
+import { registerPwa, noteBackendVersion } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
 import { devbar } from './devbar.js';
 
@@ -67,7 +67,7 @@ if (mock) {
 }
 
 // All views call the API through here: it flags offline/expired states globally.
-const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken() });
+const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken(), onVersion: noteBackendVersion });
 const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory|importSheet|monthly|pending|results|video|check|[pP]review)$/;      // reads: no blocking overlay, and the stored answers are kept
 // A floating "Loading" bar just under the header while data is fetched in the background (stored answers are shown first, see swr.js).
 const syncText = h('span', {});

@@ -36,10 +36,11 @@ export function fetchTransport(url, fetchImpl = globalThis.fetch, timeoutMs = 30
   };
 }
 
-// createClient({ transport, getIdToken, retries, delayMs, sleep, reqId })
+// createClient({ transport, getIdToken, retries, delayMs, sleep, reqId, onVersion })
+// onVersion(version) is called with the backend version every answer carries (errors too), so the app can offer an update when it changes.
 // Retries only when the transport reports a network failure, reusing the same reqId (server dedupes writes).
 export function createClient({ transport, getIdToken, retries = 2, delayMs = 600,
-  sleep = (ms) => new Promise((r) => setTimeout(r, ms)), reqId = newReqId } = {}) {
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)), reqId = newReqId, onVersion } = {}) {
   async function call(action, payload = {}) {
     const body = { action, idToken: await getIdToken?.(), payload, reqId: reqId() };
     let attempt = 0;
@@ -51,6 +52,7 @@ export function createClient({ transport, getIdToken, retries = 2, delayMs = 600
         if (e.network && attempt < retries) { await sleep(delayMs * 2 ** attempt); attempt++; continue; }
         throw new ApiError('NETWORK', e.message);
       }
+      if (res?.version) try { onVersion?.(res.version); } catch { /* never fail a call over the version check */ }
       if (res && res.ok === true) return res.data;
       const er = res && res.error;
       throw new ApiError(er?.code || 'SERVER', er?.message, er);
