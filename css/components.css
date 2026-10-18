@@ -50,6 +50,10 @@ a.list-row:hover .grow { text-decoration: underline; }
 .page:has(.fab) { padding-bottom: 72px; }          /* the last row stays reachable above the button */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s2); }
 .stat { display: flex; flex-direction: column; gap: 2px; padding: var(--s3); border: 1px solid var(--c-border); border-radius: var(--r); }
+.stat { text-decoration: none; color: inherit; font: inherit; text-align: start; background: transparent; }
+a.stat, button.stat { cursor: pointer; }
+.stats ~ p { margin-block: var(--s1) 0; }
+.stats + p { margin-top: var(--s3); }        /* the lines under the tiles keep clear of them */
 .stat b.neg { color: var(--c-bad); }
 .stat b { font-size: var(--fs-h2, 1.75rem); font-variant-numeric: tabular-nums; }
 .fab:hover { background: var(--c-primary-hover); }
