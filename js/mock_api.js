@@ -318,6 +318,10 @@ export function createMock({ delayMs = 120 } = {}) {
       matrix[p.role][p.entity] = verbs.join('');
       return ok({ grants: matrix[p.role][p.entity] });
     },
+    'roles.setMany': (u, p) => {
+      for (const q of p.changes || []) { const r = handlers['roles.set'](u, q); if (!r.ok) return r; }
+      return ok({ changed: (p.changes || []).length });
+    },
     'members.setMobileVisibility': (u, p) => {
       if (typeof p.show !== 'boolean') return fail('INVALID', 'show must be true or false');
       u.showMobile = p.show; return ok({ showMobile: p.show });

@@ -84,12 +84,6 @@ export default function render(ctx) {
         return rows.length ? rows.map(([href, text]) => h('a', { class: 'list-row', href }, h('span', { class: 'grow' }, text), icon('chevron_right'))) : null;
       } }));
   }
-  // Quick buttons for roles that can record payments or add expenses.
-  const quick = [
-    can('maintenance_payments', 'c') && button(t('home.quick.payment'), { kind: 'primary', icon: 'receipt_long', href: '#/money' }),
-    can('expenses', 'c') && button(t('home.quick.expense'), { icon: 'add', href: '#/money' }),
-  ].filter(Boolean);
-
   if (hasModule('maintenance') && (can('dues', 'r') || r('maintenance_payments'))) {
     cards.push(lazyCard(ctx, { title: t('home.maint.title'), ic: 'home_work', load: async () => summarize(await home('maintenance.mine')), act: (d) => !!d.due,
       render: (d) => [
@@ -156,6 +150,5 @@ export default function render(ctx) {
   return h('div', { class: 'page wide' },
     newPres,
     h('div', { class: 'row', style: 'margin-bottom:16px' }, h('h1', {}, t('home.greeting', { name: first })), rolePill(s.role), s.plotKeys.map(plotChip)),
-    quick.length ? h('div', { class: 'btn-row', style: 'margin-bottom:16px;flex-direction:row;flex-wrap:wrap;justify-content:flex-start' }, quick) : null,
     grid, none);
 }

@@ -172,10 +172,10 @@ export default function render(ctx) {
     openSheet({ title: t('roles.confirmTitle', { n: cs.length }), body: h('ul', { class: 'stack-sm', style: 'padding-inline-start:20px' }, lines), actions: [
       { label: t('roles.apply'), kind: 'primary', keepOpen: true, onClick: async (close) => {
         try {
-          for (const c of cs) {
+          await ctx.api.call('roles.setMany', { changes: cs.map((c) => {   // one request for all ticks
             const g = working[c.role][c.entity];
-            await ctx.api.call('roles.set', { role: c.role, entity: c.entity, c: g.includes('c'), r: g.includes('r'), u: g.includes('u'), d: g.includes('d') });
-          }
+            return { role: c.role, entity: c.entity, c: g.includes('c'), r: g.includes('r'), u: g.includes('u'), d: g.includes('d') };
+          }) });
           close(); toast(t('common.saved')); load();
         } catch (e) { close(); toastError(friendly(e, t)); load(); }
       } },
@@ -185,13 +185,11 @@ export default function render(ctx) {
   function draw() {
     const roles = data.roles.filter((r) => r !== 'President');
     if (matchMedia(WIDE).matches) {
-      box.replaceChildren(h('div', { class: 'banner info', style: 'border-radius:12px;border:1px solid var(--c-border)' }, icon('info'), h('div', { class: 'grow' }, t('roles.rules'))), can('roles_config', 'c') ? button(t('roles.new'), { icon: 'add', onClick: newRoleSheet }) : null, matrixTable(roles), foot);
+      box.replaceChildren(matrixTable(roles), foot);
       drawFoot();
       return;
     }
     box.replaceChildren(
-      h('div', { class: 'banner info', style: 'border-radius:12px;border:1px solid var(--c-border)' }, icon('info'), h('div', { class: 'grow' }, t('roles.rules'))),
-      can('roles_config', 'c') ? button(t('roles.new'), { icon: 'add', onClick: newRoleSheet }) : null,
       h('div', { class: 'field' }, h('label', { for: 'roles-pick' }, t('roles.pick')),
         h('select', { id: 'roles-pick', onChange: (ev) => { role = ev.target.value; draw(); } }, [...roles, 'President'].map((r) => h('option', { value: r, selected: r === role }, r)))),
       role === 'President'
@@ -205,6 +203,20 @@ export default function render(ctx) {
   const onResize = () => { if (!page.isConnected) { removeEventListener('resize', onResize); return; } const w = matchMedia(WIDE).matches; if (w !== wasWide && data) { wasWide = w; draw(); } };   // unsaved ticks are kept: both views edit `working`
   addEventListener('resize', onResize);
   load();
-  const page = h('div', { class: 'page stack' }, h('h1', {}, t('menu.roles')), box);
+  // Title row: the rules note sits behind an info button (tap to show, tap again or outside to hide); "+ Role" is on the right.
+  const tip = h('div', { class: 'tip', id: 'roles-tip', role: 'tooltip', hidden: true }, t('roles.rules'));
+  const info = h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('roles.rulesLabel'), 'aria-expanded': 'false', 'aria-describedby': 'roles-tip',
+    onClick: (e) => { e.stopPropagation(); setTip(tip.hidden); } }, icon('info'));
+  function setTip(show) {
+    tip.hidden = !show; info.setAttribute('aria-expanded', String(show));
+    if (show) { addEventListener('click', hideTip); addEventListener('keydown', onKey); } else { removeEventListener('click', hideTip); removeEventListener('keydown', onKey); }
+  }
+  const hideTip = () => setTip(false);
+  const onKey = (e) => { if (e.key === 'Escape') setTip(false); };
+  const page = h('div', { class: 'page stack' },
+    h('div', { class: 'row-between', style: 'flex-wrap:nowrap' },
+      h('div', { class: 'row', style: 'gap:0;flex-wrap:nowrap' }, h('h1', {}, t('menu.roles')), info),
+      can('roles_config', 'c') ? button(t('roles.newShort'), { icon: 'add', onClick: newRoleSheet }) : null),
+    tip, box);
   return page;
 }

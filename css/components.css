@@ -265,3 +265,7 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .rep-table thead th { font-weight: 600; min-width: 96px; }
 .rep-table tbody th { text-align: start; white-space: nowrap; font-weight: 600; position: sticky; inset-inline-start: 0; background: var(--c-bg); }
 .rep-table input[type="checkbox"] { width: 22px; height: 22px; }
+
+/* Tooltip opened by an info button (Roles) */
+.tip { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; padding: 12px 14px; font-size: .9rem; box-shadow: 0 4px 16px rgb(0 0 0 / .25); }
+.tip[hidden] { display: none; }
