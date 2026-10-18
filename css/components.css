@@ -87,6 +87,18 @@ a.stat, button.stat { cursor: pointer; }
 
 /* sheet / dialog: bottom sheet on phone, centred dialog from tablet */
 dialog.sheet { border: 1px solid var(--c-border); background: var(--c-bg); color: var(--c-text); padding: 0; width: 100%; max-width: 100%; margin: auto 0 0; border-radius: var(--r) var(--r) 0 0; max-height: 90vh; overflow: auto; }
+/* Photo viewer in the gallery: full height from the first moment, the picture fades in over a spinner. */
+.viewer { position: relative; min-height: 60vh; display: flex; align-items: center; justify-content: center; background: var(--c-surface); border-radius: var(--r); touch-action: pan-y; overflow: hidden; }
+.viewer-img { max-width: 100%; max-height: 70vh; object-fit: contain; display: block; }
+.viewer-img[hidden], .viewer-spin[hidden] { display: none; }
+.viewer-spin { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--c-muted); }
+.viewer-spin .spinner { width: 32px; height: 32px; }
+.viewer-nav { position: absolute; top: 50%; transform: translateY(-50%); background: var(--c-scrim); color: #fff; }
+.viewer-nav:hover { background: var(--c-scrim); }
+.viewer-nav.prev { inset-inline-start: var(--s2); }
+.viewer-nav.next { inset-inline-end: var(--s2); }
+.viewer-nav:disabled { opacity: .3; cursor: default; }
+.viewer-pos { text-align: center; margin: 0; }
 dialog.sheet::backdrop { background: var(--c-scrim); }
 dialog.sheet .sheet-in { padding: var(--s3) var(--gutter) calc(var(--s3) + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: var(--s3); }
 @media (min-width: 768px) { dialog.sheet { margin: auto; width: 400px; border-radius: var(--r); } dialog.sheet.wide { width: 560px; } }

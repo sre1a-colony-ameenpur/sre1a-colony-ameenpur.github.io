@@ -27,15 +27,60 @@ export default function render(ctx) {
   };
 
   const proof = (x) => x.category === 'expense_proofs' || x.category === 'payment_proofs';
+  // Full-size viewer: opens at its full height with a spinner until the picture arrives, steps through the photos on screen with the arrows,
+  // the arrow keys or a swipe. Videos open in the player and are skipped when stepping.
   async function open(x) {
     if (x.kind === 'video') return playVideo(ctx, x.id);
-    try {
-      const body = proof(x) ? await ctx.api.call('gallery.proof', { category: x.category, id: x.id, size: 'full' })
-        : x.public_url ? null : await ctx.api.call('media.photo', { id: x.id, size: 'full' });
-      const src = body ? `data:image/jpeg;base64,${body.jpegBase64}` : x.public_url.replace('sz=w400', 'sz=w1600');
-      openSheet({ title: x.item_title || t('cmp.photo'), wide: true, body: h('div', { class: 'stack-sm' }, h('img', { src, alt: x.item_title || '', style: 'width:100%' }),
-        x.item_id && !proof(x) ? button(t('gal.moreFrom', { name: x.item_title }), { kind: 'text', icon: 'filter_alt', onClick: () => { item = { id: x.item_id, title: x.item_title }; document.querySelector('dialog')?.close?.(); load(); } }) : null), actions: [{ label: t('common.close') }] });
-    } catch (e) { toast(friendly(e, t)); }
+    const photos = () => items.filter((i) => i.kind !== 'video');
+    let pos = Math.max(0, photos().findIndex((i) => i.id === x.id && i.category === x.category));
+    const spin = h('div', { class: 'viewer-spin', role: 'status', 'aria-label': t('common.loading') }, h('span', { class: 'spinner' }));
+    const img = h('img', { alt: '', class: 'viewer-img', hidden: true });
+    const prev = h('button', { type: 'button', class: 'icon-btn viewer-nav prev', 'aria-label': t('gal.prev'), onClick: () => step(-1) }, icon('chevron_left'));
+    const next = h('button', { type: 'button', class: 'icon-btn viewer-nav next', 'aria-label': t('gal.next'), onClick: () => step(1) }, icon('chevron_right'));
+    const where = h('p', { class: 'small muted viewer-pos', role: 'status' });
+    const moreBox = h('div', {});
+    const stage = h('div', { class: 'viewer' }, spin, img, prev, next);
+    let token = 0, sheet;
+    const srcOf = async (p) => {
+      if (proof(p)) return `data:image/jpeg;base64,${(await ctx.api.call('gallery.proof', { category: p.category, id: p.id, size: 'full' })).jpegBase64}`;
+      if (p.public_url) return p.public_url.replace('sz=w400', 'sz=w1600');
+      return `data:image/jpeg;base64,${(await ctx.api.call('media.photo', { id: p.id, size: 'full' })).jpegBase64}`;
+    };
+    async function show() {
+      const list = photos(), p = list[pos], mine = ++token;
+      img.hidden = true; spin.hidden = false; spin.replaceChildren(h('span', { class: 'spinner' }));
+      sheet.el.querySelector('#sheet-title').textContent = p.item_title || t('cmp.photo');
+      where.textContent = t('gal.position', { i: pos + 1, n: list.length + (cursor ? '+' : '') });
+      prev.disabled = pos === 0; next.disabled = pos === list.length - 1 && !cursor;
+      moreBox.replaceChildren(p.item_id && !proof(p) ? button(t('gal.moreFrom', { name: p.item_title }), { kind: 'text', icon: 'filter_alt', onClick: () => { item = { id: p.item_id, title: p.item_title }; sheet.close(); load(); } }) : '');
+      try {
+        const src = await srcOf(p);
+        if (mine !== token) return;                                   // a newer step has taken over
+        img.onload = () => { if (mine === token) { spin.hidden = true; img.hidden = false; } };
+        img.onerror = () => { if (mine === token) spin.replaceChildren(icon('broken_image')); };
+        img.src = src; img.alt = p.item_title || '';
+        // Warm the next picture so a step forward is quick.
+        const nx = list[pos + 1]; if (nx && nx.public_url) new Image().src = nx.public_url.replace('sz=w400', 'sz=w1600');
+      } catch (e) { if (mine === token) { spin.replaceChildren(icon('broken_image')); toast(friendly(e, t)); } }
+    }
+    async function step(d) {
+      if (d > 0 && pos === photos().length - 1 && cursor) await load(true);       // reached the last loaded photo: fetch the next page
+      const n = pos + d;
+      if (n < 0 || n >= photos().length) return;
+      pos = n; show();
+    }
+    let sx = 0, sy = 0;
+    stage.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    stage.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx < 0 ? 1 : -1);          // swipe left = next
+    }, { passive: true });
+    const onKey = (e) => { if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1); };
+    sheet = openSheet({ title: x.item_title || t('cmp.photo'), wide: true, body: h('div', { class: 'stack-sm' }, stage, where, moreBox), actions: [{ label: t('common.close') }],
+      onClose: () => document.removeEventListener('keydown', onKey) });
+    sheet.el.classList.add('viewer-sheet');
+    document.addEventListener('keydown', onKey);
+    show();
   }
 
   function tile(x) {

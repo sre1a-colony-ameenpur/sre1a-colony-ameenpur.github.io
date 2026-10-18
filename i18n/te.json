@@ -1118,5 +1118,8 @@
  "gal.kind": "ఫోటోలు లేదా వీడియోలు",
  "gal.none": "ఇక్కడ ఇంకా ఏమీ లేదు.",
  "gal.count": "{n} అంశాలు",
- "gal.moreFrom": "{name} నుండి మరిన్ని"
+ "gal.moreFrom": "{name} నుండి మరిన్ని",
+ "gal.prev": "మునుపటి ఫోటో",
+ "gal.next": "తదుపరి ఫోటో",
+ "gal.position": "{n} లో {i}"
 }

@@ -1118,5 +1118,8 @@
  "gal.kind": "Photos or videos",
  "gal.none": "Nothing here yet.",
  "gal.count": "{n} items",
- "gal.moreFrom": "More from {name}"
+ "gal.moreFrom": "More from {name}",
+ "gal.prev": "Previous photo",
+ "gal.next": "Next photo",
+ "gal.position": "{i} of {n}"
 }
