@@ -8,9 +8,10 @@ import { summarize, currentTotals } from '../maint.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 
 // A card that loads independently. render(data) returns nodes, or null to hide the card.
+// act(data) says the card needs something from this member (money owed, a vote to cast); those cards sort above the rest (CSS order, so nothing moves in the DOM).
 // Stored answers are drawn first; when the fresh answer arrives every card re-runs quietly (the bus), without a skeleton.
 const bus = new Set();
-function lazyCard(ctx, { title, ic, load, render, cls = '' }) {
+function lazyCard(ctx, { title, ic, load, render, act, cls = '' }) {
   const box = h('section', { class: `card ${cls}`.trim(), 'aria-busy': 'true' });
   const head = () => h('h2', { class: 'card-title' }, icon(ic), title);
   async function run(silent = false) {
@@ -19,8 +20,10 @@ function lazyCard(ctx, { title, ic, load, render, cls = '' }) {
       box.replaceChildren(head(), h('div', { class: 'skel line', style: 'width:70%;margin-top:8px' }), h('div', { class: 'skel line', style: 'width:45%;margin-top:8px' }));
     }
     try {
-      const out = render(await load());
+      const data = await load();
+      const out = render(data);
       if (!out) { box.remove(); return; }
+      box.style.order = cls.includes('accent') ? -1 : act?.(data) ? 0 : 1;
       box.replaceChildren(head(), ...out.filter(Boolean));
     } catch (e) { if (!silent) box.replaceChildren(head(), errorState(friendly(e, ctx.t), run)); }
     box.removeAttribute('aria-busy');
@@ -88,7 +91,7 @@ export default function render(ctx) {
   ].filter(Boolean);
 
   if (hasModule('maintenance') && (can('dues', 'r') || r('maintenance_payments'))) {
-    cards.push(lazyCard(ctx, { title: t('home.maint.title'), ic: 'home_work', load: async () => summarize(await home('maintenance.mine')),
+    cards.push(lazyCard(ctx, { title: t('home.maint.title'), ic: 'home_work', load: async () => summarize(await home('maintenance.mine')), act: (d) => !!d.due,
       render: (d) => [
         d.paidUpTo ? h('p', {}, t('home.maint.paidUpTo', { month: monthLabel(d.paidUpTo) })) : null,
         d.due ? h('div', { class: 'list-row' }, h('div', { class: 'grow' }, h('span', { class: 'amount' }, money(d.due.remaining_paise)), ' ', t('home.maint.for', { month: monthLabel(d.due.month) })),
@@ -97,14 +100,14 @@ export default function render(ctx) {
         link('#/money', t('common.view'))] }));
   }
   if (hasModule('fees') && (can('dues', 'r') || r('maintenance_payments'))) {
-    cards.push(lazyCard(ctx, { title: t('home.fees.title'), ic: 'request_quote', load: async () => (await home('dues.mine')).items.filter((d) => d.status !== 'paid'),
+    cards.push(lazyCard(ctx, { title: t('home.fees.title'), ic: 'request_quote', load: async () => (await home('dues.mine')).items.filter((d) => d.status !== 'paid'), act: (list) => list.length > 0,
       render: (list) => list.length ? [
         ...list.map((d) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, d.title,
           h('div', { class: 'small muted' }, h('span', { class: 'amount' }, money(d.amount_paise - d.paid_paise)), ' · ', t('home.fees.payBy', { date: dateShort(d.due_date) }))), statusPill(d.overdue ? 'overdue' : d.status === 'partly_paid' ? 'partly' : 'due'))),
         link('#/money', t('common.view'))] : null }));
   }
   if (r('polls')) {
-    cards.push(lazyCard(ctx, { title: t('home.polls.title'), ic: 'how_to_vote', load: async () => (await home('polls.list')).items.filter((p) => p.status === 'open'),
+    cards.push(lazyCard(ctx, { title: t('home.polls.title'), ic: 'how_to_vote', load: async () => (await home('polls.list')).items.filter((p) => p.status === 'open'), act: (list) => can('polls', 'vote') && list.some((p) => !p.my_vote.voted),
       render: (list) => list.length ? [
         ...list.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, p.question, h('div', { class: 'small muted' }, closes(p.closes_at))),
           p.my_vote.voted ? statusPill('voted', t('home.polls.voted')) : can('polls', 'vote') ? button(t('home.polls.vote'), { href: `#/community/polls/${p.id}`, kind: 'primary' }) : null)),
