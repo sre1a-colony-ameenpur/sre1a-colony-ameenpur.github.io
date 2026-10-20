@@ -27,10 +27,16 @@ export const onInstallChange = (f) => { installSubs.add(f); return () => install
 // `apply` runs when the member taps Update. The close icon hides the bar for this visit (a member in the middle of something can carry on);
 // it stays hidden for the same update, and comes back on the next visit or when a newer update appears. `key` names the update.
 const dismissed = new Set();
+// What to do when an update is announced: keep the bar that is showing (same update, or the member closed this one), or show this one in its place.
+export const bannerAction = (shownKey, key, closed) => (closed || shownKey === key ? 'keep' : 'show');
+// One bar at a time, always for the newest update: a bar for an older update is replaced, so a second release never needs a second tap.
 function showUpdateBanner(apply, key = 'web') {
-  if (document.getElementById('update-banner') || dismissed.has(key)) return;
+  const old = document.getElementById('update-banner');
+  const what = bannerAction(old ? old.dataset.key : null, key, dismissed.has(key));
+  if (what === 'keep') return;
+  if (old) old.remove();
   const btn = button(t('pwa.update'), { kind: 'primary', icon: 'refresh', onClick: async () => { btn.disabled = true; try { await apply(); } finally { setTimeout(() => { btn.disabled = false; }, 6000); } } });   // enabled again if nothing happened
-  const bar = h('div', { id: 'update-banner', class: 'update-banner', role: 'status' },
+  const bar = h('div', { id: 'update-banner', class: 'update-banner', role: 'status', 'data-key': key },
     icon('system_update'), h('span', { class: 'grow' }, t('pwa.updateReady')), btn,
     h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('common.close'), title: t('common.close'), onClick: () => { dismissed.add(key); bar.remove(); } }, icon('close')));
   document.body.append(bar);
@@ -43,6 +49,7 @@ const workerKey = (w) => { if (!workerIds.has(w)) workerIds.set(w, 'web:' + (wor
 let reloading = false;
 const reloadOnce = () => { if (!reloading) { reloading = true; location.reload(); } };
 export async function applyUpdate() {
+  if (latestBackend) { try { localStorage.setItem(BE_KEY, latestBackend); } catch { /* the bar may return once */ } }       // the backend version this page has seen counts as taken, whichever bar was tapped
   let waiting = null;
   try { waiting = (registration || await navigator.serviceWorker?.getRegistration?.())?.waiting || null; } catch { waiting = null; }
   if (!waiting) { reloadOnce(); return; }
@@ -54,14 +61,13 @@ const applyWorker = () => applyUpdate;
 // The backend puts its version on every answer. The first one is remembered; a different one later means the backend was released,
 // so offer the update. The remembered version moves on only when the member taps Update, so an ignored bar comes back next time.
 const BE_KEY = 'sre.beVersion';
+let latestBackend = null;
 export function noteBackendVersion(v) {
   let seen = null;
   try { seen = localStorage.getItem(BE_KEY); if (!seen) localStorage.setItem(BE_KEY, v); } catch { return; }
   if (!seen || seen === v) return;
-  showUpdateBanner(async () => {
-    try { localStorage.setItem(BE_KEY, v); } catch { /* the bar may return once */ }
-    await applyUpdate();
-  }, 'be:' + v);
+  latestBackend = v;
+  showUpdateBanner(applyUpdate, 'be:' + v);
 }
 
 const CHECK_MS = 30000;
