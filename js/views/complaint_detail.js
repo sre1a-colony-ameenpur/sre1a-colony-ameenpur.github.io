@@ -3,7 +3,7 @@ import { withCamera } from '../camera.js';
 import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { duration } from '../fmt.js';
-import { can, store } from '../store.js';
+import { can, store, isFullRole } from '../store.js';
 import { plotChip } from '../ui.js';
 import { videosCard } from '../video.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
@@ -43,7 +43,7 @@ export default async function render(ctx) {
           h('p', { class: 'small muted' }, ...withWhen(t('cmp.raisedOn', { date: '{when}', name: c.raised_by_name }), c.raised_at)),
           c.resolved_at ? h('p', { class: 'small muted' }, ...withWhen(t('cmp.resolvedOn', { date: '{when}' }), c.resolved_at)) : null,
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
-            store.get().session?.role === 'President' && c.stage !== 'Closed' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
+            isFullRole(store.get().session?.role) && c.stage !== 'Closed' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
           c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
             try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toastError(friendly(e, t)); }
           } }) : null)),

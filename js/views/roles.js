@@ -2,11 +2,11 @@
 // Phone-first: one role at a time. From 960 px wide, all roles side by side in one table. The server enforces the locked rights too.
 import { h, card, button, field, plotChip, avatar, rolePill, setCustomRoles, openSheet, toast, errorState, loadingRegion, icon, statusPill, toastError } from '../ui.js';
 import { friendly } from '../api.js';
-import { can } from '../store.js';
+import { can, isFullRole } from '../store.js';
 import { dashKey } from './members.js';
 
 const VERBS = ['c', 'r', 'u', 'd'];
-// Rights only the President can hold (mirrors the backend); the President column is always full.
+// Rights only the President and Developers can hold (mirrors the backend); their columns are always full.
 const PRESIDENT_ONLY = { roles_config: 'cud', plot_change_requests: 'ud' };
 const ORDER = ['members', 'plots', 'plot_transfer', 'plot_change_requests', 'expenses', 'expense_approval', 'maintenance_rates', 'maintenance_payments',
   'payment_confirmation', 'membership_rates', 'fee_requests', 'maintenance_dues', 'complaints', 'complaint_stage', 'comments', 'events', 'media',
@@ -136,7 +136,7 @@ export default function render(ctx) {
     const cols = [...roles, 'President'];
     const holderOf = (r) => (r === 'Member' ? t('roles.everyoneShort') : (holders.find((x) => x.role === r)?.member?.name || t('roles.vacant')));
     const cell = (r, e) => {
-      const full = r === 'President';
+      const full = isFullRole(r);
       const have = full ? VERBS.join('') : working[r][e];
       return h('td', { class: 'rm-cell' }, h('div', { class: 'row', style: 'gap:2px;justify-content:center' }, VERBS.map((v) => {
         if (READ_ONLY[e] && v !== 'r') return h('span', { style: 'width:28px' });
@@ -192,10 +192,10 @@ export default function render(ctx) {
     box.replaceChildren(
       h('div', { class: 'field' }, h('label', { for: 'roles-pick' }, t('roles.pick')),
         h('select', { id: 'roles-pick', onChange: (ev) => { role = ev.target.value; draw(); } }, [...roles, 'President'].map((r) => h('option', { value: r, selected: r === role }, r)))),
-      role === 'President'
-        ? card(t('roles.president'), 'lock', h('p', {}, t('roles.alwaysFull')), holderStrip())
+      isFullRole(role)
+        ? card(t(role === 'Developer' ? 'roles.developer' : 'roles.president'), 'lock', h('p', {}, t('roles.alwaysFull')), holderStrip())
         : card(null, null, holderStrip(), ...ORDER.filter((e) => data.entities.includes(e)).map(toggleRow)),
-      role === 'President' ? null : foot);
+      isFullRole(role) ? null : foot);
     drawFoot();
   }
 

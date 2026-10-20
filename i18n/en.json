@@ -634,6 +634,7 @@
  "roles.change": "Change in Members",
  "roles.everyone": "Every member who is not on the committee.",
  "roles.president": "President",
+ "roles.developer": "Developer",
  "roles.alwaysFull": "Always full access. This cannot be changed.",
  "roles.presidentOnly": "Only the President",
  "roles.rules": "Some rules never change: approvals need a second person, approved money entries are locked, secret votes stay secret.",

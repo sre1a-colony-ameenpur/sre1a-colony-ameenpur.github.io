@@ -2,7 +2,7 @@
 import { h, button, field, openSheet, confirmSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
-import { can, store, hasModule } from '../store.js';
+import { can, store, hasModule, isFullRole } from '../store.js';
 import { ROLES, loadRoles, dashKey, plotsOf } from './members.js';
 
 const val = (el) => el.querySelector('input,select').value.trim();
@@ -26,7 +26,7 @@ export function memberSheet(ctx, { member, items, done }) {
   const { t } = ctx;
   const editing = !!member;
   const me = store.get().session;
-  const isPresident = me.role === 'President';
+  const isPresident = isFullRole(me.role);
   const note = h('div', { role: 'alert' });
   const showErr = (text) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error', 'sm'), text));
 

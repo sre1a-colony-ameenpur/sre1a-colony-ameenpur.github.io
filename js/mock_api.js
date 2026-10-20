@@ -22,7 +22,7 @@ const CAPS = {
     expense_approval: R('u'), maintenance_payments: R('r'), payment_confirmation: R('u'), maintenance_rates: FULL,
     membership_rates: FULL, events: FULL, media: FULL, meetings: FULL, attendance: R('ru'), action_items: FULL,
     polls: [...FULL, 'vote'], fee_requests: FULL, maintenance_dues: R('cru'), members: FULL, roles_config: R('ru'),
-    plots: R('ru'), plot_transfer: R('cr'), plot_change_requests: R('ru'), handover: R('c') },
+    plots: R('ru'), plot_transfer: R('cr'), plot_change_requests: R('ru'), handover: R('c'), settings: R('r') },
 };
 CAPS.lakshmi = CAPS.member;
 
@@ -84,6 +84,7 @@ function buildMatrix() {
     }
   }
   m.President = Object.fromEntries(ENTITIES.map((e) => [e, 'crud']));
+  m.Developer = Object.fromEntries(ENTITIES.map((e) => [e, 'crud']));      // built in, any number of holders, always full
   return m;
 }
 
@@ -300,20 +301,20 @@ export function createMock({ delayMs = 120 } = {}) {
     'members.setRole': (u, p) => {
       const m = members.find((x) => x.email === String(p.email || '').toLowerCase());
       if (p.role === 'President') return fail('FORBIDDEN', 'The President role changes only by handover');
-      if (!ROLE_NAMES.includes(p.role)) return fail('INVALID', 'Unknown role');
+      if (!ROLE_NAMES.includes(p.role) && p.role !== 'Developer') return fail('INVALID', 'Unknown role');
       if (!m) return fail('NOT_FOUND', 'Member not found');
       if (m.role === 'President') return fail('FORBIDDEN', 'The President role changes only by handover');
       if (m.role === p.role) return fail('CONFLICT', 'Already has this role');
-      const holder = p.role !== 'Member' && members.find((x) => x.role === p.role && x !== m);
+      const holder = p.role !== 'Member' && p.role !== 'Developer' && members.find((x) => x.role === p.role && x !== m);
       if (holder && !p.replace) return fail('CONFLICT', 'This role is already held', { details: { holder: { name: holder.name, plot_keys: holder.plotKeys.map((k) => k.replace('-', '')) } } });
       if (holder) holder.role = 'Member';
       m.role = p.role;
       return ok({ email_norm: m.email, role: m.role, replaced: holder ? holder.name : null });
     },
-    'roles.get': () => ok({ matrix: JSON.parse(JSON.stringify(matrix)), entities: ENTITIES, roles: [...ROLE_NAMES, 'President'] }),
+    'roles.get': () => ok({ matrix: JSON.parse(JSON.stringify(matrix)), entities: ENTITIES, roles: [...ROLE_NAMES, 'Developer', 'President'] }),
     'roles.set': (u, p) => {
       if (!matrix[p.role] || !ENTITIES.includes(p.entity)) return fail('INVALID', 'Unknown role, record or action');
-      if (p.role === 'President') return fail('FORBIDDEN', 'President grants cannot be changed');
+      if (p.role === 'President' || p.role === 'Developer') return fail('FORBIDDEN', 'President and Developer grants cannot be changed');
       const verbs = 'crud'.split('').filter((v) => p[v] === true);
       if (verbs.some((v) => (PRESIDENT_ONLY[p.entity] || '').includes(v))) return fail('FORBIDDEN', 'Only the President can have this right');
       matrix[p.role][p.entity] = verbs.join('');

@@ -25,6 +25,8 @@ export function hasModule(name, s = state) {
   const list = s.session?.modules;
   return !list || list.includes(name);
 }
+// President and Developer hold every right; the app offers them the President-only screens (handover is still the President's alone).
+export function isFullRole(role) { return role === 'President' || role === 'Developer'; }
 export function canAny(entity, s = state) {
   return !!s.session?.caps?.[entity]?.length;
 }

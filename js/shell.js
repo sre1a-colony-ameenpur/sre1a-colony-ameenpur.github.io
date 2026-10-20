@@ -36,7 +36,7 @@ export function menuItems(s) {
     { path: '/roles', icon: 'admin_panel_settings', label: 'menu.roles', hint: view('roles_config'), show: can('roles_config', 'r', s) },
     { path: '/plots', icon: 'grid_view', label: 'menu.plots', hint: view('plots'), show: can('plots', 'r', s) },
     { path: '/audit', icon: 'history', label: 'menu.audit', show: can('audit', 'r', s) },
-    { path: '/settings', icon: 'settings', label: 'menu.settings', show: can('handover', 'c', s) },      // the President's
+    { path: '/settings', icon: 'settings', label: 'menu.settings', show: can('settings', 'r', s) },      // the President's and the Developers'
     { path: '/handover', icon: 'swap_horiz', label: 'menu.handover', show: can('handover', 'c', s) },
     { path: '/whats-new', icon: 'new_releases', label: 'menu.whatsNew', hint: unseenRelease() ? t('menu.new') : '', show: true },
     { path: '/help', icon: 'help', label: 'menu.help', show: true },

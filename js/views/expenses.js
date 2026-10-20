@@ -3,7 +3,7 @@ import { withCamera } from '../camera.js';
 import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
-import { can, hasModule } from '../store.js';
+import { can, hasModule, store } from '../store.js';
 import { compressPhoto } from '../photo.js';
 
 export const CATEGORIES = ['Electricity', 'Water', 'Security', 'Repairs', 'Gardening', 'Events', 'Other'];
@@ -108,7 +108,7 @@ export function addSheet(ctx, done, eventId = '') {
   const event = eventPicker(ctx, 'e-event', eventId);
   const file = h('input', { type: 'file', accept: 'image/*', id: 'e-file' });
   const proof = h('div', { class: 'field' }, h('label', { for: 'e-file' }, t('exp.proof')), withCamera(file, t), h('div', { class: 'help' }, t('exp.proofHelp')));
-  const autoOk = can('expense_approval', 'u');   // the President's own entries are approved on entry
+  const autoOk = store.get().session?.role === 'President';   // the President's own entries are approved on entry
   const note = h('div', { role: 'alert' });
   const warn = (m) => note.replaceChildren(h('div', { class: 'banner warn', style: 'border-radius:12px' }, icon('error'), m));
   openSheet({ title: t('exp.add'), body: h('div', { class: 'stack' }, date, amount, cat, event, reason, proof, h('p', { class: 'small muted' }, t(autoOk ? 'exp.autoNote' : 'exp.approvalNote')), note), actions: [

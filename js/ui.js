@@ -45,7 +45,7 @@ export function statusPill(kind, label) {
 // fill with a dashed outline, so up to 27 roles stay tellable apart. The built-in roles hold the first places, the roles the President creates follow in the order
 // they were created (the session lists them), so a role keeps its colour while the roles before it stay. Member is a quiet grey. components.css draws hue and tone.
 const HUES = [270, 355, 48, 145, 215, 315, 25, 85, 188];
-const BUILT_IN = ['President', 'Vice President', 'General Secretary', 'Joint Secretary', 'Treasurer'];
+const BUILT_IN = ['President', 'Vice President', 'General Secretary', 'Joint Secretary', 'Treasurer', 'Developer'];
 let customOrder = [];
 export function setCustomRoles(names) { customOrder = Array.isArray(names) ? names.slice() : []; }
 function roleSlot(role) {

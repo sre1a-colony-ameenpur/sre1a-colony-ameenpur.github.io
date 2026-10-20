@@ -2,7 +2,7 @@
 import { h, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, confirmSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
-import { can } from '../store.js';
+import { can, isFullRole } from '../store.js';
 import { transferSheet } from './plot_transfer.js';
 
 export const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
@@ -96,7 +96,7 @@ function plotSheet(ctx, p, done) {
   const { t } = ctx;
   const hist = h('div', { class: 'stack-sm' });
   const cat = h('div');
-  const drawCat = (cur) => cat.replaceChildren(can('plots', 'u') && ctx.store.get().session.role === 'President'
+  const drawCat = (cur) => cat.replaceChildren(can('plots', 'u') && isFullRole(ctx.store.get().session.role)
     ? segmented(CATS.map((c) => [c, t(`plots.cat.${c}`)]), cur, async (v) => {
       try { await ctx.api.call('plots.update', { plotKey: p.plot_key, category: v }); p.category = v; toast(t('common.saved')); done(); } catch (e) { toastError(friendly(e, t)); drawCat(p.category); }
     }, t('plots.category')) : h('span', {}, p.category ? t(`plots.cat.${p.category}`) : t('plots.cat.none')));

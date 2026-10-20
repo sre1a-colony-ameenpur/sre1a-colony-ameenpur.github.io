@@ -2,7 +2,7 @@
 import { h, card, button, toast, icon, errorState, loadingRegion, emptyState, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
-import { store } from '../store.js';
+import { store, isFullRole } from '../store.js';
 
 const MAX_BYTES = 2 * 1024 * 1024;
 const toBase64 = (file) => new Promise((resolve, reject) => {
@@ -14,7 +14,7 @@ const toBase64 = (file) => new Promise((resolve, reject) => {
 
 export default function render(ctx) {
   const { t } = ctx;
-  const isPresident = store.get().session?.role === 'President';
+  const isPresident = isFullRole(store.get().session?.role);
   const body = h('div', { class: 'stack' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.documents')), body);
 
