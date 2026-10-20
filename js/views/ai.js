@@ -4,7 +4,7 @@ import { h, icon, button, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { getLang } from '../i18n.js';
 import {
-  MAX_LEN, SCREENS, historyFor, canSend, showCount, cleanCard, dataValue, dataTitleKey, dataDetail, dataIsEmpty, dataHasValue, rowView, fieldView, actionTexts, actionSummary, infoText, chatErrorKey, loadChat, saveChat,
+  MAX_LEN, SCREENS, historyFor, canSend, showCount, cleanCard, dataValue, dataTitleKey, dataDetail, dataIsEmpty, dataHasValue, rowView, fieldView, actionTexts, actionSummary, confirmMode, applyReady, confirmPayload, infoText, chatErrorKey, loadChat, saveChat,
 } from '../ai_helpers.js';
 
 const EXAMPLES = ['asst.ex1', 'asst.ex2', 'asst.ex3', 'asst.ex4'];
@@ -52,21 +52,30 @@ export default function render(ctx) {
   function actionCard(c, onDone) {
     const tx = actionTexts(c);
     const body = h('div', { class: 'stack-sm' });
+    const mode = confirmMode(c), kind = c.danger ? 'danger solid' : 'primary';
+    let armed = false, typed = '';                                // armed: the "Are you sure?" step of a tap confirmation
     function draw() {
       if (c.state === 'done') body.replaceChildren(h('div', { class: 'row ai-done' }, icon('check_circle', 'sm'), t(tx.done)));
       else if (c.state === 'dismissed') body.replaceChildren(h('div', { class: 'small muted' }, t('asst.act.dismissed')));
-      else {
-        const ok = button(t(tx.confirm), { kind: 'primary', icon: 'bolt', onClick: () => confirm() });
-        body.replaceChildren(h('div', { class: 'row' }, ok, button(t('asst.act.dismiss'), { kind: 'text', onClick: () => { c.state = 'dismissed'; persist(); draw(); } })));
+      else if (armed) {
+        body.replaceChildren(h('div', { class: 'small' }, t('asst.confirm.sure')),
+          h('div', { class: 'row' }, button(t('asst.confirm.yes'), { kind, icon: 'bolt', onClick: () => confirm() }), button(t('asst.confirm.no'), { kind: 'text', onClick: () => { armed = false; draw(); } })));
+      } else {
+        const ok = button(t(tx.confirm), { kind, icon: 'bolt', onClick: () => (mode === 'tap' ? (armed = true, draw()) : confirm()) });
+        const box = mode === 'word' ? h('input', { type: 'text', class: 'ai-word', value: typed, autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', 'aria-label': t('asst.confirm.word', { word: c.confirm.word }),
+          placeholder: t('asst.confirm.word', { word: c.confirm.word }), onInput: (e) => { typed = e.target.value; ok.disabled = !applyReady(c, typed); } }) : null;
+        if (box) ok.disabled = !applyReady(c, typed);
+        body.replaceChildren(...[box ? h('div', { class: 'small muted' }, t('asst.confirm.word', { word: c.confirm.word })) : null, box,
+          h('div', { class: 'row' }, ok, button(t('asst.act.dismiss'), { kind: 'text', onClick: () => { c.state = 'dismissed'; persist(); draw(); } }))].filter(Boolean));
       }
     }
     async function confirm() {
-      if (c.state || confirming.has(c.id)) return;
+      if (c.state || confirming.has(c.id) || !applyReady(c, typed)) return;
       confirming.add(c.id);
       try {
-        await ctx.api.call(c.action, c.payload);                  // a write: stored answers are dropped by api.call, so other screens show the change
+        await ctx.api.call(c.action, confirmPayload(c, typed));   // a write: stored answers are dropped by api.call, so other screens show the change
         c.state = 'done'; persist(); draw(); if (onDone) onDone();
-      } catch (e) { toastError(friendly(e, t)); }
+      } catch (e) { armed = false; toastError(friendly(e, t)); draw(); }
       finally { confirming.delete(c.id); }
     }
     draw();

@@ -22,7 +22,8 @@ function lazyCard(ctx, { title, ic, load, render, act, cls = '' }) {
     try {
       const data = await load();
       const out = render(data);
-      if (!out) { box.remove(); return; }
+      if (!out) { box.style.display = 'none'; box.removeAttribute('aria-busy'); return; }          // nothing to show: hidden, and shown again if a later answer has something
+      box.style.display = '';
       box.style.order = cls.includes('accent') ? -1 : act?.(data) ? 0 : 1;
       box.replaceChildren(head(), ...out.filter(Boolean));
     } catch (e) { if (!silent) box.replaceChildren(head(), errorState(friendly(e, ctx.t), run)); }
@@ -86,7 +87,7 @@ export default function render(ctx) {
   }
   if (hasModule('maintenance') && (can('dues', 'r') || r('maintenance_payments'))) {
     cards.push(lazyCard(ctx, { title: t('home.maint.title'), ic: 'home_work', load: async () => summarize(await home('maintenance.mine')), act: (d) => !!d.due,
-      render: (d) => [
+      render: (d) => !d.paidUpTo && !d.due ? null : [
         d.paidUpTo ? h('p', {}, t('home.maint.paidUpTo', { month: monthLabel(d.paidUpTo) })) : null,
         d.due ? h('div', { class: 'list-row' }, h('div', { class: 'grow' }, h('span', { class: 'amount' }, money(d.due.remaining_paise)), ' ', t('home.maint.for', { month: monthLabel(d.due.month) })),
           statusPill(d.due.status === 'partly_paid' ? 'partly' : 'due')) : null,
@@ -105,7 +106,7 @@ export default function render(ctx) {
       render: (list) => list.length ? [
         ...list.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, p.question, h('div', { class: 'small muted' }, closes(p.closes_at))),
           p.my_vote.voted ? statusPill('voted', t('home.polls.voted')) : can('polls', 'vote') ? button(t('home.polls.vote'), { href: `#/community/polls/${p.id}`, kind: 'primary' }) : null)),
-        can('polls', 'vote') ? h('p', { class: 'small muted' }, t('home.polls.oneVote')) : null] : [h('p', { class: 'muted' }, t('home.polls.none'))] }));
+        can('polls', 'vote') ? h('p', { class: 'small muted' }, t('home.polls.oneVote')) : null] : null }));
   }
   if (r('meetings')) {
     cards.push(lazyCard(ctx, { title: t('home.meeting.title'), ic: 'event_note', load: async () => {
@@ -116,22 +117,22 @@ export default function render(ctx) {
       },
       render: (list) => list[0] ? [
         h('p', {}, h('strong', {}, String(list[0].agenda).split('\n')[0] || t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(list[0].date, list[0].time)}, ${list[0].place}`),
-        list[0].open ? link('#/community', t('home.meeting.actions', { n: list[0].open })) : null] : [h('p', { class: 'muted' }, t('home.meeting.none'))] }));
+        list[0].open ? link('#/community', t('home.meeting.actions', { n: list[0].open })) : null] : null }));
   }
   if (r('complaints')) {
     cards.push(lazyCard(ctx, { title: t('home.complaints.title'), ic: 'report', load: async () => (await home('complaints.list')).items.filter((c) => c.stage !== 'Closed').slice(0, 2),
-      render: (list) => [...(list.length ? list.map((c) => h('a', { class: 'list-row', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))) : [h('p', { class: 'muted' }, t('home.complaints.none'))]),
-        link('#/issues', t('common.viewAll'))] }));
+      render: (list) => list.length ? [...list.map((c) => h('a', { class: 'list-row', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))),
+        link('#/issues', t('common.viewAll'))] : null }));
   }
   if (r('complaints')) {
-    cards.push(lazyCard(ctx, { title: t('pend.title'), ic: 'pending_actions', load: () => home('complaints.pending'), render: (d) => [...pendingBody(t, d), link('#/issues', t('common.viewAll'))] }));
+    cards.push(lazyCard(ctx, { title: t('pend.title'), ic: 'pending_actions', load: () => home('complaints.pending'), render: (d) => d.total ? [...pendingBody(t, d), link('#/issues', t('common.viewAll'))] : null }));
   }
   if (r('events')) {
     cards.push(lazyCard(ctx, { title: t('home.event.title'), ic: 'celebration', load: async () => (await home('events.list')).items.filter((e) => e.upcoming).slice(0, 1),
-      render: (list) => list[0] ? [h('p', {}, h('strong', {}, list[0].title)), h('p', { class: 'muted' }, dateShort(list[0].date)), link(`#/community`, t('common.view'))] : [h('p', { class: 'muted' }, t('home.event.none'))] }));
+      render: (list) => list[0] ? [h('p', {}, h('strong', {}, list[0].title)), h('p', { class: 'muted' }, dateShort(list[0].date)), link(`#/community`, t('common.view'))] : null }));
   }
   if (hasModule('maintenance')) cards.push(lazyCard(ctx, { title: t('home.money.title'), ic: 'savings', load: async () => currentTotals(await home('maintenance.totals')),
-    render: (d) => { const exp = d.collected_paise + d.outstanding_paise || 1; return [h('p', {}, t('home.money.collected', { month: monthLabel(d.month), got: money(d.collected_paise), of: money(exp) })),
+    render: (d) => { const exp = d.collected_paise + d.outstanding_paise || 1; if (!d.collected_paise && !d.outstanding_paise) return null; return [h('p', {}, t('home.money.collected', { month: monthLabel(d.month), got: money(d.collected_paise), of: money(exp) })),
       h('div', { class: 'progress', role: 'img', 'aria-label': `${Math.round(d.collected_paise / exp * 100)}%` }, h('i', { style: `width:${Math.min(100, d.collected_paise / exp * 100)}%` }))]; } }));
 
   // For 14 days after a handover everyone sees who the President is now. No message is sent anywhere.

@@ -1,5 +1,5 @@
 // Pure helpers for the AI chat view (no DOM), so they can be tested on their own.
-import { money, dateShort, timeShort, fullStamp } from './fmt.js';
+import { money, dateShort, timeShort, fullStamp, monthLabel } from './fmt.js';
 
 export const MAX_LEN = 300;
 export const SHOW_COUNT_AT = 250;
@@ -15,17 +15,24 @@ const KIND_ACTIONS = {
   create_poll: ['polls.create'], cancel_poll: ['polls.cancel'], vote_poll: ['polls.vote'], create_event: ['events.create'], update_event: ['events.update'],
   create_action_item: ['actionItems.create'], finish_action_item: ['actionItems.update'], raise_complaint: ['complaints.create'], comment_complaint: ['comments.create'],
   take_on_complaint: ['complaints.takeOn'], move_complaint_stage: ['complaints.stage'], set_mobile_visibility: ['members.setMobileVisibility'], request_plot_change: ['plotRequests.create'],
+  raise_fee_request: ['feeRequests.create'], update_fee_request: ['feeRequests.update'], cancel_fee_request: ['feeRequests.cancel'], raise_dues: ['maintenance.dues.raise'],
+  set_maintenance_rate: ['maintenance.rates.set'], set_membership_rate: ['membership.rates.set'], set_member_role: ['members.setRole'], add_member: ['members.add'],
+  approve_plot_request: ['plotRequests.approve'], reject_plot_request: ['plotRequests.reject'], mark_attendance: ['attendance.set'], remove_member: ['members.remove'],
+  handover_presidency: ['members.handover'], confirm_payment: ['maintenance.payments.confirm', 'dues.payments.confirm'], reverse_payment: ['maintenance.payments.reverse', 'dues.payments.reverse'],
+  approve_expense: ['expenses.approve'], reject_expense: ['expenses.reject'], reverse_expense: ['expenses.reverse'], transfer_plot: ['plots.transfer'],
 };
 export const ACTION_KINDS = Object.keys(KIND_ACTIONS);
-export const DATA_KINDS = ['my_dues', 'maintenance_unpaid', 'maintenance_collected', 'expenses_pending', 'complaints_list', 'next_meeting', 'open_polls', 'upcoming_events', 'my_action_items', 'role_holders', 'find_member'];
-export const INFO_KINDS = ['no_change', 'not_allowed', 'role_exists', 'not_found', 'too_many', 'poll_not_open', 'already_voted', 'no_meeting', 'no_plot', 'missing'];
-export const FIELD_KEYS = ['date', 'time', 'place', 'agenda', 'title', 'description', 'question', 'options', 'type', 'closes_at', 'poll', 'option', 'meeting', 'owner', 'due', 'text', 'complaint', 'stage', 'area', 'plot', 'body', 'show', 'action', 'note', 'reason', 'role'];
-const FIELD_UNITS = ['text', 'date', 'time', 'paise', 'list', 'key'];
+export const DATA_KINDS = ['my_dues', 'maintenance_unpaid', 'maintenance_collected', 'expenses_pending', 'complaints_list', 'next_meeting', 'open_polls', 'upcoming_events', 'my_action_items', 'role_holders', 'find_member',
+  'fee_requests_status', 'plot_requests_pending', 'payments_awaiting', 'expenses_to_decide'];
+export const INFO_KINDS = ['no_change', 'not_allowed', 'role_exists', 'not_found', 'too_many', 'poll_not_open', 'already_voted', 'no_meeting', 'no_plot', 'missing', 'already_done', 'no_rate'];
+export const FIELD_KEYS = ['date', 'time', 'place', 'agenda', 'title', 'description', 'question', 'options', 'type', 'closes_at', 'poll', 'option', 'meeting', 'owner', 'due', 'text', 'complaint', 'stage', 'area', 'plot', 'body', 'show', 'action', 'note', 'reason', 'role',
+  'amount', 'deadline', 'audience', 'members', 'month', 'rate', 'category', 'from', 'member', 'email', 'mobile', 'plots', 'request', 'replaces', 'attendees', 'payment', 'expense', 'receiver', 'effective', 'will_create', 'name'];
+const FIELD_UNITS = ['text', 'date', 'time', 'paise', 'list', 'key', 'month'];
 export const ROW_KEYS = ['maintenance'];
 export const ROW_FLAGS = ['voted', 'overdue'];
-export const VAL_KEYS = ['open', 'secret', 'yes', 'no', 'add', 'remove', 'Acknowledged', 'In progress', 'Resolved'];
-export const MISSING_WHAT = ['date', 'time', 'place', 'question', 'options', 'reason', 'option', 'title', 'text', 'due', 'owner', 'description', 'area', 'plot', 'action', 'stage', 'body', 'closes_at'];
-export const NOT_FOUND_WHAT = ['meeting', 'poll', 'event', 'item', 'complaint', 'option', 'owner'];
+export const VAL_KEYS = ['open', 'secret', 'yes', 'no', 'add', 'remove', 'Acknowledged', 'In progress', 'Resolved', 'all', 'selected', 'house', 'none'];
+export const MISSING_WHAT = ['date', 'time', 'place', 'question', 'options', 'reason', 'option', 'title', 'text', 'due', 'owner', 'description', 'area', 'plot', 'action', 'stage', 'body', 'closes_at', 'amount', 'deadline', 'month', 'category', 'from', 'member', 'email', 'role', 'name', 'plots', 'request', 'payment', 'expense', 'receiver', 'effective', 'attendees', 'mobile'];
+export const NOT_FOUND_WHAT = ['meeting', 'poll', 'event', 'item', 'complaint', 'option', 'owner', 'request', 'member', 'role', 'payment', 'expense', 'plot_request'];
 const MAX_OPTIONS = 8;
 
 // Screens a link card may open: [route, i18n label].
@@ -51,7 +58,21 @@ const isStr = (v) => typeof v === 'string';
 const validRow = (r) => isObj(r) && ((isStr(r.label) && !!r.label) || (r.label === undefined && ROW_KEYS.includes(r.key))) && (r.vacant === undefined || typeof r.vacant === 'boolean') && (r.flag === undefined || ROW_FLAGS.includes(r.flag)) && (r.value === undefined || Number.isFinite(r.value)) && (r.unit === undefined || r.unit === 'paise' || r.unit === 'count')
   && (r.sub === undefined || isStr(r.sub)) && (r.date === undefined || /^\d{4}-\d{2}-\d{2}$/.test(r.date)) && (r.at === undefined || (isStr(r.at) && !Number.isNaN(Date.parse(r.at))));
 const validField = (f) => isObj(f) && FIELD_KEYS.includes(f.key) && (f.unit === undefined || FIELD_UNITS.includes(f.unit))
-  && (f.unit === 'list' ? Array.isArray(f.value) && f.value.every(isStr) : f.unit === 'key' ? VAL_KEYS.includes(f.value) : isStr(f.value) || Number.isFinite(f.value));
+  && (f.unit === 'list' ? Array.isArray(f.value) && f.value.every(isStr) : f.unit === 'key' ? VAL_KEYS.includes(f.value) : f.unit === 'month' ? isStr(f.value) && /^\d{4}-(0[1-9]|1[0-2])$/.test(f.value) : isStr(f.value) || Number.isFinite(f.value));
+
+// confirm: absent, {word:'HANDOVER'} (type it to enable Apply) or {tap:true} (Apply asks "Are you sure?" first). Nothing else.
+export function validConfirm(x) {
+  if (x === undefined) return true;
+  if (!isObj(x)) return false;
+  const keys = Object.keys(x);
+  if (keys.length !== 1) return false;
+  return keys[0] === 'word' ? isStr(x.word) && /^[A-Z]{1,20}$/.test(x.word) : keys[0] === 'tap' && x.tap === true;
+}
+export const confirmMode = (c) => (isObj(c.confirm) ? (c.confirm.word ? 'word' : 'tap') : '');
+// Apply is enabled when no word is needed, or the typed text is exactly the word.
+export const applyReady = (c, typed) => confirmMode(c) !== 'word' || typed === c.confirm.word;
+// What is sent: the prepared payload, plus the confirm word when one was asked for.
+export const confirmPayload = (c, typed) => (confirmMode(c) === 'word' ? { ...c.payload, confirm: typed } : c.payload);
 
 // Is this card one the view knows how to draw? Anything else is ignored.
 function plainCard(c) {
@@ -71,6 +92,8 @@ function plainCard(c) {
   }
   if (c.type === 'action') {
     if (!isStr(c.id) || !c.id || !(KIND_ACTIONS[c.kind] || []).includes(c.action) || !isObj(c.payload)) return false;
+    if (c.danger !== undefined && typeof c.danger !== 'boolean') return false;
+    if (!validConfirm(c.confirm)) return false;
     if (c.fields !== undefined && !(Array.isArray(c.fields) && c.fields.every(validField))) return false;
     if (c.kind === 'set_role_access') return isStr(a.role) && !!a.role && isStr(a.entity) && verbsOf(a.before) !== null && verbsOf(a.after) !== null;
     if (c.kind === 'create_role') return isStr(a.name) && !!a.name && typeof a.singleHolder === 'boolean';
@@ -139,6 +162,7 @@ export function fieldView(f) {
   else if (f.unit === 'date') text = dateShort(f.value) || String(f.value);
   else if (f.unit === 'time') text = timeShort(f.value) || String(f.value);
   else if (f.unit === 'key') text = String(f.value);
+  else if (f.unit === 'month') text = monthLabel(f.value) || String(f.value);
   else if (f.unit === 'paise') text = money(Number(f.value));
   else text = String(f.value);
   return { key: f.key, label: `asst.field.${f.key}`, text, textKey: f.unit === 'key' ? `asst.val.${f.value}` : '' };
