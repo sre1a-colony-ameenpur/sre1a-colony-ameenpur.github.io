@@ -22,7 +22,7 @@ const CAPS = {
     expense_approval: R('u'), maintenance_payments: R('r'), payment_confirmation: R('u'), maintenance_rates: FULL,
     membership_rates: FULL, events: FULL, media: FULL, meetings: FULL, attendance: R('ru'), action_items: FULL,
     polls: [...FULL, 'vote'], fee_requests: FULL, maintenance_dues: R('cru'), members: FULL, roles_config: R('ru'),
-    plots: R('ru'), plot_transfer: R('cr'), plot_change_requests: R('ru'), handover: R('c'), settings: R('r') },
+    plots: R('ru'), plot_transfer: R('cr'), plot_change_requests: R('ru'), handover: R('c'), settings: R('r'), assistant: R('r') },
 };
 CAPS.lakshmi = CAPS.member;
 
@@ -184,6 +184,7 @@ export function createMock({ delayMs = 120 } = {}) {
     role: m.role, active: m.active !== false, removed_at: m.removed_at || '', joined_at: m.joined_at || '2024-06-01' });
   let down = false;
   let nextId = 1;
+  let mockAsked = 0;
 
   const ok = (data) => ({ ok: true, data });
   const fail = (code, message, extra) => ({ ok: false, error: { code, message, ...extra } });
@@ -208,6 +209,28 @@ export function createMock({ delayMs = 120 } = {}) {
       }
       return ok(out);
     },
+    // Keyword stand-in for the real assistant: same reply shapes (answer, data, action and link cards), nothing is saved until an action card is confirmed.
+    'assistant.ask': (u, p) => {
+      const q = String(p.text || '').toLowerCase();
+      const left = Math.max(0, 29 - (mockAsked += 1) + 1);
+      const reply = (r) => ok({ left, ...r });
+      if (/\bhow (do|can|to)\b/.test(q)) return reply({ answer: 'To raise a complaint, open Issues, tap the + button, describe the problem, add a photo if you like, and send it. You can follow it from the same screen.' });
+      if (/expense|spent|spend/.test(q)) {
+        const now = new Date(), y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
+        return reply({ cards: [{ type: 'data', kind: 'expenses_total', args: { period: 'this_month' }, value: 1842500, detail: { count: 8, from: `${y}-${m}-01`, to: now.toISOString().slice(0, 10) } }] });
+      }
+      if (/complaint|issue/.test(q)) return reply({ cards: [{ type: 'data', kind: 'complaints_count', args: { stage: 'Open' }, value: 6 }] });
+      if (/how many members|member count|members/.test(q) && !/role/.test(q)) return reply({ cards: [{ type: 'data', kind: 'members_count', args: {}, value: 214 }] });
+      if (/access|permission|right/.test(q)) {
+        const role = (/(treasurer|advisor|secretary)/.exec(q) || [, 'Treasurer'])[1].replace(/^./, (c) => c.toUpperCase());
+        return reply({ answer: `I can set that up. Check it and tap Apply.`, cards: [{ type: 'action', id: 'a' + nextId++, kind: 'set_role_access', args: { role, entity: 'meetings', before: 'r', after: 'ru' },
+          action: 'roles.setMany', payload: { changes: [{ role, entity: 'meetings', c: false, r: true, u: true, d: false }] } }] });
+      }
+      if (/create.*role|new role/.test(q)) return reply({ cards: [{ type: 'action', id: 'a' + nextId++, kind: 'create_role', args: { name: 'Advisor', singleHolder: false }, action: 'roles.create', payload: { name: 'Advisor', singleHolder: false } }] });
+      if (/role/.test(q)) return reply({ answer: 'Roles are set on the Roles screen.', cards: [{ type: 'link', screen: 'roles' }] });
+      return reply({ answer: 'I can help with how-to questions, totals and role changes. Try: Total expenses this month.' });
+    },
+    'roles.create': (u, p) => ok({ role: String(p.name || '') }),
     'profile.syncGooglePhoto': () => ok({ skipped: 'no_picture' }),
     'profile.setPhoto': (u, p) => { if (!p.jpegBase64) return fail('INVALID', 'That is not a photo'); mockPhotos.set(u.email, p.jpegBase64); return ok({ saved: true }); },
     'profile.photo': (u) => (mockPhotos.has(u.email) ? ok({ jpegBase64: mockPhotos.get(u.email) }) : fail('NOT_FOUND', 'No photo')),

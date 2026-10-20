@@ -10,9 +10,9 @@ const VERBS = ['c', 'r', 'u', 'd'];
 const PRESIDENT_ONLY = { roles_config: 'cud', plot_change_requests: 'ud' };
 const ORDER = ['members', 'plots', 'plot_transfer', 'plot_change_requests', 'expenses', 'expense_approval', 'maintenance_rates', 'maintenance_payments',
   'payment_confirmation', 'membership_rates', 'fee_requests', 'maintenance_dues', 'complaints', 'complaint_stage', 'comments', 'events', 'media',
-  'meetings', 'attendance', 'notes', 'action_items', 'polls', 'poll_results_early', 'proof_gallery', 'map_profile', 'roles_config'];
+  'meetings', 'attendance', 'notes', 'action_items', 'polls', 'poll_results_early', 'proof_gallery', 'map_profile', 'assistant', 'roles_config'];
 // Records where only Read applies.
-const READ_ONLY = { poll_results_early: true, proof_gallery: true };
+const READ_ONLY = { poll_results_early: true, proof_gallery: true, assistant: true };
 const WIDE = '(min-width: 960px)';
 
 export default function render(ctx) {

@@ -1,7 +1,7 @@
 // App shell: top bar, role-aware nav (tab bar / rail / sidebar), avatar menu (S7.0).
 import { h, icon, avatar, rolePill, crest } from './ui.js';
 import { t } from './i18n.js';
-import { can } from './store.js';
+import { can, hasModule } from './store.js';
 import { CONFIG } from './config.js';
 import { latestRelease } from './releases.js';
 
@@ -13,7 +13,7 @@ export function navItems(s) {
     { path: '/issues', icon: 'report', label: 'nav.issues', show: r('complaints') },
     { path: '/money', icon: 'payments', label: 'nav.money', show: r('expenses') || r('maintenance_payments') || r('dues') },
     { path: '/community', icon: 'groups', label: 'nav.community', show: r('events') || r('meetings') || r('polls') },
-    { path: '/map', icon: 'map', label: 'nav.map', show: r('map_profile') },
+    { path: '/ai', icon: 'auto_awesome', label: 'nav.ai', show: hasModule('assistant', s) && r('assistant') },
   ].filter((i) => i.show);
 }
 
@@ -29,6 +29,7 @@ export function menuItems(s) {
   const view = (e) => (can(e, 'c', s) || can(e, 'u', s) || can(e, 'd', s) ? '' : t('menu.viewOnly'));
   return [
     { path: '/profile', icon: 'person', label: 'menu.profile', show: true },
+    { path: '/map', icon: 'map', label: 'nav.map', show: can('map_profile', 'r', s) },
     { path: '/gallery', icon: 'photo_library', label: 'menu.gallery', show: true },
     { path: '/reports', icon: 'assessment', label: 'menu.reports', show: REPORT_ENTITIES.some((e) => can(e, 'r', s)) },
     { path: '/documents', icon: 'menu_book', label: 'menu.documents', show: true },

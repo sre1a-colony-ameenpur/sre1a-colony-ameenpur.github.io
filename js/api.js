@@ -5,7 +5,7 @@ export class ApiError extends Error {
 
 // Server error codes plus the client-only NETWORK. Message text lives in i18n as err.<CODE>.
 export const ERROR_CODES = ['BAD_REQUEST', 'BAD_TOKEN', 'NO_ACCESS', 'FORBIDDEN', 'INVALID', 'NOT_FOUND', 'CONFLICT',
-  'ALREADY_VOTED', 'POLL_CLOSED', 'SELF_APPROVAL', 'IMMUTABLE', 'RATE_LIMITED', 'LOCKED', 'SERVER', 'NETWORK'];
+  'ALREADY_VOTED', 'POLL_CLOSED', 'SELF_APPROVAL', 'IMMUTABLE', 'RATE_LIMITED', 'LOCKED', 'UNAVAILABLE', 'SERVER', 'NETWORK'];
 export const errorKey = (code) => (ERROR_CODES.includes(code) ? `err.${code}` : 'err.SERVER');
 // Plain sentence for a user; never shows the code. `t` is the i18n function.
 export const friendly = (err, t) => t(errorKey(err?.code));
