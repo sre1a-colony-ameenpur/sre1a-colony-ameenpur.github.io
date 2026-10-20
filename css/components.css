@@ -337,4 +337,3 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .guide-shot { margin: 8px 0 4px; }
 .guide-shot img { display: block; width: 100%; max-width: 360px; border: 1px solid var(--c-border); border-radius: 12px; }
 .guide-shot figcaption { font-size: var(--fs-small); color: var(--c-muted); margin-top: 4px; }
-.guide-shot.loading { min-height: 120px; }

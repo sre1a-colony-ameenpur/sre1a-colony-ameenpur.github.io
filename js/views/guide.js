@@ -4,7 +4,7 @@ import { friendly } from '../api.js';
 import { can, hasModule } from '../store.js';
 import { SECTIONS } from '../guide_content.js';
 import { rightsFor, visibleSections, roleChoices, localise } from '../guide.js';
-import { guideImage } from '../guide_images.js';
+import { guideImageUrl } from '../guide_image_ids.js';
 
 export default function render(ctx) {
   const { t, store } = ctx;
@@ -15,16 +15,13 @@ export default function render(ctx) {
   const note = h('p', { class: 'small muted', id: 'guide-role-help' });
   const body = h('div', { class: 'stack' });
 
-  // A picture from the colony Drive, fetched when it scrolls into view; hidden if it is not there.
+  // A picture from the colony Drive (shared for viewing), loaded by the browser as it scrolls into view; its place is dropped if it does not load.
   function shot(x) {
-    const fig = h('figure', { class: 'guide-shot loading' });
-    const show = () => guideImage((a, p) => ctx.api.call(a, p), x.id).then((url) => {
-      if (!url) { fig.remove(); return; }
-      fig.classList.remove('loading');
-      fig.append(h('img', { src: url, alt: x.caption, loading: 'lazy' }), h('figcaption', {}, x.caption));
-    });
-    if (typeof IntersectionObserver === 'undefined') show();
-    else { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); show(); } }, { rootMargin: '300px' }); queueMicrotask(() => io.observe(fig)); }
+    const url = guideImageUrl(x.id);
+    if (!url) return null;
+    const img = h('img', { src: url, alt: x.caption, loading: 'lazy', decoding: 'async' });
+    const fig = h('figure', { class: 'guide-shot' }, img, h('figcaption', {}, x.caption));
+    img.addEventListener('error', () => fig.remove());
     return fig;
   }
 

@@ -58,6 +58,20 @@ export async function applyUpdate() {
 }
 const applyWorker = () => applyUpdate;
 
+// A second way to notice a release, for when the browser's own worker update stalls (a file late on the server, a worker dropped): read the published sw.js
+// and compare its BUILD with the build this page runs. Update then clears the old worker and its stored files and loads the new release from the server.
+export const buildOf = (swText) => (/const BUILD = '([0-9a-f]{6,})'/.exec(String(swText)) || [])[1] || '';
+export async function applyFresh() {
+  try {
+    for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+    for (const k of await caches.keys()) if (k.startsWith('sre1a-')) await caches.delete(k);
+  } catch { /* reload anyway */ }
+  reloadOnce();
+}
+async function publishedBuild() {
+  try { const r = await fetch(`sw.js?b=${Date.now()}`, { cache: 'no-store' }); return r.ok ? buildOf(await r.text()) : ''; } catch { return ''; }
+}
+
 // The backend puts its version on every answer. The first one is remembered; a different one later means the backend was released,
 // so offer the update. The remembered version moves on only when the member taps Update, so an ignored bar comes back next time.
 const BE_KEY = 'sre.beVersion';
@@ -117,7 +131,12 @@ export async function registerPwa() {
     if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(applyWorker(), workerKey(reg.waiting));
     reg.addEventListener('updatefound', () => reg.installing && watch(reg.installing));
     // Look for a new release when the app is opened, whenever it comes back to the front, and every 30 seconds while it is in front.
-    const check = () => reg.update().catch(() => {});
+    const check = async () => {
+      try { await reg.update(); } catch { /* offline */ }
+      if (reg.waiting || !navigator.serviceWorker.controller) return;       // a worker is ready: its own bar covers it. An install that keeps failing does not count.
+      const [mine, live] = [await currentBuild(), await publishedBuild()];
+      if (mine && live && mine !== live) showUpdateBanner(applyFresh, 'build:' + live);
+    };
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
     setInterval(() => { if (document.visibilityState === 'visible') check(); }, CHECK_MS);
     check();
