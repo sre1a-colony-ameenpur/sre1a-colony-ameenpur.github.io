@@ -308,6 +308,16 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .ai-card p { margin: var(--s1) 0 var(--s2); overflow-wrap: anywhere; }
 .ai-value { font-size: 1.75rem; font-weight: 700; line-height: 2.25rem; overflow-wrap: anywhere; }
 .ai-done { color: var(--c-ok); font-weight: 600; }
+.ai-rows, .ai-fields { margin: var(--s2) 0 0; padding: 0; list-style: none; }
+.ai-item { display: flex; justify-content: space-between; gap: var(--s2); padding: var(--s1) 0; border-top: 1px solid var(--c-border); }
+.ai-item:first-child { border-top: 0; }
+.ai-item-main { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.ai-fields { display: grid; grid-template-columns: auto 1fr; gap: 2px var(--s3); }
+.ai-fields dd { margin: 0; overflow-wrap: anywhere; }
+.ai-choices { display: flex; flex-direction: column; gap: var(--s2); margin: var(--s2) 0; }
+.ai-choice { display: flex; flex-direction: column; align-items: flex-start; text-align: start; min-height: var(--tap-min); padding: var(--s2) var(--s3); border: 1px solid var(--c-border); border-radius: var(--r); background: var(--c-bg); color: var(--c-text); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.ai-choice.on { border-color: var(--c-primary); outline: 1px solid var(--c-primary); }
+.ai-choice[disabled] { cursor: default; }
 .ai-empty { margin: auto; padding: var(--s4) 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--s2); }
 .ai-hero { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: var(--r-pill); background: var(--p-info-bg); color: var(--p-info-fg); }
 .ai-hero .icon { font-size: 28px; }
