@@ -166,6 +166,7 @@
  "guide.role.own": "You see the guide for your own role.",
  "guide.viewingAs": "You are looking at the guide for the role {role}. Your own screens do not change.",
  "guide.contents": "Contents",
+ "guide.top": "Back to the top",
  "help.signin.q": "How do I sign in?",
  "help.signin.a": "Press Sign in with Google and choose the Gmail address the colony has registered for you. If it says No access, ask the President or Secretary to add that Gmail.",
  "help.complaint.q": "How do I raise a complaint?",

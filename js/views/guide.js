@@ -51,7 +51,13 @@ export default function render(ctx) {
   }
 
   if (lang === 'te') import('../guide_te.js').then((m) => { te = m.TE; drawBody(); }).catch(() => {});
+  // A round button that appears once the page is scrolled down, to jump back to the role list and the contents.
+  const top = h('button', { type: 'button', class: 'guide-top', hidden: true, 'aria-label': t('guide.top'), title: t('guide.top'),
+    onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }) }, icon('arrow_upward'));
+  const onScroll = () => { if (!top.isConnected) { window.removeEventListener('scroll', onScroll); return; } top.hidden = window.scrollY < 500; };
+  window.addEventListener('scroll', onScroll, { passive: true });
+
   drawPicker(); drawBody(); load();
   return h('div', { class: 'page' }, h('h1', {}, t('help.guide.title')),
-    h('div', { class: 'field' }, h('label', { for: 'guide-role' }, t('guide.role.label')), pick, note), body);
+    h('div', { class: 'field' }, h('label', { for: 'guide-role' }, t('guide.role.label')), pick, note), body, top);
 }

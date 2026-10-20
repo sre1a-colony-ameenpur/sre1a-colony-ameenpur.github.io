@@ -337,3 +337,6 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .guide-shot { margin: 8px 0 4px; }
 .guide-shot img { display: block; width: 100%; max-width: 360px; border: 1px solid var(--c-border); border-radius: 12px; }
 .guide-shot figcaption { font-size: var(--fs-small); color: var(--c-muted); margin-top: 4px; }
+.guide-top { position: fixed; z-index: 25; inset-inline-end: 16px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--c-primary); color: var(--c-on-primary); box-shadow: 0 2px 8px rgba(0, 0, 0, .3); cursor: pointer; }
+.guide-top[hidden] { display: none; }
+@media (min-width: 960px) { .guide-top { bottom: 24px; } }
