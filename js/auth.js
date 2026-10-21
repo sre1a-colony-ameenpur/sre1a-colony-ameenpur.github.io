@@ -2,7 +2,7 @@
 // After sign-in the server swaps it for its own 30-day session token (`session.renew`), kept in localStorage, so a phone app added to the
 // home screen (iOS wipes its sessionStorage and cannot refresh Google silently) stays signed in.
 const KEY = 'sre.idToken';
-const SESSION_KEY = 'sre.session';
+export const SESSION_KEY = 'sre.session';
 const RENEW_BELOW = 15 * 86400;       // ask for a fresh 30 days once less than 15 remain
 
 export function decodeJwt(token) {

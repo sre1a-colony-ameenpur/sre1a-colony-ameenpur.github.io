@@ -4,6 +4,7 @@ import { store, can } from './store.js';
 import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
+import { shareWithWorker, forgetDevice } from './push.js';
 import { createRouter } from './router.js';
 import { h, icon, button, toast, toastError, busy, setMyPhoto, setCustomRoles } from './ui.js';
 import { createSwr } from './swr.js';
@@ -108,7 +109,11 @@ function applyTheme(theme) {
   else document.documentElement.dataset.theme = theme;
 }
 // Changing the language only re-draws: stored answers are reused, so no data requests are sent.
-async function setLang(l) { ls.set('sre.lang', l); await loadLang(l); await swrCache.withoutRefresh(renderAll); }
+async function setLang(l) {
+  ls.set('sre.lang', l); await loadLang(l); await swrCache.withoutRefresh(renderAll);
+  // The language is the member's, not the phone's (FR-139): every device follows it, and notifications are written in it.
+  if (store.get().status === 'in') client.call('members.setLanguage', { lang: l }).then(() => store.set({ session: { ...store.get().session, language: l } })).catch(() => {});
+}
 function setTheme(th) { ls.set('sre.theme', th); store.set({ theme: th }); applyTheme(th); }
 
 // ---- session ----
@@ -129,7 +134,10 @@ async function loadSession() {
     store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
     if (!mock) auth.keepSession((a, p) => client.call(a, p));   // not awaited: a 30-day sign-in for the phone
     loadMyPhoto(session);       // not awaited: the photo never holds up sign-in
-    if (!ls.get('sre.lang') && session.language && session.language !== getLang()) await loadLang(session.language);
+    if (!mock) shareWithWorker();      // not awaited: the notification worker learns the 30-day sign-in
+    if (session.language) {
+      if (session.language !== getLang()) { ls.set('sre.lang', session.language); await loadLang(session.language); await swrCache.withoutRefresh(renderAll); }
+    } else client.call('members.setLanguage', { lang: getLang() }).catch(() => {});        // the member has not chosen on the server yet: keep what this phone shows
   } catch (e) {
     if (e.code === 'NO_ACCESS') {
       const c = mock ? { email: mockEmail() } : (auth.claims() || {});
@@ -149,6 +157,7 @@ const mockEmail = () => ({ unlisted: 'someone.else@example.com', removed: 'forme
 
 function signOut() {
   swrCache.clear(); setMyPhoto('');
+  if (!mock) forgetDevice();
   auth.signOut();
   store.set({ status: 'out', session: null, user: null, notice: null });
   location.hash = '#/signin'; router.refresh();

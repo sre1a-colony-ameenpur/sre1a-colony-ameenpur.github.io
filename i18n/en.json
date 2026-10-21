@@ -1365,5 +1365,13 @@
  "asst.field.receiver": "New owner",
  "asst.field.effective": "Effective from",
  "asst.field.will_create": "Dues to create",
- "asst.field.name": "Name"
+ "asst.field.name": "Name",
+ "notify.title": "Notifications",
+ "notify.label": "Notify me on this phone",
+ "notify.help": "You get a short notice when something concerns you, such as a payment confirmed, a new poll or a change in your complaint. It uses the language you chose above. You can turn it off any time.",
+ "notify.onDone": "Notifications are on",
+ "notify.offDone": "Notifications are off",
+ "notify.blocked": "This phone is blocking notifications for the app. Allow them in the phone's settings for this site, then try again.",
+ "notify.iosHome": "On an iPhone, notifications work for the app added to the Home Screen. Add it from Share, Add to Home Screen, open it from there and come back here.",
+ "notify.unsupported": "This browser cannot show notifications from the app."
 }

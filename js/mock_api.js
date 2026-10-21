@@ -278,7 +278,7 @@ export function createMock({ delayMs = 120 } = {}) {
       const ho = handedOver();                                // after a handover (kept for the tab, so a reload still shows it) the old President is a Member
       const gone = ho && u === MOCK_USERS.president;
       return ok({
-        name: u.name, email: u.email, hasPhoto: mockPhotos.has(u.email), role: gone ? 'Member' : u.role, plotKeys: u.plotKeys, showMobile: !!u.showMobile, language: 'en', caps: gone ? CAPS.member : u.caps,
+        name: u.name, email: u.email, hasPhoto: mockPhotos.has(u.email), role: gone ? 'Member' : u.role, plotKeys: u.plotKeys, showMobile: !!u.showMobile, language: u.language || '', push: '', caps: gone ? CAPS.member : u.caps,
         presidentName: ho ? ho.name : MOCK_USERS.president.name, presidentSince: ho ? ho.at : '',
         customRoles: [],
       });
@@ -384,6 +384,13 @@ export function createMock({ delayMs = 120 } = {}) {
       for (const q of p.changes || []) { const r = handlers['roles.set'](u, q); if (!r.ok) return r; }
       return ok({ changed: (p.changes || []).length });
     },
+    'members.setLanguage': (u, p) => {
+      if (p.lang !== 'en' && p.lang !== 'te') return fail('INVALID', 'lang must be en or te');
+      u.language = p.lang; return ok({ language: p.lang });
+    },
+    'notifications.subscribe': () => ok({ enabled: true }),
+    'notifications.unsubscribe': () => ok({ enabled: false }),
+    'notifications.pending': () => ok({ items: [] }),
     'members.setMobileVisibility': (u, p) => {
       if (typeof p.show !== 'boolean') return fail('INVALID', 'show must be true or false');
       u.showMobile = p.show; return ok({ showMobile: p.show });

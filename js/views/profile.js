@@ -4,6 +4,7 @@ import { pickPhoto, compressPhoto } from '../photo.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
+import { pushSupport, isOn, turnOn, turnOff } from '../push.js';
 
 const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
@@ -25,6 +26,7 @@ export default function render(ctx) {
       can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, onClick: () => requestSheet(ctx, loadRequests) })) : null),
     (hasModule('maintenance') || hasModule('fees')) ? button(t('pay.mineTitle'), { icon: 'receipt_long', block: true, onClick: () => { location.hash = '#/profile/payments'; } }) : null,
     card(t('profile.showMobile'), 'call', mobileSwitch(ctx, s)),
+    s.push ? card(t('notify.title'), 'notifications', notifySwitch(ctx, s.push)) : null,
     can('plot_change_requests', 'c') ? card(t('profile.myRequests'), 'list_alt', reqBox) : null,
     card(t('profile.language'), 'translate', segmented([['en', 'English'], ['te', 'తెలుగు']], ctx.lang, ctx.setLang, t('lang.label'))),
     card(t('profile.appearance'), 'contrast', segmented([['auto', t('theme.auto')], ['light', t('theme.light')], ['dark', t('theme.dark')]], store.get().theme, ctx.setTheme, t('profile.appearance'))),
@@ -84,6 +86,28 @@ function mobileSwitch(ctx, s) {
   return h('div', { class: 'stack-sm' },
     h('label', { class: 'row', for: 'show-mobile' }, box, h('span', { class: 'grow' }, t('profile.showMobileLabel'))),
     h('p', { class: 'small muted' }, t('profile.showMobileHelp')));
+}
+
+// Notifications on this phone (FR-138): off until the member turns them on; the phone asks permission only then.
+function notifySwitch(ctx, publicKey) {
+  const { t } = ctx;
+  const support = pushSupport();
+  if (support !== 'ok') return h('p', { class: 'small muted' }, t(support === 'ios-home' ? 'notify.iosHome' : 'notify.unsupported'));
+  const box = h('input', { type: 'checkbox', id: 'notify-on', style: 'width:24px;height:24px', disabled: true });
+  const note = h('p', { class: 'small muted' }, t('notify.help'));
+  isOn().then((on) => { box.checked = on; box.disabled = false; });
+  box.addEventListener('change', async () => {
+    const want = box.checked;
+    box.disabled = true;
+    try {
+      if (want) {
+        if (await turnOn(ctx.api, publicKey) === 'denied') { box.checked = false; note.textContent = t('notify.blocked'); }
+        else { toast(t('notify.onDone')); note.textContent = t('notify.help'); }
+      } else { await turnOff(ctx.api); toast(t('notify.offDone')); }
+    } catch (e) { box.checked = !want; toastError(friendly(e, t)); }
+    box.disabled = false;
+  });
+  return h('div', { class: 'stack-sm' }, h('label', { class: 'row', for: 'notify-on' }, box, h('span', { class: 'grow' }, t('notify.label'))), note);
 }
 
 // Profile photo: take one with the camera (front camera on a phone) or choose one from the gallery. Kept small (512 px) before it is sent.
