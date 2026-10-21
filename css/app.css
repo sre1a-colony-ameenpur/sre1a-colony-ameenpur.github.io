@@ -3,6 +3,8 @@
 /* Text follows the phone's own font-size setting (rem, never fixed px) and starts a little smaller on phones. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; font-size: 93.75%; }
 @media (min-width: 768px) { html { font-size: 100%; } }
+/* iOS Safari zooms into any field under 16px and stays zoomed after the keyboard closes; fields keep at least 16px (the page zoom itself stays allowed). */
+input, textarea, select { font-size: max(16px, 1rem) !important; }
 body { margin: 0; background: var(--c-bg); color: var(--c-text); font: 400 var(--fs-body)/24px var(--font); overflow-x: hidden; }
 h1, h2, h3, p { margin: 0; }
 h1 { font-size: var(--fs-h1); line-height: 2rem; font-weight: 600; letter-spacing: -.01em; }
