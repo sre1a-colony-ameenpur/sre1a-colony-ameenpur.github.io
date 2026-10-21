@@ -35,9 +35,9 @@ export default function render(ctx) {
     body.replaceChildren(
       role !== own ? h('div', { class: 'banner info', role: 'status' }, icon('visibility'), t('guide.viewingAs', { role })) : null,
       h('nav', { class: 'card', 'aria-label': t('guide.contents') }, h('h2', { class: 'card-title' }, icon('list'), t('guide.contents')),
-        h('div', { class: 'guide-toc' }, list.map((s) => button(s.title, { kind: 'text', onClick: () => document.getElementById(`guide-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) })))),
-      ...list.map((s) => h('section', { class: 'card guide-sec', id: `guide-${s.id}` },
-        h('h2', { class: 'card-title' }, icon(s.icon), s.title),
+        h('ol', { class: 'guide-toc' }, list.map((s) => h('li', {}, button(s.title, { kind: 'text', onClick: () => document.getElementById(`guide-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }))))),
+      ...list.map((s, n) => h('section', { class: 'card guide-sec', id: `guide-${s.id}` },
+        h('h2', { class: 'card-title' }, icon(s.icon), `${n + 1}. ${s.title}`),
         s.intro ? h('p', {}, s.intro) : null,
         h('ul', { class: 'guide-steps' }, s.steps.map(([lead, text], i) => h('li', {}, h('strong', {}, lead), ' ', text, (s.shots || []).filter((x) => x.after === i).map(shot)))))));
     drawPicker();
