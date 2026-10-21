@@ -1395,5 +1395,8 @@
  "contact.noneToDecide": "Nothing waiting for your decision.",
  "contact.approveTitle": "Approve this change?",
  "contact.approveText": "{name}: {field} will change to {value}.",
- "common.save": "Save"
+ "common.save": "Save",
+ "cmp.sending": "Sending…",
+ "cmp.notSent": "Not sent",
+ "cmp.discard": "Discard"
 }

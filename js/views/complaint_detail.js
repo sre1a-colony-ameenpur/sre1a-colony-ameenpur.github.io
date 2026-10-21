@@ -83,18 +83,41 @@ function thumb(ctx, id) {
   return btn;
 }
 
+// The comment shows at once, marked "Sending", and the save runs behind it (a save takes 2 to 3 s). If it fails the comment stays with Try again / Discard
+// and nothing is lost. A comment with a photo is refreshed from the server when the photo is saved, so the photo shows.
 function commentBox(ctx, complaintId, done) {
   const { t } = ctx;
   const text = h('textarea', { rows: 2, maxlength: 1000, 'aria-label': t('cmp.writeComment'), placeholder: t('cmp.writeComment') });
   const file = h('input', { type: 'file', accept: 'image/*', 'aria-label': t('cmp.addPhoto') });
-  return h('div', { class: 'stack-sm' }, text, withCamera(file, t), button(t('cmp.send'), { kind: 'primary', icon: 'send', onClick: async () => {
+
+  function post(body, photo, item, status) {
+    status.replaceChildren(icon('hourglass_top', 'sm'), ' ', t('cmp.sending'));
+    item.style.opacity = '.7';
+    ctx.api.call('comments.create', { complaint_id: complaintId, body }, { quiet: true }).then(async ({ id }) => {
+      if (photo) {
+        try { await ctx.api.call('media.addPhoto', { parentType: 'comment', parentId: id, ...(await photoWithThumb(photo)) }, { quiet: true }); } catch { toast(t('cmp.photoFailed')); }
+        done();
+        return;
+      }
+      item.style.opacity = ''; status.replaceChildren(when(new Date().toISOString()));
+    }).catch((e) => {
+      status.replaceChildren(icon('error', 'sm'), ` ${t('cmp.notSent')} · ${friendly(e, t)} `,
+        button(t('common.retry'), { kind: 'text', onClick: () => post(body, photo, item, status) }),
+        button(t('cmp.discard'), { kind: 'text', onClick: () => item.remove() }));
+    });
+  }
+
+  const box = h('div', { class: 'stack-sm' }, text, withCamera(file, t), button(t('cmp.send'), { kind: 'primary', icon: 'send', onClick: () => {
     const body = text.value.trim(); if (!body) return;
-    try {
-      const { id } = await ctx.api.call('comments.create', { complaint_id: complaintId, body });
-      if (file.files[0]) { try { await ctx.api.call('media.addPhoto', { parentType: 'comment', parentId: id, ...(await photoWithThumb(file.files[0])) }); } catch { toast(t('cmp.photoFailed')); } }
-      done();
-    } catch (e) { toastError(friendly(e, t)); }
+    const photo = file.files[0] || null;
+    text.value = ''; file.value = '';
+    const status = h('div', { class: 'small muted' });
+    const item = h('div', { class: 'stack-sm' }, h('div', { class: 'row' }, avatar(store.get().session.name), h('div', { class: 'grow' }, h('strong', {}, store.get().session.name), status)),
+      h('p', {}, body));
+    box.before(item);
+    post(body, photo, item, status);
   } }));
+  return box;
 }
 
 // The President picks who looks after a complaint (from the members list, by name or plot), or keeps it with themself.

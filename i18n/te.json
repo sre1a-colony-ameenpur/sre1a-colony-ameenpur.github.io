@@ -1395,5 +1395,8 @@
  "contact.decide": "ఇమెయిల్, మొబైల్ మార్పు అభ్యర్థనలు",
  "contact.noneToDecide": "మీ నిర్ణయం కోసం ఏదీ ఎదురుచూడటం లేదు.",
  "contact.approveTitle": "ఈ మార్పును ఆమోదించాలా?",
- "contact.approveText": "{name}: {field} {value} గా మారుతుంది."
+ "contact.approveText": "{name}: {field} {value} గా మారుతుంది.",
+ "cmp.sending": "పంపుతోంది…",
+ "cmp.notSent": "పంపబడలేదు",
+ "cmp.discard": "తొలగించండి"
 }

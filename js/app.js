@@ -83,13 +83,14 @@ const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, 
 const api = {
   swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
   swrMany: (specs, cb) => swrCache.many(specs, cb),
-  async call(action, payload) {
-    const block = !READ_ACTION.test(action);
+  // opts.quiet: a write the screen already shows as sent (it handles its own failure), so no blocking overlay.
+  async call(action, payload, opts) {
+    const block = !READ_ACTION.test(action) && !opts?.quiet;
     if (block) busy.start();
     try {
       const out = await client.call(action, payload);
       if (!store.get().online) store.set({ online: true });
-      if (block) swrCache.clear();                                    // a write may change anything we stored
+      if (!READ_ACTION.test(action)) swrCache.clear();                // a write may change anything we stored
       return out;
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') store.set({ online: false });
