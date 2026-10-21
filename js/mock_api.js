@@ -94,6 +94,7 @@ export function createMock({ delayMs = 120 } = {}) {
   const matrix = buildMatrix();
   const holders = new Set(members.flatMap((m) => m.plotKeys));
   const plotRequests = [];
+  const contactRequests = [];
   const events = [
     { id: 'V1', title: 'Diwali get-together', date: day(10).slice(0, 10), place: 'Community park', description: 'Snacks, games and lamps for everyone. Bring your family.', photos: [] },
     { id: 'V2', title: 'Sports day', date: day(-30).slice(0, 10), place: 'Community park', description: 'Races and cricket for all ages.', photos: ['M91', 'M92'] },
@@ -729,6 +730,23 @@ export function createMock({ delayMs = 120 } = {}) {
       plotRequests.push(r);
       return ok(r);
     },
+    'members.setName': (u, p) => { const n = String(p.name || '').trim(); if (!n) return fail('INVALID', 'Name needed'); u.name = n; return ok({ name: n }); },
+    'members.setContact': (u, p) => {
+      if (!['President', 'Developer'].includes(u.role)) return fail('FORBIDDEN', 'Use a request');
+      if (p.email !== undefined) { u.email = String(p.email); return ok({ changed: ['email'], signInAgain: true, drive_sync: true }); }
+      u.mobile = String(p.mobile); return ok({ changed: ['mobile'], signInAgain: false, drive_sync: true });
+    },
+    'contactRequests.create': (u, p) => {
+      if (['President', 'Developer'].includes(u.role)) return fail('CONFLICT', 'Change it yourself');
+      contactRequests.filter((r) => r.email === u.email && r.field === p.field && r.status === 'Pending').forEach((r) => { r.status = 'Cancelled'; });
+      const r = { id: 'c' + nextId++, email: u.email, member_name: u.name, field: p.field, old_value: u[p.field] || '', new_value: String(p.value), status: 'Pending', requested_at: new Date().toISOString() };
+      contactRequests.push(r); return ok({ id: r.id });
+    },
+    'contactRequests.mine': (u) => ok({ items: contactRequests.filter((r) => r.email === u.email) }),
+    'contactRequests.cancel': (u, p) => { const r = contactRequests.find((x) => x.id === p.id && x.email === u.email && x.status === 'Pending'); if (!r) return fail('NOT_FOUND', 'No such request'); r.status = 'Cancelled'; return ok({ id: r.id }); },
+    'contactRequests.list': (u, p) => ok({ items: contactRequests.filter((r) => !p.status || r.status === p.status) }),
+    'contactRequests.approve': (u, p) => { const r = contactRequests.find((x) => x.id === p.id && x.status === 'Pending'); if (!r) return fail('CONFLICT', 'Already decided'); r.status = 'Approved'; return ok({ id: r.id }); },
+    'contactRequests.reject': (u, p) => { const r = contactRequests.find((x) => x.id === p.id && x.status === 'Pending'); if (!r) return fail('CONFLICT', 'Already decided'); r.status = 'Rejected'; r.reason = p.reason; return ok({ id: r.id }); },
     'plotRequests.cancel': (u, p) => {
       const r = plotRequests.find((x) => x.id === p.id && x.email === u.email && x.status === 'Pending');
       if (!r) return fail('NOT_FOUND', 'No such request');

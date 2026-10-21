@@ -177,7 +177,7 @@ let current = null; // current resolved route
 const ctx = () => ({
   api, t, store, can, mock, auth, lang: getLang(), setLang, setTheme, signOut, mockSignIn, toast,
   route: current?.route, params: current?.params || {}, query: current?.query || {},
-  retryBoot: () => boot(), navigate: (p) => { location.hash = p; },
+  refresh: renderAll, retryBoot: () => boot(), navigate: (p) => { location.hash = p; },
 });
 
 async function renderAll() { await renderRoute(current); }
