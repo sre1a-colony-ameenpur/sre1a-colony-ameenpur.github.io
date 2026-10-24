@@ -67,7 +67,7 @@ export default function render(ctx) {
   const s = ctx.store.get().session;
   const r = (e) => can(e, 'r');
   const closes = (iso) => { const d = daysUntil(iso); return d <= 0 ? t('home.closesToday') : t('home.closesIn', { n: d }); };
-  const link = (href, text) => button(text, { href, kind: 'text' });
+  const link = (href, text) => button(text, { href, kind: 'text flush' });
   const cards = [];
 
   // Needs your action: only where caps allow approving.
@@ -96,7 +96,7 @@ export default function render(ctx) {
   if (hasModule('fees') && (can('dues', 'r') || r('maintenance_payments'))) {
     cards.push(lazyCard(ctx, { title: t('home.fees.title'), ic: 'request_quote', load: async () => (await home('dues.mine')).items.filter((d) => d.status !== 'paid'), act: (list) => list.length > 0,
       render: (list) => list.length ? [
-        ...list.map((d) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, d.title,
+        ...list.map((d) => h('div', { class: 'list-row stacked' }, h('div', { class: 'grow' }, d.title,
           h('div', { class: 'small muted' }, h('span', { class: 'amount' }, money(d.amount_paise - d.paid_paise)), ' · ', t('home.fees.payBy', { date: dateShort(d.due_date) }))), statusPill(d.overdue ? 'overdue' : d.status === 'partly_paid' ? 'partly' : 'due'))),
         link('#/money', t('common.view'))] : null }));
   }
@@ -120,7 +120,7 @@ export default function render(ctx) {
   }
   if (r('complaints')) {
     cards.push(lazyCard(ctx, { title: t('home.complaints.title'), ic: 'report', load: async () => (await home('complaints.list')).items.filter((c) => c.stage !== 'Closed').slice(0, 2),
-      render: (list) => list.length ? [...list.map((c) => h('a', { class: 'list-row', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))),
+      render: (list) => list.length ? [...list.map((c) => h('a', { class: 'list-row stacked', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))),
         link('#/issues', t('common.viewAll'))] : null }));
   }
   if (r('complaints')) {
