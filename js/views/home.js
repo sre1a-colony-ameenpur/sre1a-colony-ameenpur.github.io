@@ -1,6 +1,6 @@
 // S1 Home. Each card loads on its own and appears only if `caps` allows reading it.
 import { pendingBody } from '../pending.js';
-import { h, icon, button, statusPill, plotChip, rolePill, errorState } from '../ui.js';
+import { h, icon, button, statusPill, errorState } from '../ui.js';
 import { friendly, ApiError } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -66,7 +66,6 @@ export default function render(ctx) {
   const home = homeData(api);
   const s = ctx.store.get().session;
   const r = (e) => can(e, 'r');
-  const first = s.name.split(' ')[0];
   const closes = (iso) => { const d = daysUntil(iso); return d <= 0 ? t('home.closesToday') : t('home.closesIn', { n: d }); };
   const link = (href, text) => button(text, { href, kind: 'text' });
   const cards = [];
@@ -150,6 +149,5 @@ export default function render(ctx) {
 
   return h('div', { class: 'page wide' },
     newPres,
-    h('div', { class: 'row', style: 'margin-bottom:16px' }, h('h1', {}, t('home.greeting', { name: first })), rolePill(s.role), s.plotKeys.map(plotChip)),
     grid, none);
 }

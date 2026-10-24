@@ -16,6 +16,7 @@ img, svg { max-width: 100%; }
 .muted { color: var(--c-muted); }
 .small { font-size: var(--fs-small); line-height: 1.25rem; }
 .num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }          /* a class that sets display (stack, row) must not keep a hidden element on screen */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--c-primary); color: var(--c-on-primary); padding: 8px 16px; border-radius: var(--r); z-index: 100; }
 .skip:focus { left: 8px; }

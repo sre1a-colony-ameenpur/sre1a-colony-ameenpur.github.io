@@ -2,6 +2,13 @@
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
   { date: '2026-10-25',
+    title: { en: 'Faster screens, a tidier profile and change log', te: 'వేగవంతమైన స్క్రీన్‌లు, చక్కని ప్రొఫైల్, మార్పుల చిట్టా' },
+    items: [
+      { en: 'Screens and photos you have already opened show at once and are not fetched again until you press Sync or come back to the app. When you come back, Home refreshes and every other screen refreshes when you open it.', te: 'ఇప్పటికే తెరిచిన స్క్రీన్‌లు, ఫోటోలు వెంటనే కనిపిస్తాయి; సింక్ నొక్కే వరకు లేదా యాప్‌కు తిరిగి వచ్చే వరకు మళ్ళీ తేవబడవు. తిరిగి వచ్చినప్పుడు హోమ్ రిఫ్రెష్ అవుతుంది, మిగతా ప్రతి స్క్రీన్ తెరిచినప్పుడు రిఫ్రెష్ అవుతుంది.' },
+      { en: 'My profile: the pencil beside the title opens a window to change your name, photo, Gmail or mobile. Home no longer repeats your name and plots.', te: 'నా ప్రొఫైల్: శీర్షిక పక్కన ఉన్న పెన్సిల్ నొక్కితే మీ పేరు, ఫోటో, Gmail లేదా మొబైల్ మార్చే విండో తెరుచుకుంటుంది. హోమ్‌లో మీ పేరు, ప్లాట్లు ఇక కనిపించవు.' },
+      { en: 'Change log: entries open and close properly and start closed, the filters sit under a filter icon that turns bold while a filter is applied, and a contact change reads "Set Contact for" the member\'s name.', te: 'మార్పుల చిట్టా: నమోదులు సరిగ్గా తెరుచుకుని మూసుకుంటాయి, మొదట మూసి ఉంటాయి; ఫిల్టర్లు ఫిల్టర్ గుర్తు కింద ఉంటాయి, ఫిల్టర్ వర్తింపజేసినంతసేపు అది బోల్డ్‌గా కనిపిస్తుంది; సంప్రదింపు మార్పు సభ్యుని పేరుతో “సెట్ చేశారు” అని కనిపిస్తుంది.' },
+    ] },
+  { date: '2026-10-25',
     title: { en: 'Sync button', te: 'సింక్ బటన్' },
     items: [
       { en: 'A Sync button at the top fetches the screen you are on again. Screens you have already opened are not fetched again when you move between tabs, so they open at once. Change the language in My profile.', te: 'పైన ఉన్న సింక్ బటన్ మీరు ఉన్న స్క్రీన్‌ను మళ్ళీ తెస్తుంది. ఒకసారి తెరిచిన స్క్రీన్‌లు ట్యాబ్‌లు మారినప్పుడు మళ్ళీ తేవబడవు, కాబట్టి అవి వెంటనే తెరుచుకుంటాయి. భాషను నా ప్రొఫైల్‌లో మార్చుకోండి.' },

@@ -8,7 +8,7 @@ export const SECTIONS = [
     steps: [
       ['Sign in.', 'Press Sign in with Google and choose your registered Gmail. If you see "No access", ask the President or Secretary to add your Gmail.'],
       ['Find your way.', 'Home, Issues, Money and Community are in the bar at the bottom of the phone (the side of a computer screen). Tap your picture at the top right for the menu: My profile, Map, Gallery, Reports, Bylaws & rules, What\'s new, Help and Sign out. A role also sees the extra screens it may use.'],
-      ['Language, refresh and look.', 'Change the language in My profile. The Sync button at the top fetches the data of the screen you are on again; screens you have already opened are not fetched again when you move between tabs. When you come back to the app from another app or a locked phone, each screen fetches its data again when you open it. The app follows your phone for light or dark.'],
+      ['Language, refresh and look.', 'Change the language in My profile. The Sync button at the top fetches the data of the screen you are on again; screens you have already opened are not fetched again when you move between tabs. When you come back to the app from another app or a locked phone, Home is drawn again at once and every other screen fetches its data again when you open it. Photos you have already seen stay on the phone while the app is open, so they show at once. The app follows your phone for light or dark.'],
       ['Install it.', 'Help has an Install button, or on iPhone use Share, then Add to Home Screen. The app then opens like any other app.'],
       ['Updates.', 'The app checks for new versions by itself. Help has Check for updates if you want to look now.'],
       ['This guide.', 'Help in the menu, then User guide. The role list at the top shows the guide for one role. The President and Developers can pick any role to see what that role sees; everyone else sees their own.'],
@@ -21,7 +21,7 @@ export const SECTIONS = [
     ] },
   { id: 'profile', shots: [{ id: 'profile-member', after: 0, caption: 'My profile' }, { id: 'map-member', after: 1, caption: 'The map' }, { id: 'gallery', after: 2, caption: 'The gallery' }, { id: 'docs-member', after: 3, caption: 'Bylaws and rules' }], icon: 'person', title: 'Your profile, the map and the gallery',
     steps: [
-      ['My profile.', 'Shows your name, role and plots. You choose whether other members can see your mobile number (it is hidden unless you turn it on). Committee holders\' numbers are always shown to members.'],
+      ['My profile.', 'Shows your name, role, Gmail, mobile and plots. The pencil beside the title opens a window to change your name, photo, Gmail or mobile. You choose whether other members can see your mobile number (it is hidden unless you turn it on). Committee holders\' numbers are always shown to members.'],
       ['Map.', 'In the profile menu. Tap a plot to see who lives there and their role.'],
       ['Gallery.', 'Photos of colony events and of fixed issues.'],
       ['Bylaws & rules.', 'The Association bylaws and the EC rules, in English and Telugu, as PDF files. Everyone can read them.'],
@@ -136,7 +136,7 @@ export const SECTIONS = [
   { id: 'changelog', shots: [{ id: 'changelog', after: 1, caption: 'The change log' }], icon: 'history', title: 'Change log', committee: true, mods: ['changelog'], group: 'role',
     steps: [
       ['What it is.', 'A record of every change with who, what and when. It cannot be edited, and it is chained so tampering is detected.'],
-      ['Search.', 'Filter by person, action or dates, or search the text. Tap an entry for the before and after values.'],
+      ['Search.', 'Tap the filter icon to filter by person, action or dates, or to search the text. The icon turns bold while a filter is applied. Entries are closed; tap one to open its before and after values.'],
       ['Check now.', 'Checks the chain. A red result means: stop editing and tell your builder.'],
     ] },
   { id: 'reports', shots: [{ id: 'reports', after: 0, caption: 'Download a report' }, { id: 'reports-access', after: 1, caption: 'Who can download' }], icon: 'bar_chart', title: 'Reports', needs: [['report_accounts', 'r'], ['report_expenses', 'r'], ['report_maintenance', 'r'], ['report_payments', 'r'], ['report_issues', 'r'], ['report_meetings', 'r']], group: 'role',

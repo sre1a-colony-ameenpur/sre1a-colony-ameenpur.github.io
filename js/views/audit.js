@@ -20,7 +20,9 @@ export default function render(ctx) {
   let items = [], cursor = null, loadingMore = false, lastVerify = null, bad = null, q = '', person = '', action = '', from = '', to = '', open = new Set(), ticket = 0, timer = null;
   const people = new Set(), actions = new Set();                 // everything seen so far, so a filter choice never makes its own option vanish
   const top = h('div'), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'stack-sm' }), more = h('div');
-  const body = h('div', { class: 'stack' }, top, filters, count, list, more);
+  let filtersOpen = false;
+  const filterBtn = h('button', { type: 'button', class: 'icon-btn filter-btn', onClick: () => { filtersOpen = !filtersOpen; drawFilterBtn(); } }, icon('filter_list'));
+  const body = h('div', { class: 'stack' }, top, h('div', { class: 'row-between' }, count, filterBtn), filters, list, more);
   const root = h('div', { class: 'stack' }, body);
 
   const params = (before) => {
@@ -45,7 +47,7 @@ export default function render(ctx) {
         if (mine !== ticket) return;                             // a newer filter already asked
         items = r.items; cursor = r.next_cursor || null; lastVerify = r.last_verify; remember(items);
         if (lastVerify && !lastVerify.ok && !bad) bad = { from_ts: null };
-        if (first) { root.replaceChildren(body); drawTop(); drawFilters(); }
+        if (first) { root.replaceChildren(body); drawTop(); drawFilters(); drawFilterBtn(); }
         drawList();
       });
     } catch (e) {
@@ -67,7 +69,15 @@ export default function render(ctx) {
     loadingMore = false; drawList();
   }
 
-  const refilter = (now) => { clearTimeout(timer); if (now) load(false); else timer = setTimeout(() => load(false), 300); };
+  // The filter icon opens the filters; it is bold (and filled) while any filter is applied.
+  const filtered = () => !!(q.trim() || person || action || from || to);
+  function drawFilterBtn() {
+    const on = filtered(), name = t(on ? 'audit.filtersOn' : 'audit.filters');
+    filterBtn.classList.toggle('on', on);
+    filterBtn.setAttribute('aria-expanded', String(filtersOpen)); filterBtn.setAttribute('aria-label', name); filterBtn.title = name;
+    filters.hidden = !filtersOpen;
+  }
+  const refilter = (now) => { drawFilterBtn(); clearTimeout(timer); if (now) load(false); else timer = setTimeout(() => load(false), 300); };
 
   let checking = false;
   async function check() {
@@ -123,7 +133,14 @@ export default function render(ctx) {
     if (typeof n.reason === 'string' && n.reason) parts.push(t('audit.detail.reason', { reason: n.reason }));
     return parts.join(' · ');
   };
-  const sentence = (i) => `${label(i.action)}${i.entity_id ? ` · ${i.entity_id}` : ''}`;
+  const NAMED = new Set(['members.setContact']);                 // the title names the person it was done for (the signed-in member changed their own details)
+  const sentence = (i) => {
+    if (NAMED.has(i.action) && i.actor_name) {
+      const [before, after] = t(`audit.a.${i.action}.named`, { name: '\u0001' }).split('\u0001');
+      return [before, h('strong', {}, i.actor_name), after || ''];
+    }
+    return [`${label(i.action)}${i.entity_id ? ` · ${i.entity_id}` : ''}`];
+  };
 
   function drawList() {
     count.textContent = t(cursor ? 'audit.countMore' : 'audit.count', { n: items.length });
@@ -156,7 +173,7 @@ export default function render(ctx) {
         now ? open.add(key) : open.delete(key);
         detail.hidden = !now; head.setAttribute('aria-expanded', String(now)); chevron.textContent = now ? 'expand_less' : 'expand_more';
       } },
-      h('span', { class: 'grow' }, sentence(i), mismatch ? [' ', h('span', { class: 'pill bad' }, t('audit.mismatch'))] : null,
+      h('span', { class: 'grow' }, ...sentence(i), mismatch ? [' ', h('span', { class: 'pill bad' }, t('audit.mismatch'))] : null,
         detailOf(i) ? h('span', { class: 'small muted log-sub' }, detailOf(i)) : null),
       chevron);
     return h('div', { class: `card log-card${mismatch ? ' log-bad' : ''}` }, head, detail);

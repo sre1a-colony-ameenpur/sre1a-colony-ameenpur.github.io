@@ -1,5 +1,5 @@
 // S7.1 My profile: read-only details, language, appearance, plot change requests, sign out.
-import { h, card, rolePill, plotChip, avatar, segmented, button, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion, setMyPhoto, toastError } from '../ui.js';
+import { h, card, rolePill, plotChip, avatar, segmented, button, icon, openSheet, confirmSheet, statusPill, field, toast, emptyState, errorState, loadingRegion, setMyPhoto, toastError } from '../ui.js';
 import { pickPhoto, compressPhoto } from '../photo.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
@@ -17,16 +17,14 @@ export default function render(ctx) {
   const reqBox = h('div', { class: 'stack-sm' });
   const mine = myRequests(ctx);
   const redraw = () => { mine.reload(); ctx.refresh(); };
-  const edit = (label, onClick) => button(label, { kind: 'text', icon: 'edit', onClick });
 
   const root = h('div', { class: 'page stack' },
-    h('h1', {}, t('profile.title')),
+    h('div', { class: 'row-between' }, h('h1', {}, t('profile.title')),
+      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('profile.edit'), title: t('profile.edit'), onClick: () => editProfileSheet(ctx, redraw) }, icon('edit'))),
     card(null, null,
-      h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true, true), h('div', { class: 'grow' }, h('h2', {}, s.name), rolePill(s.role)),
-        edit(t('contact.edit'), () => editName(ctx, redraw))),
-      button(t('profile.changePhoto'), { kind: 'text', icon: 'photo_camera', onClick: () => photoSheet(ctx) }),
-      row(t('profile.email'), h('span', { class: 'row-between' }, h('span', { style: 'overflow-wrap:anywhere' }, s.email), edit(t('contact.edit'), () => changeContact(ctx, 'email', redraw)))),
-      row(t('profile.mobile'), h('span', { class: 'row-between' }, s.mobile || h('span', { class: 'muted' }, t('profile.notAdded')), edit(t('contact.edit'), () => changeContact(ctx, 'mobile', redraw)))),
+      h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true, true), h('div', { class: 'grow' }, h('h2', {}, s.name), rolePill(s.role))),
+      row(t('profile.email'), s.email),
+      row(t('profile.mobile'), s.mobile || h('span', { class: 'muted' }, t('profile.notAdded'))),
       row(t('profile.plots'), h('span', { class: 'row' }, s.plotKeys.length ? s.plotKeys.map(plotChip) : t('profile.noPlots'))),
       isFull(s.role) ? null : h('p', { class: 'small muted', style: 'margin-top:8px' }, t('profile.readonly')),
       can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, onClick: () => requestSheet(ctx, loadRequests) })) : null),
@@ -59,6 +57,21 @@ export default function render(ctx) {
   }
   loadRequests();
   return root;
+}
+
+// The pencil beside the title: one place for everything a member can change about themselves. Each change opens its own small sheet over this one,
+// and this one closes when a change is made so the page behind it redraws with the new details.
+function editProfileSheet(ctx, redraw) {
+  const { t, store } = ctx, s = store.get().session;
+  let sheet;
+  const done = () => { sheet.close(); redraw(); };
+  const line = (label, val, onClick) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, label),
+    h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, val), button(t('contact.edit'), { kind: 'text', icon: 'edit', onClick }));
+  sheet = openSheet({ title: t('profile.edit'), actions: [{ label: t('common.close') }], body: h('div', { class: 'stack-sm' },
+    line(t('profile.name'), s.name, () => editName(ctx, done)),
+    line(t('profile.photo'), '', () => photoSheet(ctx)),
+    line(t('profile.email'), s.email, () => changeContact(ctx, 'email', done)),
+    line(t('profile.mobile'), s.mobile || h('span', { class: 'muted' }, t('profile.notAdded')), () => changeContact(ctx, 'mobile', done))) });
 }
 
 // Request a plot change: Add / Remove, then plot id. Server decides; ownedByOther shows the amber note.
