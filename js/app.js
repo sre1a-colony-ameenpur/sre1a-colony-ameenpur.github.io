@@ -72,7 +72,7 @@ if (mock) {
 
 // All views call the API through here: it flags offline/expired states globally.
 const client = createClient({ transport: devApi ? fetchTransport(devApi) : mock ? mockCtl.transport : fetchTransport(CONFIG.apiUrl), getIdToken: () => auth.getToken(), onVersion: noteBackendVersion });
-const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photo|summary|directory|importSheet|monthly|pending|results|video|check|catalog|file|ask|image|[pP]review)$/;      // reads: no blocking overlay, and the stored answers are kept
+const READ_ACTION = /\.(list|get|mine|status|totals|lookup|holders|history|forMember|removedBalances|plots|profile|committee|proof|photos?|pictures?|summary|directory|importSheet|monthly|pending|results|video|check|catalog|file|ask|image|[pP]review)$/;      // reads: no blocking overlay, and the stored answers are kept
 // A floating "Loading" bar just under the header while data is fetched in the background (stored answers are shown first, see swr.js).
 const syncText = h('span', {});
 const syncDot = h('div', { class: 'sync-bar', role: 'status', hidden: true }, syncText, h('span', { class: 'spinner', 'aria-hidden': 'true' }));
@@ -83,6 +83,8 @@ const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, 
 const api = {
   swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
   swrMany: (specs, cb) => swrCache.many(specs, cb),
+  mediaPeek: (action, payload) => swrCache.mediaPeek(action, payload || {}),     // the copy already in memory, or null
+  mediaPut: (action, payload, data) => swrCache.mediaPut(action, payload || {}, data),
   media: (action, payload) => swrCache.media(action, payload || {}),     // photos, proofs, videos: kept in memory by id and size
   // opts.quiet: a write the screen already shows as sent (it handles its own failure), so no blocking overlay.
   async call(action, payload, opts) {

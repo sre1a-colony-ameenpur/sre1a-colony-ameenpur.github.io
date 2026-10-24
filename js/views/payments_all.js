@@ -10,9 +10,10 @@ export default function render(ctx) {
   const kind = h('select', { id: 'pf-kind', 'aria-label': t('pay.f.kind') }, [['', t('pay.f.all')], ['maintenance', t('pay.kind.maintenance')], ['membership', t('pay.kind.membership')], ['fee', t('pay.kind.fee')]].map(([v, l]) => h('option', { value: v }, l)));
   const status = h('select', { id: 'pf-status', 'aria-label': t('pay.f.status') }, [['', t('pay.f.all')], ['awaiting', t('pay.s.awaiting')], ['confirmed', t('pay.s.confirmed')]].map(([v, l]) => h('option', { value: v }, l)));
   const plot = h('input', { type: 'search', id: 'pf-plot', placeholder: t('pay.f.plot'), 'aria-label': t('pay.f.plot'), autocapitalize: 'characters' });
+  const fieldOf = (id, label, el) => h('div', { class: 'field' }, h('label', { for: id }, label), el);
   const list = h('div', {}), more = h('div', {});
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('pay.allTitle')),
-    h('div', { class: 'stack-sm' }, month, kind, status, plot), h('p', { class: 'small muted', role: 'status', id: 'pf-count' }), list, more);
+    h('div', { class: 'filters-grid' }, fieldOf('pf-month', t('pay.f.month'), month), fieldOf('pf-kind', t('pay.f.kind'), kind), fieldOf('pf-status', t('pay.f.status'), status), fieldOf('pf-plot', t('pay.f.plotLabel'), plot)), h('p', { class: 'small muted', role: 'status', id: 'pf-count' }), list, more);
   let timer = null;
   const filters = () => {
     const f = {};

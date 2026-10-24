@@ -1175,6 +1175,7 @@
  "pay.f.month": "నెల",
  "pay.f.kind": "రకం",
  "pay.f.status": "స్థితి",
+ "pay.f.plotLabel": "ప్లాట్",
  "pay.f.plot": "ప్లాట్, ఉదా. A-12",
  "pay.f.all": "అన్నీ",
  "pay.count": "{n} చెల్లింపులు",

@@ -1,6 +1,6 @@
 // S4.1 Events list (cover photo, upcoming first) and S4.3 new event.
 import { withCamera } from '../camera.js';
-import { h, button, field, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { h, button, fab, field, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -42,7 +42,7 @@ export default async function render(ctx) {
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'stack' }, list, more, can('events', 'c') ? button(t('evt.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
+  return h('div', { class: 'stack' }, list, more, can('events', 'c') ? fab(t('evt.new'), () => newSheet(ctx, load)) : null);
 }
 
 function newSheet(ctx, done) {

@@ -1175,6 +1175,7 @@
  "pay.f.month": "Month",
  "pay.f.kind": "Type",
  "pay.f.status": "Status",
+ "pay.f.plotLabel": "Plot",
  "pay.f.plot": "Plot, e.g. A-12",
  "pay.f.all": "All",
  "pay.count": "{n} payments",

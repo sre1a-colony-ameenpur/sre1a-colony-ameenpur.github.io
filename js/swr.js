@@ -49,13 +49,21 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
     if (hit) { media.delete(k); media.set(k, hit); return hit.p; }                // asked again: now the newest
     const entry = { n: 0, p: null };
     entry.p = call(action, payload).then((d) => {
-      entry.n = JSON.stringify(d ?? '').length; mediaChars += entry.n;
-      for (const [ok, e] of media) { if (mediaChars <= MEDIA_BUDGET || ok === k) break; media.delete(ok); mediaChars -= e.n; }
+      entry.n = JSON.stringify(d ?? '').length; mediaChars += entry.n; trimMedia(k);
       return d;
     }, (e) => { if (media.get(k) === entry) media.delete(k); throw e; });         // a failed fetch is not remembered
     media.set(k, entry);
     return entry.p;
   }
+  function trimMedia(keep) { for (const [ok, e] of media) { if (mediaChars <= MEDIA_BUDGET || ok === keep) break; media.delete(ok); mediaChars -= e.n; } }
+  // A bulk request (several pictures in one call) puts each answer here under the key its single request would use, so both ways share one copy.
+  function mediaPut(action, payload, data) {
+    const k = key(action, payload);
+    if (media.has(k)) return;
+    const n = JSON.stringify(data ?? '').length; mediaChars += n;
+    media.set(k, { n, p: Promise.resolve(data) }); trimMedia(k);
+  }
+  const mediaPeek = (action, payload) => media.get(key(action, payload))?.p || null;
   // No argument: everything (sign-out). With a pattern: the entries whose action matches it (a write drops the proofs, which can be replaced; photos never change).
   function dropMedia(actionPattern) {
     if (!actionPattern) { media.clear(); mediaChars = 0; return; }
@@ -95,5 +103,5 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   async function refreshScreen(fn) { resetLoaded([...touched]); return fn(); }
   // Resolves when no request is running (at once if none is); the pull-down indicator waits for it.
   function whenIdle() { return running === 0 ? Promise.resolve() : new Promise((res) => { idleWaiters.push(res); }); }
-  return { swr, many, media: mediaGet, dropMedia, clear, resetLoaded, markLoaded, fill, withoutRefresh, beginScreen, refreshScreen, whenIdle, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
+  return { swr, many, media: mediaGet, mediaPut, mediaPeek, dropMedia, clear, resetLoaded, markLoaded, fill, withoutRefresh, beginScreen, refreshScreen, whenIdle, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
 }

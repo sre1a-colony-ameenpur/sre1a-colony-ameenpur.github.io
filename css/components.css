@@ -350,3 +350,4 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .field input[type="month"], .field input[type="date"] { appearance: none; -webkit-appearance: none; text-align: start; }
 .pill-icon { padding: 2px 6px; min-width: 28px; justify-content: center; }
 .btn.text.flush-end { margin-inline-end: -12px; }
+.avatar.xl { width: 144px; height: 144px; font-size: 3rem; }

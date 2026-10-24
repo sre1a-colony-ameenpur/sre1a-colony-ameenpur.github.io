@@ -1,5 +1,5 @@
 // S6.1 Members: searchable list with role and active/removed filters; the President adds, edits and removes (sheets in members_sheets.js).
-import { h, button, avatar, rolePill, plotChip, statusPill, emptyState, errorState, loadingRegion, icon } from '../ui.js';
+import { h, button, avatar, rolePill, plotChip, statusPill, emptyState, errorState, loadingRegion, icon, openSheet } from '../ui.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { memberSheet } from './members_sheets.js';
@@ -10,24 +10,63 @@ export async function loadRoles(api) {
   try { await api.swr('roles.list', {}, ({ items }) => { ROLES = items.map((r) => r.role).filter((r) => r !== 'President'); }); } catch { /* keep the last list */ }
   return ROLES;
 }
-// A member's avatar with their picture when they have one. Pictures are asked for only as the avatar scrolls into view, a few at a time,
-// and are kept in memory (api.media), so drawing the list again does not ask again.
-let loading = 0; const waiting = [];
-const pump = () => { while (loading < 4 && waiting.length) { loading++; waiting.shift()().finally(() => { loading--; pump(); }); } };
-// `m.photo` is the handle the directory gives every member (members.picture); `m.photo_file_id` is on the committee's member rows (members.photo, by email).
+// A member's avatar with their picture when they have one. Pictures are asked for only as the avatar scrolls into view, and the ones that came into view
+// together go in one request (up to 20): members.pictures for the handle every member has (m.photo), members.photos by email for the committee's
+// Members list (m.photo_file_id). Each answer is kept in memory under the key of its single request (api.media), so drawing the list again asks for nothing.
+const BULK = 20;
+const batch = { waiting: new Map(), timer: null };
+function pictureOf(ctx, m, size) {
+  const [action, payload, id] = m.photo ? ['members.picture', { photo: m.photo, size }, m.photo] : ['members.photo', { email: m.email, size }, m.email];
+  const have = ctx.api.mediaPeek(action, payload);
+  if (have) return have.then((d) => d.jpegBase64);
+  return new Promise((resolve, reject) => {
+    const k = `${action}|${size}|${id}`;
+    if (!batch.waiting.has(k)) batch.waiting.set(k, { action, payload, id, size, bulk: m.photo ? 'members.pictures' : 'members.photos', field: m.photo ? 'photos' : 'emails', hands: [] });
+    batch.waiting.get(k).hands.push({ resolve, reject });
+    clearTimeout(batch.timer);
+    batch.timer = setTimeout(() => flush(ctx), 40);
+  });
+}
+function flush(ctx) {
+  const wanted = [...batch.waiting.values()]; batch.waiting.clear();
+  const groups = new Map();
+  wanted.forEach((w) => { const g = `${w.bulk}|${w.size}`; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(w); });
+  groups.forEach((list) => {
+    for (let i = 0; i < list.length; i += BULK) {
+      const chunk = list.slice(i, i + BULK);
+      ctx.api.call(chunk[0].bulk, { [chunk[0].field]: chunk.map((w) => w.id), size: chunk[0].size }).then((r) => {
+        chunk.forEach((w) => {
+          const b64 = r.items?.[w.id];
+          if (b64) { ctx.api.mediaPut(w.action, w.payload, { jpegBase64: b64 }); w.hands.forEach((hd) => hd.resolve(b64)); }
+          else w.hands.forEach((hd) => hd.reject(new Error('no picture')));
+        });
+      }, (e) => chunk.forEach((w) => w.hands.forEach((hd) => hd.reject(e))));
+    }
+  });
+}
+// Paints a picture onto an avatar element (the initials are replaced).
+export function paintPicture(el, b64) { el.style.backgroundImage = `url("data:image/jpeg;base64,${b64}")`; el.classList.add('has-photo'); el.textContent = ''; }
 export function memberAvatar(ctx, m, lg = false) {
   const el = avatar(m.name, lg);
   if (!m.photo && !m.photo_file_id) return el;
-  const ask = () => (m.photo ? ctx.api.media('members.picture', { photo: m.photo, size: lg ? 'thumb' : 'tiny' }) : ctx.api.media('members.photo', { email: m.email, size: lg ? 'thumb' : 'tiny' }));
-  const fetchIt = () => { waiting.push(async () => {
-    try {
-      const d = await ask();
-      el.style.backgroundImage = `url("data:image/jpeg;base64,${d.jpegBase64}")`; el.classList.add('has-photo'); el.textContent = '';
-    } catch { /* the initials stay */ }
-  }); pump(); };
+  const fetchIt = () => pictureOf(ctx, m, lg ? 'thumb' : 'tiny').then((b64) => paintPicture(el, b64), () => { /* the initials stay */ });
   if (!('IntersectionObserver' in window)) fetchIt();
   else { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); fetchIt(); } }); io.observe(el); }
   return el;
+}
+// A member's card, like a phone contact: a big picture, name, role, plots and (when they chose to show it) their mobile number with a call button.
+export function memberDetailSheet(ctx, m, role = m.role) {
+  const { t } = ctx;
+  const pic = memberAvatar(ctx, m, true);
+  pic.classList.add('xl');
+  const line = (label, ...value) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'flex:none;width:72px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, ...value));
+  const plots = plotsOf({ plot_keys: Array.isArray(m.plot_keys) ? m.plot_keys.join(',') : m.plot_keys });
+  openSheet({ title: m.name, actions: [{ label: t('common.close') }], body: h('div', { class: 'stack' },
+    h('div', { class: 'stack-sm', style: 'align-items:center;text-align:center' }, pic, role && role !== 'Member' ? rolePill(role) : null),
+    h('div', { class: 'card' },
+      line(t('mem.plots'), plots.length ? h('span', { class: 'row' }, plots.map((k) => plotChip(dashKey(k)))) : h('span', { class: 'muted' }, t('mem.noPlots'))),
+      m.mobile ? line(t('profile.mobile'), h('span', { class: 'row-between' }, m.mobile,
+        h('a', { class: 'icon-btn', href: `tel:${String(m.mobile).replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${m.name}`, title: t('map.call') }, icon('call')))) : null)) });
 }
 export const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 export const plotsOf = (m) => String(m.plot_keys || '').split(',').filter(Boolean);

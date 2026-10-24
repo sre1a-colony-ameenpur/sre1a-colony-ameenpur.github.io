@@ -148,6 +148,9 @@ export function card(title, ic, ...body) {
     title ? h('h2', { class: 'card-title' }, ic && icon(ic), title) : null, ...body);
 }
 
+// The round + button at the bottom right of a list screen (new poll, new event, ...).
+export const fab = (label, onClick) => h('button', { type: 'button', class: 'fab', 'aria-label': label, title: label, onClick }, icon('add'));
+
 export function emptyState(text, ic = 'inbox', action) {
   return h('div', { class: 'state' }, icon(ic), h('p', {}, text), action);
 }

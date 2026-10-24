@@ -22,6 +22,7 @@ export const SECTIONS = [
   { id: 'profile', shots: [{ id: 'profile-member', after: 0, caption: 'My profile' }, { id: 'map-member', after: 1, caption: 'The map' }, { id: 'gallery', after: 2, caption: 'The gallery' }, { id: 'docs-member', after: 3, caption: 'Bylaws and rules' }], icon: 'person', title: 'Your profile, the map and the gallery',
     steps: [
       ['My profile.', 'Shows your name, role, Gmail, mobile and plots. The pencil beside the title opens a window to change your name, photo, Gmail or mobile. You choose whether other members can see your mobile number (it is hidden unless you turn it on). Committee holders\' numbers are always shown to members.'],
+      ['Members.', 'Community, then Members: the committee and every member, with their picture. Tap one to open their card: a big picture, role, plots and, if they chose to show it, their mobile number with a call button.'],
       ['Map.', 'In the profile menu. Tap a plot to see who lives there and their role.'],
       ['Gallery.', 'Photos of colony events and of fixed issues. Choose the category, photos or videos, and the month from the dropdowns.'],
       ['Bylaws & rules.', 'The Association bylaws and the EC rules, in English and Telugu, as PDF files. Everyone can read them.'],

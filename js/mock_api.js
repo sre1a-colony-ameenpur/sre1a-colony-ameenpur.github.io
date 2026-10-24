@@ -657,6 +657,8 @@ export function createMock({ delayMs = 120 } = {}) {
     'media.photo': () => ok({ jpegBase64: PIXEL }),
     'members.photo': () => fail('NOT_FOUND', 'No photo'),
     'members.picture': () => fail('NOT_FOUND', 'No picture'),
+    'members.pictures': () => ok({ items: {} }),
+    'members.photos': () => ok({ items: {} }),
     'events.list': () => {
       const today = new Date().toISOString().slice(0, 10);
       const v = (e) => ({ id: e.id, title: e.title, date: e.date, place: e.place, description: e.description, photo_count: e.photos.length, cover_media_id: e.photos[0] || '', upcoming: e.date >= today });

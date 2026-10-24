@@ -1,5 +1,5 @@
 // S4.7 Polls list and S4.8 create poll. Voting and results are in poll_detail.js.
-import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { h, button, fab, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -33,7 +33,7 @@ export default async function render(ctx) {
   }
   load();
   return h('div', { class: 'stack' }, segmented([['open', t('poll.tabOpen')], ['closed', t('poll.tabClosed')]], 'open', (v) => { tab = v; draw(); }, t('com.polls')),
-    list, more, can('polls', 'c') ? button(t('poll.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => createSheet(ctx, load) }) : null);
+    list, more, can('polls', 'c') ? fab(t('poll.new'), () => createSheet(ctx, load)) : null);
 }
 
 // Create a poll, or edit one (pass `poll` from polls.get). The backend refuses edits once anyone has voted.

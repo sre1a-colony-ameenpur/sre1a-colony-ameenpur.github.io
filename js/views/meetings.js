@@ -1,5 +1,5 @@
 // S4.4 Meetings list (upcoming highlighted, open action items) and new meeting sheet.
-import { h, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { h, button, fab, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { whenShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -36,7 +36,7 @@ export default async function render(ctx) {
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'stack' }, can('action_items', 'r') ? h('a', { class: 'btn', href: '#/community/action-items', style: 'align-self:flex-start' }, icon('checklist'), t('ai.title')) : null, list, more, can('meetings', 'c') ? button(t('mtg.new'), { kind: 'primary', block: true, icon: 'add', onClick: () => newSheet(ctx, load) }) : null);
+  return h('div', { class: 'stack' }, can('action_items', 'r') ? h('a', { class: 'btn', href: '#/community/action-items', style: 'align-self:flex-start' }, icon('checklist'), t('ai.title')) : null, list, more, can('meetings', 'c') ? fab(t('mtg.new'), () => newSheet(ctx, load)) : null);
 }
 
 function newSheet(ctx, done) {
