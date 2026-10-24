@@ -182,8 +182,12 @@ const ctx = () => ({
 });
 
 async function renderAll() { await renderRoute(current); }
+// The Sync button in the top bar: this screen's data is fetched again (shown first, replaced when the fresh answers arrive). Opening the app again
+// or the browser's own pull-down reload also fetch each screen's data once; moving between tabs does not.
+async function syncScreen() { await swrCache.refreshScreen(renderAll); }
 
 async function renderRoute(r) {
+  if (r !== current) swrCache.beginScreen();     // a different screen: a pull-down refreshes what this one reads (a re-draw of the same screen keeps the list)
   current = r;
   const s = store.get();
   if (r?.denied) toast(t('common.notAvailable'));
@@ -204,7 +208,7 @@ async function renderRoute(r) {
   const main = h('main', { class: 'content', id: 'main', tabindex: '-1' }, banners(), view);
   root.replaceChildren(
     dev, h('a', { class: 'skip', href: '#main', onClick: (e) => { e.preventDefault(); main.focus(); } }, t('common.skip')),
-    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, back: route.back, lang: getLang(), setLang, onSignOut: signOut }), main));
+    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, back: route.back, onSignOut: signOut, onSync: syncScreen }), main));
   document.title = `${title} · ${CONFIG.appName}`;
   main.focus({ preventScroll: true });
 }
@@ -247,4 +251,5 @@ window.addEventListener('online', () => { store.set({ online: true }); renderAll
 if (!mock) await auth.init();
 await boot(false);
 router.start();
+
 if (!mock && !isDevHost()) registerPwa();      // installable app + update banner; not on localhost, so dev edits are never cached

@@ -1,6 +1,11 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
 export const RELEASES = [
+  { date: '2026-10-25',
+    title: { en: 'Sync button', te: 'సింక్ బటన్' },
+    items: [
+      { en: 'A Sync button at the top fetches the screen you are on again. Screens you have already opened are not fetched again when you move between tabs, so they open at once. Change the language in My profile.', te: 'పైన ఉన్న సింక్ బటన్ మీరు ఉన్న స్క్రీన్‌ను మళ్ళీ తెస్తుంది. ఒకసారి తెరిచిన స్క్రీన్‌లు ట్యాబ్‌లు మారినప్పుడు మళ్ళీ తేవబడవు, కాబట్టి అవి వెంటనే తెరుచుకుంటాయి. భాషను నా ప్రొఫైల్‌లో మార్చుకోండి.' },
+    ] },
   { date: '2026-10-23',
     title: { en: 'Reports', te: 'నివేదికలు' },
     items: [

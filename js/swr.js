@@ -1,4 +1,6 @@
 // Stale-while-revalidate for read actions: show the last answer from this device at once, fetch a fresh one in the background, then replace it.
+// Once an answer has been fetched in this run of the app it is not fetched again when the member moves between screens or tabs: only a pull-down
+// on that screen (refreshScreen) or a write (clear) asks the server again. The first visit after the app opens still fetches once.
 // Answers are kept per signed-in member and dropped on sign-out and after any write. Nothing heavy (photos, proofs, videos) is stored.
 const PREFIX = 'sre.c:';
 const MAX_CHARS = 150000;
@@ -7,6 +9,9 @@ const SKIP = /(proof|photo|video)$/;
 export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   const mem = new Map();
   let running = 0, holdFresh = false;
+  const loaded = new Set();                          // keys fetched from the server since the app opened (in memory only, so a new launch fetches again)
+  let touched = new Set();                           // keys the current screen has asked for, so a pull-down refreshes this screen and no other
+  const idleWaiters = [];
   const key = (action, payload) => `${PREFIX}${userKey() || ''}|${action}|${JSON.stringify(payload || {})}`;
   const cacheable = (action) => !SKIP.test(action);
   function read(k) {
@@ -20,24 +25,26 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
     try { const raw = JSON.stringify(v); if (raw.length <= MAX_CHARS) storage?.setItem(k, raw); } catch { /* full or blocked: memory copy still works */ }
   }
   function clear() {
-    mem.clear();
+    mem.clear(); loaded.clear();
     try { if (storage) Object.keys(storage).filter((k) => k.startsWith(PREFIX)).forEach((k) => storage.removeItem(k)); } catch { /* ignore */ }
   }
   // cb(data, { stale }) is called with the stored answer first (stale: true) when there is one, then with the fresh one. Resolves with the latest data.
   async function swr(action, payload, cb) {
     const k = key(action, payload), hit = cacheable(action) ? read(k) : null;
+    touched.add(k);
+    if (hit && loaded.has(k)) { cb(hit.data, { stale: false }); return hit.data; }       // already fetched in this run: no request
     if (hit) cb(hit.data, { stale: true });
     if (hit && holdFresh) return hit.data;             // a re-draw with no new data (language change): the stored answer is enough
     onSync(++running);
     try {
       const data = await call(action, payload);
-      if (cacheable(action)) write(k, data);
+      if (cacheable(action)) { write(k, data); loaded.add(k); }
       cb(data, { stale: false });
       return data;
     } catch (e) {
       if (hit) return hit.data;                         // offline or failing: keep showing what we have
       throw e;
-    } finally { onSync(--running); }
+    } finally { onSync(--running); if (running === 0) idleWaiters.splice(0).forEach((f) => f()); }
   }
   // Several reads for one screen: cb(results[], { stale }) runs once every read has an answer (stored or fresh), and again as each fresh one arrives.
   async function many(specs, cb) {
@@ -49,5 +56,11 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   // Run fn (a re-draw) with stored answers served as they are, without asking the server again.
   // The flag stays on briefly after fn returns, because views ask for their data a moment after they are drawn.
   async function withoutRefresh(fn) { holdFresh = true; try { return await fn(); } finally { setTimeout(() => { holdFresh = false; }, 1500); } }
-  return { swr, many, clear, withoutRefresh, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
+  // A new screen starts: from now on 'touched' is the keys this screen reads.
+  function beginScreen() { touched = new Set(); }
+  // The member pulled the screen down: the answers this screen uses are fetched again (shown first, replaced when the fresh ones arrive), then fn re-draws it.
+  async function refreshScreen(fn) { touched.forEach((k) => loaded.delete(k)); return fn(); }
+  // Resolves when no request is running (at once if none is); the pull-down indicator waits for it.
+  function whenIdle() { return running === 0 ? Promise.resolve() : new Promise((res) => { idleWaiters.push(res); }); }
+  return { swr, many, clear, withoutRefresh, beginScreen, refreshScreen, whenIdle, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
 }

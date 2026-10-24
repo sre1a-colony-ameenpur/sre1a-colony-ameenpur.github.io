@@ -57,7 +57,7 @@ export function langToggle(lang, setLang) {
   return h('div', { class: 'lang', role: 'group', 'aria-label': t('lang.label') }, b('en', 'EN', 'English'), b('te', 'తె', 'తెలుగు'));
 }
 
-export function buildTopbar(s, { title, back, lang, setLang, onSignOut }) {
+export function buildTopbar(s, { title, back, onSignOut, onSync }) {
   const session = s.session;
   const btn = h('button', { class: 'avatar-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
     'aria-label': t('menu.open', { name: session.name }), onClick: () => toggle() }, avatar(session.name, false, true));
@@ -81,5 +81,6 @@ export function buildTopbar(s, { title, back, lang, setLang, onSignOut }) {
     back ? h('a', { class: 'icon-btn back-btn', href: '#' + back, 'aria-label': t('common.back'), title: t('common.back') }, icon('arrow_back'))
       : h('span', { class: 'brand-sm' }, crest(true)),
     h('div', { class: 'title', id: 'page-title' }, title),
-    langToggle(lang, setLang), btn);
+    // Fetches this screen's data again (the language is changed in Profile). The "Loading" bar shows while it runs.
+    h('button', { class: 'icon-btn sync-btn', type: 'button', 'aria-label': t('common.syncScreen'), title: t('common.syncScreen'), onClick: () => onSync?.() }, icon('sync')), btn);
 }

@@ -7,6 +7,7 @@
  "common.retry": "మళ్ళీ ప్రయత్నించండి",
  "common.saved": "సేవ్ అయింది",
  "common.loadingBar": "లోడ్ అవుతోంది",
+ "common.syncScreen": "ఈ స్క్రీన్‌ను రిఫ్రెష్ చేయండి",
  "common.refreshing": "నవీకరిస్తోంది…",
  "common.working": "పని జరుగుతోంది, దయచేసి వేచి ఉండండి…",
  "pwa.updateReady": "యాప్ కొత్త వెర్షన్ అందుబాటులో ఉంది.",
