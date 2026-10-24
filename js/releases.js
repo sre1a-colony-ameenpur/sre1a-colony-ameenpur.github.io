@@ -1,14 +1,22 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
-// Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD).
+// Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD) and `time` (HH:MM, India time) is optional: shown with the date when set.
 export const RELEASES = [
-  { date: '2026-10-25',
+  { date: '2026-10-25', time: '04:00',
+    title: { en: 'Easier Money, Members, Gallery and Reports screens', te: 'సులభమైన డబ్బు, సభ్యులు, గ్యాలరీ, నివేదికల స్క్రీన్‌లు' },
+    items: [
+      { en: 'Money: All payments and Monthly accounts are icons beside the title; Add expense and Raise fee request are a + button at the bottom right; the year\'s approved expenses are now in Monthly accounts, between this month and all time.', te: 'డబ్బు: అన్ని చెల్లింపులు, నెలవారీ లెక్కలు శీర్షిక పక్కన గుర్తులుగా ఉన్నాయి; ఖర్చు జోడించు, రుసుము అభ్యర్థన కింద కుడివైపు + బటన్‌గా ఉన్నాయి; ఈ సంవత్సరం ఆమోదించిన ఖర్చులు ఇప్పుడు నెలవారీ లెక్కలలో, ఈ నెల మరియు మొత్తం మధ్య ఉన్నాయి.' },
+      { en: 'Members: Load from sheet and Add member are icons beside the title, and members show their picture in the list and when you edit them.', te: 'సభ్యులు: షీట్ నుండి లోడ్ చేయి, సభ్యుడిని చేర్చు శీర్షిక పక్కన గుర్తులుగా ఉన్నాయి; జాబితాలో, మార్చేటప్పుడు సభ్యుల ఫోటో కనిపిస్తుంది.' },
+      { en: 'Gallery and Reports use dropdowns. A report can be made for custom dates, from one day to another.', te: 'గ్యాలరీ, నివేదికలు డ్రాప్‌డౌన్లు వాడతాయి. ఒక తేదీ నుండి మరో తేదీ వరకు నచ్చిన తేదీలకు నివేదిక తయారు చేయవచ్చు.' },
+      { en: 'What\'s new opens one release at a time and shows the time. The Change log names every action in plain words, and its filter icon has a label. My profile\'s details window shows your picture.', te: 'కొత్తగా ఏముంది ఒక్కో విడుదలను తెరిచి చూపుతుంది, సమయాన్ని కూడా చూపుతుంది. మార్పుల చిట్టా ప్రతి చర్యకు సాదా మాటల్లో పేరు ఇస్తుంది, దాని ఫిల్టర్ గుర్తుకు పేరు ఉంది. నా ప్రొఫైల్ వివరాల విండోలో మీ ఫోటో కనిపిస్తుంది.' },
+    ] },
+  { date: '2026-10-25', time: '02:00',
     title: { en: 'Faster screens, a tidier profile and change log', te: 'వేగవంతమైన స్క్రీన్‌లు, చక్కని ప్రొఫైల్, మార్పుల చిట్టా' },
     items: [
       { en: 'Screens and photos you have already opened show at once and are not fetched again until you press Sync or come back to the app. When you come back, Home refreshes and every other screen refreshes when you open it.', te: 'ఇప్పటికే తెరిచిన స్క్రీన్‌లు, ఫోటోలు వెంటనే కనిపిస్తాయి; సింక్ నొక్కే వరకు లేదా యాప్‌కు తిరిగి వచ్చే వరకు మళ్ళీ తేవబడవు. తిరిగి వచ్చినప్పుడు హోమ్ రిఫ్రెష్ అవుతుంది, మిగతా ప్రతి స్క్రీన్ తెరిచినప్పుడు రిఫ్రెష్ అవుతుంది.' },
       { en: 'My profile: the pencil beside the title opens a window to change your name, photo, Gmail or mobile. Home no longer repeats your name and plots.', te: 'నా ప్రొఫైల్: శీర్షిక పక్కన ఉన్న పెన్సిల్ నొక్కితే మీ పేరు, ఫోటో, Gmail లేదా మొబైల్ మార్చే విండో తెరుచుకుంటుంది. హోమ్‌లో మీ పేరు, ప్లాట్లు ఇక కనిపించవు.' },
       { en: 'Change log: entries open and close properly and start closed, the filters sit under a filter icon that turns bold while a filter is applied, and a contact change reads "Set Contact for" the member\'s name.', te: 'మార్పుల చిట్టా: నమోదులు సరిగ్గా తెరుచుకుని మూసుకుంటాయి, మొదట మూసి ఉంటాయి; ఫిల్టర్లు ఫిల్టర్ గుర్తు కింద ఉంటాయి, ఫిల్టర్ వర్తింపజేసినంతసేపు అది బోల్డ్‌గా కనిపిస్తుంది; సంప్రదింపు మార్పు సభ్యుని పేరుతో “సెట్ చేశారు” అని కనిపిస్తుంది.' },
     ] },
-  { date: '2026-10-25',
+  { date: '2026-10-25', time: '00:27',
     title: { en: 'Sync button', te: 'సింక్ బటన్' },
     items: [
       { en: 'A Sync button at the top fetches the screen you are on again. Screens you have already opened are not fetched again when you move between tabs, so they open at once. Change the language in My profile.', te: 'పైన ఉన్న సింక్ బటన్ మీరు ఉన్న స్క్రీన్‌ను మళ్ళీ తెస్తుంది. ఒకసారి తెరిచిన స్క్రీన్‌లు ట్యాబ్‌లు మారినప్పుడు మళ్ళీ తేవబడవు, కాబట్టి అవి వెంటనే తెరుచుకుంటాయి. భాషను నా ప్రొఫైల్‌లో మార్చుకోండి.' },
@@ -56,7 +64,7 @@ export const RELEASES = [
       { en: 'When resolving or closing, add photos of the fix and mark who helped.', te: 'పరిష్కరించేటప్పుడు లేదా మూసివేసేటప్పుడు, సరిచేసిన ఫోటోలు జోడించి, సహాయం చేసినవారిని గుర్తించండి.' },
       { en: 'The language switch now shows EN and తె.', te: 'భాష మార్పు ఇప్పుడు EN, తె అని చూపిస్తుంది.' },
     ] },
-  { date: '2026-10-17',
+  { date: '2026-10-17', time: '15:42',
     title: { en: 'Videos, event spending and a new look', te: 'వీడియోలు, కార్యక్రమ ఖర్చులు, కొత్త రూపం' },
     items: [
       { en: 'Add a short video to an event or a complaint.', te: 'కార్యక్రమానికి లేదా ఫిర్యాదుకు చిన్న వీడియో జోడించండి.' },

@@ -21,7 +21,8 @@ export default function render(ctx) {
   const people = new Set(), actions = new Set();                 // everything seen so far, so a filter choice never makes its own option vanish
   const top = h('div'), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'stack-sm' }), more = h('div');
   let filtersOpen = false;
-  const filterBtn = h('button', { type: 'button', class: 'icon-btn filter-btn', onClick: () => { filtersOpen = !filtersOpen; drawFilterBtn(); } }, icon('filter_list'));
+  const filterLabel = h('span', {});
+  const filterBtn = h('button', { type: 'button', class: 'btn text filter-btn', onClick: () => { filtersOpen = !filtersOpen; drawFilterBtn(); } }, icon('filter_list'), filterLabel);
   const body = h('div', { class: 'stack' }, top, h('div', { class: 'row-between' }, count, filterBtn), filters, list, more);
   const root = h('div', { class: 'stack' }, body);
 
@@ -73,7 +74,7 @@ export default function render(ctx) {
   const filtered = () => !!(q.trim() || person || action || from || to);
   function drawFilterBtn() {
     const on = filtered(), name = t(on ? 'audit.filtersOn' : 'audit.filters');
-    filterBtn.classList.toggle('on', on);
+    filterBtn.classList.toggle('on', on); filterLabel.textContent = t('audit.filters');
     filterBtn.setAttribute('aria-expanded', String(filtersOpen)); filterBtn.setAttribute('aria-label', name); filterBtn.title = name;
     filters.hidden = !filtersOpen;
   }
@@ -123,7 +124,7 @@ export default function render(ctx) {
       h('div', { class: 'row' }, date('audit-from', t('audit.from'), from, (v) => { from = v; }), date('audit-to', t('audit.to'), to, (v) => { to = v; })));
   }
 
-  const label = (a) => { const k = `audit.a.${a}`; const s = t(k); return s === k ? a : s; };
+  const label = (a) => { const k = `audit.a.${a}`; const s = t(k); return s === k ? humanKey(a) : s; };      // an action nobody has named yet reads as words, not as a code
   const who = (i) => i.actor_name || (i.role === 'System' ? t('audit.system') : t('audit.unknown'));
   // A short plain-language detail from the saved values: the amount and the reason, when there are any.
   const detailOf = (i) => {

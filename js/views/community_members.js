@@ -1,7 +1,8 @@
 // Community > Members: the committee, then every active member by name (30 a page, searched on the server).
 // Shown from the stored answer first and refreshed in the background. Mobile numbers appear only where the member chose to show them.
-import { h, button, avatar, plotChip, rolePill, emptyState, errorState, loadingRegion } from '../ui.js';
+import { h, button, plotChip, rolePill, emptyState, errorState, loadingRegion } from '../ui.js';
 import { friendly } from '../api.js';
+import { memberAvatar } from './members.js';
 
 const label = (k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
@@ -16,7 +17,7 @@ export default async function render(ctx) {
   const box = h('div', { class: 'stack-sm' }), more = h('div'), head = h('div', { class: 'stack-sm' });
 
   const call = (m) => (m?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${String(m.mobile).replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${m.name}` }) : null);
-  const row = (m, extra) => h('div', { class: 'list-row' }, avatar(m.name),
+  const row = (m, extra) => h('div', { class: 'list-row' }, memberAvatar(ctx, m),
     h('div', { class: 'grow' }, extra ? h('div', {}, rolePill(extra)) : null, h('div', {}, m.name),
       h('div', { class: 'row small' }, (m.plot_keys || []).map((k) => plotChip(label(k))), m.role && m.role !== 'Member' && !extra ? rolePill(m.role) : null)), call(m));
 

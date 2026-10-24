@@ -13,7 +13,7 @@ const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$
 export default function render(ctx) {
   const { t, store } = ctx;
   const s = store.get().session;
-  const row = (label, val) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, val));
+  const row = (label, val) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'flex:none;width:72px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, val));
   const reqBox = h('div', { class: 'stack-sm' });
   const mine = myRequests(ctx);
   const redraw = () => { mine.reload(); ctx.refresh(); };
@@ -65,9 +65,10 @@ function editProfileSheet(ctx, redraw) {
   const { t, store } = ctx, s = store.get().session;
   let sheet;
   const done = () => { sheet.close(); redraw(); };
-  const line = (label, val, onClick) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, label),
+  const line = (label, val, onClick) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'flex:none;width:72px' }, label),
     h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, val), button(t('contact.edit'), { kind: 'text', icon: 'edit', onClick }));
   sheet = openSheet({ title: t('profile.edit'), actions: [{ label: t('common.close') }], body: h('div', { class: 'stack-sm' },
+    h('div', { class: 'row', style: 'justify-content:center' }, avatar(s.name, true, true)),          // my picture, when I have one
     line(t('profile.name'), s.name, () => editName(ctx, done)),
     line(t('profile.photo'), '', () => photoSheet(ctx)),
     line(t('profile.email'), s.email, () => changeContact(ctx, 'email', done)),

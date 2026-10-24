@@ -6,7 +6,7 @@ import { can } from '../store.js';
 import { getLang } from '../i18n.js';
 import { monthLabel } from '../fmt.js';
 
-const PERIODS = ['month', '3m', '6m', '12m'];
+const PERIODS = ['month', '3m', '6m', '12m', 'custom'];
 const shift = (ym, by) => { const [y, m] = ym.split('-').map(Number); const d = new Date(Date.UTC(y, m - 1 + by, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
 const title = (item) => item.title[getLang()] || item.title.en;
 
@@ -24,31 +24,38 @@ export default function render(ctx) {
   const { t } = ctx;
   const now = new Date().toISOString().slice(0, 7);
   let items = [], report = '', period = 'month', month = now, busy = false;
+  const today = new Date().toISOString().slice(0, 10);
+  let from = `${now}-01`, to = today;                                   // the custom window
   const pick = h('div', { class: 'stack-sm' }), when = h('div', { class: 'stack-sm' }), go = h('div', { class: 'btn-row' }), msg = h('p', { class: 'small muted', role: 'status' });
   const dl = card(t('rep.download'), 'assessment', pick, when, go, msg);
   const access = h('div', { class: 'stack' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('rep.title')), dl, access);
 
+  const dropdown = (id, label, value, options, onChange) => h('div', { class: 'field' }, h('label', { for: id }, label),
+    h('select', { id, onChange: (e) => onChange(e.target.value) }, options.map(([v, text]) => h('option', { value: v, selected: v === value }, text))));
   function drawPick() {
-    pick.replaceChildren(h('strong', {}, t('rep.pick')), ...items.map((i) => h('button', { type: 'button', class: 'list-row map-row', 'aria-pressed': String(report === i.key),
-      onClick: () => { report = i.key; drawPick(); } }, icon(report === i.key ? 'radio_button_checked' : 'radio_button_unchecked'), h('span', { class: 'grow' }, title(i)))));
+    pick.replaceChildren(dropdown('rep-report', t('rep.pick'), report, items.map((i) => [i.key, title(i)]), (v) => { report = v; drawWhen(); }));
     drawWhen();
   }
   function drawWhen() {
+    const dateIn = (id, label, value, set) => h('div', { class: 'field' }, h('label', { for: id }, label),
+      h('input', { id, type: 'date', value, max: today, onChange: (e) => { set(e.target.value); } }));
     when.replaceChildren(
-      h('strong', {}, t('rep.period')),
-      h('div', { class: 'chips', role: 'group' }, PERIODS.map((p) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(period === p), onClick: () => { period = p; drawWhen(); } }, t(`rep.p.${p}`)))),
-      h('div', { class: 'row-between' },
-        button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); drawWhen(); } }),
-        h('span', {}, period === 'month' ? monthLabel(month) : `${monthLabel(shift(month, 1 - ({ '3m': 3, '6m': 6, '12m': 12 }[period])))} – ${monthLabel(month)}`),
-        button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); drawWhen(); } })));
+      dropdown('rep-period', t('rep.period'), period, PERIODS.map((p) => [p, t(`rep.p.${p}`)]), (v) => { period = v; drawWhen(); }),
+      period === 'custom'
+        ? h('div', { class: 'filters-grid' }, dateIn('rep-from', t('rep.from'), from, (v) => { from = v; }), dateIn('rep-to', t('rep.to'), to, (v) => { to = v; }))
+        : h('div', { class: 'row-between' },
+          button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); drawWhen(); } }),
+          h('span', {}, period === 'month' ? monthLabel(month) : `${monthLabel(shift(month, 1 - ({ '3m': 3, '6m': 6, '12m': 12 }[period])))} – ${monthLabel(month)}`),
+          button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); drawWhen(); } })));
     go.replaceChildren(button(t('rep.excel'), { kind: 'primary', icon: 'table_view', disabled: busy || !report, onClick: () => download('xlsx') }),
       button(t('rep.pdf'), { icon: 'picture_as_pdf', disabled: busy || !report, onClick: () => download('pdf') }));
   }
   async function download(format) {
+    if (period === 'custom' && (!from || !to || from > to)) { toastError(t('rep.badRange'), 6000); return; }
     busy = true; drawWhen(); msg.textContent = t('rep.making');
     try {
-      const r = await ctx.api.swr('reports.file', { report, period, month, format, lang: getLang() }, () => {});      // the same report again in this run is not made again
+      const r = await ctx.api.swr('reports.file', { report, period, month, format, lang: getLang(), ...(period === 'custom' ? { from, to } : {}) }, () => {});      // the same report again in this run is not made again
       saveFile(r);
       toast(t('rep.done', { name: r.filename }));
       if (r.truncated) toast(t('rep.cut'), 6000);

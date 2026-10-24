@@ -35,7 +35,7 @@ export default function render(ctx) {
   const { t, store } = ctx;
   const pres = store.get().session?.presidentName;
   return h('div', { class: 'page' }, h('h1', {}, t('help.title')),
-    h('div', { style: 'margin-bottom:16px' }, card(t('help.guide.title'), 'menu_book', h('p', {}, t('help.guide.text')), button(t('help.guide.button'), { kind: 'primary', icon: 'menu_book', href: '#/help/guide' }))),
+    h('div', { style: 'margin-bottom:16px' }, card(t('help.guide.title'), 'menu_book', h('p', {}, t('help.guide.text')), button(t('help.guide.button'), { kind: 'primary', icon: 'menu_book', href: '#/help/guide', style: 'margin-top:12px' }))),
     h('div', { class: 'stack-sm' }, SECTIONS.map((k) => h('details', { class: 'acc', name: 'help' },
       h('summary', {}, h('span', {}, t(`help.${k}.q`)), icon('expand_more')),
       h('div', { class: 'acc-body' }, h('p', {}, t(`help.${k}.a`)))))

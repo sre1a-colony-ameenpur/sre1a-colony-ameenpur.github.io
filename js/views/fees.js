@@ -105,7 +105,7 @@ function committee(ctx) {
   }
   drawFilters();
   box.append(h('h2', {}, t('fee.committee')),
-    can('fee_requests', 'c') ? button(t('fee.raise'), { kind: 'primary', icon: 'add', onClick: () => raiseRequestSheet(ctx, load) }) : null,
+    can('fee_requests', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('fee.raise'), title: t('fee.raise'), onClick: () => raiseRequestSheet(ctx, load) }, icon('add')) : null,
     queue, segmented([['requests', t('fee.requests')], ['membership', t('fee.membership')]], tab, (v) => { tab = v; drawFilters(); load(); }, t('fee.committee')), filters, list, more,
     can('maintenance_payments', 'r') ? recentPaymentsCard(ctx, 'fee', load) : null);
   load();

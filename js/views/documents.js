@@ -47,9 +47,9 @@ export default function render(ctx) {
         body.replaceChildren(...items.map((it) => {
           const holder = h('div', { class: 'stack-sm' });
           if (it.has_file) holder.append(button(t('doc.read'), { kind: 'primary', icon: 'menu_book', block: true, onClick: () => readIt(it.slot, holder) }));
-          return card(it.title, 'description',
-            it.has_file ? h('p', { class: 'small muted' }, t('doc.updated', { date: dateShort(it.uploaded_at), name: it.uploaded_by_name })) : emptyState(t('doc.none'), 'inbox'),
-            holder, isPresident ? uploadControl(it) : null);
+          return card(it.title, 'description', h('div', { class: 'stack' },          // space between the date line, the read buttons and the upload control
+            it.has_file ? h('p', { class: 'small muted', style: 'margin:0' }, t('doc.updated', { date: dateShort(it.uploaded_at), name: it.uploaded_by_name })) : emptyState(t('doc.none'), 'inbox'),
+            holder, isPresident ? uploadControl(it) : null));
         }));
       });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }

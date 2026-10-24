@@ -23,7 +23,7 @@ export const SECTIONS = [
     steps: [
       ['My profile.', 'Shows your name, role, Gmail, mobile and plots. The pencil beside the title opens a window to change your name, photo, Gmail or mobile. You choose whether other members can see your mobile number (it is hidden unless you turn it on). Committee holders\' numbers are always shown to members.'],
       ['Map.', 'In the profile menu. Tap a plot to see who lives there and their role.'],
-      ['Gallery.', 'Photos of colony events and of fixed issues.'],
+      ['Gallery.', 'Photos of colony events and of fixed issues. Choose the category, photos or videos, and the month from the dropdowns.'],
       ['Bylaws & rules.', 'The Association bylaws and the EC rules, in English and Telugu, as PDF files. Everyone can read them.'],
     ] },
   { id: 'my-money', shots: [{ id: 'money-member', after: 0, caption: 'Money' }], icon: 'payments', title: 'Money: what you owe', mods: ['maintenance', 'fees'],
@@ -75,7 +75,7 @@ export const SECTIONS = [
       ['Add a member.', 'Tap Add member (needs the right to add). Enter the Gmail, name and at least one plot, written like A-12. Mobile is optional. Choose New member to raise a membership fee, or Existing member for someone already in the colony. The app emails them a welcome message.'],
       ['Edit a member.', 'Tap their row to change name or mobile. Plots cannot be changed here: use a plot request or a transfer.'],
       ['Remove a member.', 'At the bottom of the Edit member sheet. They lose access at once; their payments and complaints stay. If they return, add them again.'],
-      ['Load many members.', 'Load from sheet: fill one row per plot owner in the sheet, press Check sheet, fix any problems listed, then load. Everyone loads as a Member.'],
+      ['Load many members.', 'The icons beside the title load from a sheet or add one member. Load from sheet: fill one row per plot owner in the sheet, press Check sheet, fix any problems listed, then load. Everyone loads as a Member.'],
     ] },
   { id: 'roles', shots: [{ id: 'roles-table', after: 0, caption: 'The permission table' }, { id: 'roles-new', after: 3, caption: 'New role' }], icon: 'admin_panel_settings', title: 'Roles and permissions', needs: [['roles_config', 'r']], mods: ['roles'], group: 'role',
     steps: [
@@ -94,7 +94,7 @@ export const SECTIONS = [
     ] },
   { id: 'expenses', shots: [{ id: 'expense-add', after: 0, caption: 'Add an expense' }, { id: 'expenses-list', after: 1, caption: 'Expenses waiting for approval' }, { id: 'expense-detail', after: 1, caption: 'An expense with its proof' }], icon: 'receipt_long', title: 'Expenses', needs: [['expenses', 'c'], ['expense_approval', 'u'], ['expenses', 'r']], mods: ['expenses'], group: 'role',
     steps: [
-      ['Add an expense.', 'Tap Add expense, fill the details and attach a photo of the payment proof (always required). The President\'s own entries count at once; anyone else\'s wait for approval.'],
+      ['Add an expense.', 'Tap the + button at the bottom right, fill the details and attach a photo of the payment proof (always required). The President\'s own entries count at once; anyone else\'s wait for approval.'],
       ['Approve or reject.', 'The person who adds an expense never approves it. Open the waiting item, check the proof, then approve, or reject with a reason. Only approved expenses count in the totals.'],
       ['Corrections.', 'An approved expense cannot be edited. Reverse it from its detail screen with a reason and add the right one. Both stay in the history.'],
     ] },
@@ -108,7 +108,7 @@ export const SECTIONS = [
     ] },
   { id: 'fees', shots: [{ id: 'fees-raise', after: 0, caption: 'Raise a fee request' }, { id: 'fees-requests', after: 2, caption: 'Fee requests and progress' }], icon: 'request_quote', title: 'Fee requests and membership fees', needs: [['fee_requests', 'r'], ['fee_requests', 'c'], ['membership_rates', 'u']], mods: ['fees'], group: 'role',
     steps: [
-      ['Raise a fee request.', 'Choose Fee for members (for example a festival contribution) or Membership fee for one member. Give a title, choose All or Chosen members, the amount and the pay-by date. No message is sent, so tell people in your usual group.'],
+      ['Raise a fee request.', 'Tap the + button at the bottom right. Choose Fee for members (for example a festival contribution) or Membership fee for one member. Give a title, choose All or Chosen members, the amount and the pay-by date. No message is sent, so tell people in your usual group.'],
       ['Confirm fee payments.', 'Payments recorded by a committee member appear under Fee payments to confirm. Open the screenshot, then confirm.'],
       ['Track progress.', 'The Requests tab shows paid, unpaid and overdue for each request. The Membership fees tab lists fees charged to new members.'],
       ['Change or cancel.', 'A request can be changed or cancelled with a reason while nobody has paid; paid dues stay.'],
@@ -141,7 +141,7 @@ export const SECTIONS = [
     ] },
   { id: 'reports', shots: [{ id: 'reports', after: 0, caption: 'Download a report' }, { id: 'reports-access', after: 1, caption: 'Who can download' }], icon: 'bar_chart', title: 'Reports', needs: [['report_accounts', 'r'], ['report_expenses', 'r'], ['report_maintenance', 'r'], ['report_payments', 'r'], ['report_issues', 'r'], ['report_meetings', 'r']], group: 'role',
     steps: [
-      ['Download.', 'Choose a report, the period (this month, 3, 6 or 12 months) and Excel or PDF. You only see the reports your role holds.'],
+      ['Download.', 'Choose a report and a period from the dropdowns (one month, 3, 6 or 12 months, or custom dates from one day to another), then Excel or PDF. You only see the reports your role holds.'],
       ['Who may download.', 'The President ticks reports per role at the bottom of the screen.'],
     ] },
   { id: 'documents', icon: 'description', title: 'Bylaws and rules: uploading', only: ['President', 'Developer'], group: 'role',

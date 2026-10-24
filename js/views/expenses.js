@@ -40,9 +40,7 @@ export default async function render(ctx) {
   }
 
   function draw() {
-    const year = new Date().getFullYear();
-    const waiting = queue;
-    const parts = [card(null, null, h('div', { class: 'muted small' }, t('exp.yearTotal', { year })), h('div', { class: 'amount big' }, money(stats.year_total_paise)))];
+    const waiting = queue, parts = [];
     if (can('expense_approval', 'u') && waiting.length) {
       parts.push(card(t('exp.queue', { n: stats.pending_count }), 'pending_actions', ...waiting.map((x) => h('div', { class: 'stack-sm queue-item' },
         h('a', { class: 'grow', href: `#/money/expense/${x.id}` }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${money(x.amount_paise)} · ${t('exp.addedBy', { name: x.created_by_name })}`)),
@@ -53,7 +51,6 @@ export default async function render(ctx) {
     parts.push(segmented([['all', t('exp.f.all')], ['pending', t('exp.f.pending')], ['approved', t('exp.f.approved')], ['rejected', t('exp.f.rejected')]], filter, (v) => { filter = v; loadList(); }, t('exp.filter')));
     parts.push(items.length ? h('div', { class: 'stack-sm' }, items.map(row)) : emptyState(t('exp.none'), 'receipt_long'));
     if (cursor) parts.push(button(t('audit.more'), { block: true, disabled: busy, onClick: () => loadList(true) }));
-    if (can('expenses', 'c')) parts.push(button(t('exp.add'), { kind: 'primary', block: true, icon: 'add', onClick: () => addSheet(ctx, load) }));
     box.replaceChildren(...parts);
   }
 
@@ -79,7 +76,8 @@ export default async function render(ctx) {
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return box;
+  return h('div', { class: 'stack' }, box,
+    can('expenses', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('exp.add'), title: t('exp.add'), onClick: () => addSheet(ctx, load) }, icon('add')) : null);
 }
 
 // "Which event is this for?" (optional). Only offered while the Events module is on and the person may read events.

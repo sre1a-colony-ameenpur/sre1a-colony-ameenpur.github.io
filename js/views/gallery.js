@@ -4,17 +4,18 @@ import { h, button, icon, errorState, loadingRegion, emptyState, openSheet, toas
 import { friendly } from '../api.js';
 import { playVideo } from '../video.js';
 
-const CAT_ICON = { events: 'celebration', meetings: 'groups', issues: 'report', fixes: 'task_alt', expense_proofs: 'receipt_long', payment_proofs: 'payments' };
 
 export default function render(ctx) {
   const { t } = ctx;
   let category = '', kind = '', month = '', item = null, items = [], cursor = null, total = 0, categories = [];
-  const chips = h('div', { class: 'chips', role: 'group', 'aria-label': t('gal.category') });
+  const catSel = h('select', { id: 'gal-cat', onChange: (e) => { category = e.target.value; item = null; load(); } });
   const itemChip = h('div', {});
-  const kindSel = h('select', { id: 'gal-kind', 'aria-label': t('gal.kind') }, [['', t('gal.all')], ['photo', t('gal.photos')], ['video', t('gal.videos')]].map(([v, l]) => h('option', { value: v }, l)));
-  const monthIn = h('input', { type: 'month', id: 'gal-month', 'aria-label': t('pay.f.month') });
+  const kindSel = h('select', { id: 'gal-kind' }, [['', t('gal.all')], ['photo', t('gal.photos')], ['video', t('gal.videos')]].map(([v, l]) => h('option', { value: v }, l)));
+  const monthIn = h('input', { type: 'month', id: 'gal-month' });
+  const fieldOf = (id, label, el) => h('div', { class: 'field' }, h('label', { for: id }, label), el);
   const grid = h('div', { class: 'photo-grid gallery-grid' }), more = h('div', {}), count = h('p', { class: 'small muted', role: 'status', id: 'gal-count' });
-  const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.gallery')), chips, itemChip, h('div', { class: 'row' }, kindSel, monthIn), count, grid, more);
+  const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.gallery')),
+    h('div', { class: 'filters-grid' }, fieldOf('gal-cat', t('gal.category'), catSel), fieldOf('gal-kind', t('gal.kind'), kindSel), fieldOf('gal-month', t('pay.f.month'), monthIn)), itemChip, count, grid, more);
 
   // Thumbnails are fetched a few at a time, only as they come into view.
   let busy = 0; const queue = [];
@@ -93,8 +94,7 @@ export default function render(ctx) {
   }
 
   function drawChips() {
-    chips.replaceChildren(...[['', t('gal.all'), 'photo_library'], ...categories.map((c) => [c, t(`gal.cat.${c}`), CAT_ICON[c]])].map(([v, label, ic]) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(v === category),
-      onClick: () => { category = v; item = null; load(); } }, icon(ic, 'sm'), label)));
+    catSel.replaceChildren(...[['', t('gal.all')], ...categories.map((c) => [c, t(`gal.cat.${c}`)])].map(([v, label]) => h('option', { value: v, selected: v === category }, label)));
     itemChip.replaceChildren(item ? button(`${item.title} ✕`, { kind: 'text', onClick: () => { item = null; load(); } }) : '');
   }
 

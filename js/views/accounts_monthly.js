@@ -18,7 +18,7 @@ export default function render(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(2));
     try {
-      await ctx.api.swr('accounts.monthly', { month }, (d) => {
+      await ctx.api.swrMany([['accounts.monthly', { month }], ['expenses.list']], ([d, ex]) => {      // expenses.list carries this year's approved total
         body.replaceChildren(
           h('div', { class: 'row-between' },
             button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); load(); } }),
@@ -31,7 +31,8 @@ export default function render(ctx) {
             h('div', { class: 'grow' }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${cat(x.category)} · ${dateShort(x.date)}${x.reversal ? ` · ${t('acc.reversal')}` : ''}`)),
             h('div', { class: 'amount' }, money(x.amount_paise))))) : emptyState(t('acc.noExpenses'), 'inbox')),
           d.by_category.length ? card(t('acc.byCategory'), 'category', d.by_category.map((x) => row(cat(x.category), money(x.amount_paise)))) : null,
-          card(t('acc.allTime'), 'savings', h('div', { class: 'stats' },
+          card(t('exp.yearTotal', { year: new Date().getFullYear() }), 'event_available', h('div', { class: 'amount big' }, money(ex.year_total_paise))),
+        card(t('acc.allTime'), 'savings', h('div', { class: 'stats' },
             stat(d.overall.collected_paise, t('acc.collected')), stat(d.overall.spent_paise, t('acc.spent')), stat(d.overall.net_paise, t('acc.net'), d.overall.net_paise < 0 ? 'neg' : ''))));
       });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }

@@ -1,6 +1,6 @@
 // S1 Home. Each card loads on its own and appears only if `caps` allows reading it.
 import { pendingBody } from '../pending.js';
-import { h, icon, button, statusPill, errorState } from '../ui.js';
+import { h, icon, button, statusPill, statusIcon, errorState } from '../ui.js';
 import { friendly, ApiError } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -11,9 +11,10 @@ import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 // act(data) says the card needs something from this member (money owed, a vote to cast); those cards sort above the rest (CSS order, so nothing moves in the DOM).
 // Stored answers are drawn first; when the fresh answer arrives every card re-runs quietly (the bus), without a skeleton.
 const bus = new Set();
-function lazyCard(ctx, { title, ic, load, render, act, cls = '' }) {
+function lazyCard(ctx, { title, ic, load, render, act, cls = '', more }) {
   const box = h('section', { class: `card ${cls}`.trim(), 'aria-busy': 'true' });
-  const head = () => h('h2', { class: 'card-title' }, icon(ic), title);
+  // `more` ({ href, text }) puts a link at the right end of the title row.
+  const head = () => { const t2 = h('h2', { class: 'card-title' }, icon(ic), title); return more ? h('div', { class: 'row-between' }, t2, button(more.text, { href: more.href, kind: 'text flush-end' })) : t2; };
   async function run(silent = false) {
     if (!silent) {
       box.setAttribute('aria-busy', 'true');
@@ -119,12 +120,11 @@ export default function render(ctx) {
         list[0].open ? link('#/community', t('home.meeting.actions', { n: list[0].open })) : null] : null }));
   }
   if (r('complaints')) {
-    cards.push(lazyCard(ctx, { title: t('home.complaints.title'), ic: 'report', load: async () => (await home('complaints.list')).items.filter((c) => c.stage !== 'Closed').slice(0, 2),
-      render: (list) => list.length ? [...list.map((c) => h('a', { class: 'list-row stacked', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`)))),
-        link('#/issues', t('common.viewAll'))] : null }));
+    cards.push(lazyCard(ctx, { title: t('home.complaints.title'), ic: 'report', more: { href: '#/issues', text: t('common.viewAll') }, load: async () => (await home('complaints.list')).items.filter((c) => c.stage !== 'Closed').slice(0, 2),
+      render: (list) => list.length ? [...list.map((c) => h('a', { class: 'list-row', href: `#/issues/${c.id}` }, h('span', { class: 'grow' }, titleOf(c)), statusIcon(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))))] : null }));
   }
   if (r('complaints')) {
-    cards.push(lazyCard(ctx, { title: t('pend.title'), ic: 'pending_actions', load: () => home('complaints.pending'), render: (d) => d.total ? [...pendingBody(t, d), link('#/issues', t('common.viewAll'))] : null }));
+    cards.push(lazyCard(ctx, { title: t('pend.title'), ic: 'pending_actions', more: { href: '#/issues', text: t('common.viewAll') }, load: () => home('complaints.pending'), render: (d) => d.total ? pendingBody(t, d).filter(Boolean) : null }));
   }
   if (r('events')) {
     cards.push(lazyCard(ctx, { title: t('home.event.title'), ic: 'celebration', load: async () => (await home('events.list')).items.filter((e) => e.upcoming).slice(0, 1),

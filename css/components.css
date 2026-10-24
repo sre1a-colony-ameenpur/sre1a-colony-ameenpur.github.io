@@ -341,8 +341,12 @@ dialog.busy-overlay::backdrop { background: var(--c-scrim); }
 .guide-top { position: fixed; z-index: 25; inset-inline-end: 16px; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px); width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--c-primary); color: var(--c-on-primary); box-shadow: 0 2px 8px rgba(0, 0, 0, .3); cursor: pointer; }
 .guide-top[hidden] { display: none; }
 @media (min-width: 960px) { .guide-top { bottom: 24px; } }
-.filter-btn.on { background: color-mix(in srgb, var(--c-primary) 16%, transparent); color: var(--c-primary); }
+.filter-btn.on { background: color-mix(in srgb, var(--c-primary) 16%, transparent); font-weight: 700; }
 .filter-btn.on .icon { font-variation-settings: "FILL" 1, "wght" 700; }
 .list-row.stacked { flex-direction: column; align-items: flex-start; gap: 6px; }      /* title on its own line, the status pill under it */
 .list-row.stacked .grow { align-self: stretch; }
 .btn.text.flush { margin-inline-start: -12px; align-self: flex-start; }                /* the link's text lines up with the card's text, not its padding */
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s3); }
+.field input[type="month"], .field input[type="date"] { appearance: none; -webkit-appearance: none; text-align: start; }
+.pill-icon { padding: 2px 6px; min-width: 28px; justify-content: center; }
+.btn.text.flush-end { margin-inline-end: -12px; }

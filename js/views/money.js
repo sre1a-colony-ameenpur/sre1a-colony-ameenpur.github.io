@@ -23,7 +23,9 @@ export default async function render(ctx) {
     const mod = await import(tab === 'expenses' ? './expenses.js' : tab === 'maintenance' ? './maintenance.js' : './fees.js');
     body.replaceChildren(await mod.default(ctx, tab));
   }
-  const root = h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('nav.money')), h('div', { class: 'row' }, can('maintenance_payments', 'r') ? h('a', { class: 'btn', href: '#/money/payments' }, icon('receipt', 'sm'), t('pay.allTitle')) : null, can('expenses', 'r') ? h('a', { class: 'btn', href: '#/money/accounts' }, icon('account_balance', 'sm'), t('acc.title')) : null)),
+  const root = h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('nav.money')), h('div', { class: 'row' },
+      can('maintenance_payments', 'r') ? h('a', { class: 'icon-btn', href: '#/money/payments', 'aria-label': t('pay.allTitle'), title: t('pay.allTitle') }, icon('receipt')) : null,
+      can('expenses', 'r') ? h('a', { class: 'icon-btn', href: '#/money/accounts', 'aria-label': t('acc.title'), title: t('acc.title') }, icon('account_balance')) : null)),
     tabs.length > 1 ? segmented(tabs, lastTab, show, t('nav.money')) : null, body);
   show(lastTab);
   return root;

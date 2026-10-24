@@ -40,6 +40,12 @@ export function statusPill(kind, label) {
   const [cls, ic] = STATUS[kind] || ['off', 'info'];
   return h('span', { class: `pill ${cls}` }, icon(ic, 'sm'), label || t(`status.${kind}`));
 }
+// Just the icon of a status, for tight rows (the word is its tooltip and screen-reader name).
+export function statusIcon(kind, label) {
+  const [cls, ic] = STATUS[kind] || ['off', 'info'];
+  const name = label || t(`status.${kind}`);
+  return h('span', { class: `pill pill-icon ${cls}`, role: 'img', 'aria-label': name, title: name }, icon(ic, 'sm'));
+}
 // Each role has its own colour. Nine hues that are clearly different to the eye (purple, red, yellow, green, blue, magenta, orange, lime, cyan), handed out in an
 // order that keeps neighbours far apart. The first 9 roles get the 9 hues in a soft fill; roles 10 to 18 reuse them as a deeper solid fill, roles 19 to 27 as a pale
 // fill with a dashed outline, so up to 27 roles stay tellable apart. The built-in roles hold the first places, the roles the President creates follow in the order

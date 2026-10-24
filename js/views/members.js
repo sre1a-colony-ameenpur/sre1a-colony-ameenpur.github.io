@@ -10,6 +10,25 @@ export async function loadRoles(api) {
   try { await api.swr('roles.list', {}, ({ items }) => { ROLES = items.map((r) => r.role).filter((r) => r !== 'President'); }); } catch { /* keep the last list */ }
   return ROLES;
 }
+// A member's avatar with their picture when they have one. Pictures are asked for only as the avatar scrolls into view, a few at a time,
+// and are kept in memory (api.media), so drawing the list again does not ask again.
+let loading = 0; const waiting = [];
+const pump = () => { while (loading < 4 && waiting.length) { loading++; waiting.shift()().finally(() => { loading--; pump(); }); } };
+// `m.photo` is the handle the directory gives every member (members.picture); `m.photo_file_id` is on the committee's member rows (members.photo, by email).
+export function memberAvatar(ctx, m, lg = false) {
+  const el = avatar(m.name, lg);
+  if (!m.photo && !m.photo_file_id) return el;
+  const ask = () => (m.photo ? ctx.api.media('members.picture', { photo: m.photo, size: lg ? 'thumb' : 'tiny' }) : ctx.api.media('members.photo', { email: m.email, size: lg ? 'thumb' : 'tiny' }));
+  const fetchIt = () => { waiting.push(async () => {
+    try {
+      const d = await ask();
+      el.style.backgroundImage = `url("data:image/jpeg;base64,${d.jpegBase64}")`; el.classList.add('has-photo'); el.textContent = '';
+    } catch { /* the initials stay */ }
+  }); pump(); };
+  if (!('IntersectionObserver' in window)) fetchIt();
+  else { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); fetchIt(); } }); io.observe(el); }
+  return el;
+}
 export const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 export const plotsOf = (m) => String(m.plot_keys || '').split(',').filter(Boolean);
 const norm = (s) => String(s).toLowerCase().replace(/[\s-]/g, '');
@@ -35,7 +54,7 @@ export default function render(ctx) {
     list.replaceChildren(...(shown.length ? shown.map(row) : [emptyState(t('mem.none'), 'group')]));
   }
   function row(m) {
-    const body = [avatar(m.name),
+    const body = [memberAvatar(ctx, m),
       h('div', { class: 'grow' }, h('div', { style: 'font-weight:600' }, m.name), h('div', { class: 'small muted', style: 'overflow-wrap:anywhere' }, m.email),
         h('div', { class: 'row', style: 'margin-top:4px' }, plotsOf(m).map((k) => plotChip(dashKey(k))), m.active ? rolePill(m.role) : statusPill('closed', t('mem.removed'))))];
     return editable && m.active
@@ -53,8 +72,9 @@ export default function render(ctx) {
 
   const root = h('div', { class: 'page stack' },
     h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('menu.members')),
-      can('members', 'c') ? h('div', { class: 'row' }, button(t('mem.import'), { icon: 'upload_file', href: '#/members/import' }),
-        button(t('mem.add'), { kind: 'primary', icon: 'person_add', onClick: () => memberSheet(ctx, { member: null, items, done: load }) })) : null),
+      can('members', 'c') ? h('div', { class: 'row' },
+        h('a', { class: 'icon-btn', href: '#/members/import', 'aria-label': t('mem.import'), title: t('mem.import') }, icon('upload_file')),
+        h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('mem.add'), title: t('mem.add'), onClick: () => memberSheet(ctx, { member: null, items, done: load }) }, icon('person_add'))) : null),
     !editable ? h('p', { class: 'small muted' }, t('mem.viewOnly')) : null,
     h('div', { class: 'field' }, h('label', { for: 'mem-q' }, t('mem.search')), search),
     h('div', { class: 'row' }, seg, h('div', { class: 'field' }, role)), count, list);
