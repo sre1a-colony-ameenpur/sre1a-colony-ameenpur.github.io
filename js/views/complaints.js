@@ -117,7 +117,7 @@ function plotPicker(ctx, id, labelText, initial) {
   input.addEventListener('input', draw);
   input.addEventListener('blur', hide);
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !list.hidden && list.firstChild) { e.preventDefault(); input.value = list.firstChild.textContent; hide(); } });
-  ctx.api.call('map.plots').then((d) => { plots = d.plots; const own = find(initial); if (own) input.value = own.plot_label; }).catch(() => {});
+  ctx.api.swr('map.plots', {}, () => {}).then((d) => { plots = d.plots; const own = find(initial); if (own) input.value = own.plot_label; }).catch(() => {});
   const el = h('div', { class: 'field combo' }, h('label', { for: id }, labelText), input, list, h('div', { class: 'help' }, t('cmp.plotHelp')));
   return { el, input, find, loaded: () => plots.length > 0 };
 }

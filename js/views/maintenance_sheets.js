@@ -170,7 +170,7 @@ export async function proofSheet(ctx, id) {
   const body = h('div', {}, loadingRegion(1));
   openSheet({ title: t('exp.proof'), wide: true, body, actions: [{ label: t('common.close') }] });
   try {
-    const { jpegBase64 } = await ctx.api.call('maintenance.payments.proof', { id, size: 'full' });
+    const { jpegBase64 } = await ctx.api.media('maintenance.payments.proof', { id, size: 'full' });
     body.replaceChildren(h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: t('exp.proof'), style: 'width:100%' }));
   } catch (e) { toastError(friendly(e, t)); body.replaceChildren(h('p', {}, friendly(e, t))); }
 }

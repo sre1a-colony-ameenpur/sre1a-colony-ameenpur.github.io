@@ -75,11 +75,11 @@ function thumb(ctx, id) {
   const img = h('img', { alt: ctx.t('cmp.photo'), class: 'photo-thumb', loading: 'lazy' });
   const btn = h('button', { type: 'button', class: 'photo-btn', 'aria-label': ctx.t('cmp.photo'), onClick: async () => {
     try {
-      const { jpegBase64 } = await ctx.api.call('media.photo', { id, size: 'full' });
+      const { jpegBase64 } = await ctx.api.media('media.photo', { id, size: 'full' });
       openSheet({ title: ctx.t('cmp.photo'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: ctx.t('cmp.photo'), style: 'width:100%' }), actions: [{ label: ctx.t('common.close') }] });
     } catch (e) { toastError(friendly(e, ctx.t)); }
   } }, img);
-  ctx.api.call('media.photo', { id, size: 'thumb' }).then((d) => { img.src = `data:image/jpeg;base64,${d.jpegBase64}`; }).catch(() => { btn.replaceChildren(icon('broken_image')); });
+  ctx.api.media('media.photo', { id, size: 'thumb' }).then((d) => { img.src = `data:image/jpeg;base64,${d.jpegBase64}`; }).catch(() => { btn.replaceChildren(icon('broken_image')); });
   return btn;
 }
 

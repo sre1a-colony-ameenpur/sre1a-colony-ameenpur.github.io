@@ -16,16 +16,17 @@ export default function render(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(2));
     try {
-      const d = await ctx.api.call('complaints.monthly', { month });
-      body.replaceChildren(
-        h('div', { class: 'row-between' },
-          button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); load(); } }),
-          h('strong', {}, monthLabel(month)),
-          button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); load(); } })),
-        card(t('cmp.m.title'), 'insights', h('div', { class: 'stats' },
-          stat(d.raised, t('cmp.m.raised')), stat(d.resolved, t('cmp.m.resolved')), stat(d.still_open, t('cmp.m.stillOpen')), stat(d.reopened, t('cmp.m.reopened')),
-          stat(d.closed_by_hand, t('cmp.m.closedHand')), stat(d.closed_by_system, t('cmp.m.closedAuto'))),
-          h('p', {}, icon('timer', 'sm'), ' ', d.avg_hours_to_resolve === null ? t('cmp.m.noAvg') : t('cmp.m.avg', { d: duration(d.avg_hours_to_resolve * 3600000) }))));
+      await ctx.api.swr('complaints.monthly', { month }, (d) => {
+        body.replaceChildren(
+          h('div', { class: 'row-between' },
+            button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); load(); } }),
+            h('strong', {}, monthLabel(month)),
+            button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); load(); } })),
+          card(t('cmp.m.title'), 'insights', h('div', { class: 'stats' },
+            stat(d.raised, t('cmp.m.raised')), stat(d.resolved, t('cmp.m.resolved')), stat(d.still_open, t('cmp.m.stillOpen')), stat(d.reopened, t('cmp.m.reopened')),
+            stat(d.closed_by_hand, t('cmp.m.closedHand')), stat(d.closed_by_system, t('cmp.m.closedAuto'))),
+            h('p', {}, icon('timer', 'sm'), ' ', d.avg_hours_to_resolve === null ? t('cmp.m.noAvg') : t('cmp.m.avg', { d: duration(d.avg_hours_to_resolve * 3600000) }))));
+      });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();

@@ -103,7 +103,7 @@ function plotSheet(ctx, p, done) {
   drawCat(p.category);
   if (can('plot_transfer', 'r')) {
     hist.replaceChildren(loadingRegion(1));
-    ctx.api.call('plots.history', { plotKey: p.plot_key }).then(({ items }) => {
+    ctx.api.swr('plots.history', { plotKey: p.plot_key }, ({ items }) => {
       const cur = p.owner ? [h('div', { class: 'list-row' }, h('div', { class: 'grow' }, p.owner.name), h('span', { class: 'small muted' }, t('plots.now')))] : [];
       hist.replaceChildren(h('h3', {}, t('plots.history')), ...(items.length ? [...items].reverse().map((r) => h('div', { class: 'list-row' },
         h('div', { class: 'grow' }, r.to_name ? t('plots.hist.to', { name: r.to_name }) : t('plots.hist.none'), r.from_name ? ` · ${t('plots.hist.from', { name: r.from_name })}` : '',

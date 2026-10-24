@@ -61,16 +61,17 @@ export default function render(ctx) {
     openPanel(loadingRegion(1));
     fly(key);
     try {
-      const p = await ctx.api.call('map.profile', { plot_key: realKey.get(key) || key });
-      const o = p.owner;
-      openPanel(
-        h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(o?.name || '?', true),
-          h('div', {}, h('h2', {}, o?.name || t('map.noOwner')), h('div', { class: 'row' }, plotChip(p.plot_label || label(key)), o?.role && o.role !== 'Member' ? rolePill(o.role) : null))),
-        h('p', { class: 'small muted' }, t(`map.cat.${p.category}`), p.facing ? ` · ${t('map.facing')}: ${p.facing} (${t('map.estimated')})` : ''),
-        o?.plot_keys?.length > 1 ? h('p', { class: 'small' }, t('map.alsoOwns'), ' ', ...o.plot_keys.map((k) => plotChip(label(k)))) : null,
-        o?.mobile ? h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, t('profile.mobile')),
-          h('a', { href: `tel:${o.mobile.replace(/\s/g, '')}` }, icon('call', 'sm'), ' ', o.mobile)) : null,
-        ...Object.entries(p.profile || {}).map(([k, v]) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, k), h('div', {}, String(v)))));
+      await ctx.api.swr('map.profile', { plot_key: realKey.get(key) || key }, (p) => {
+        const o = p.owner;
+        openPanel(
+          h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(o?.name || '?', true),
+            h('div', {}, h('h2', {}, o?.name || t('map.noOwner')), h('div', { class: 'row' }, plotChip(p.plot_label || label(key)), o?.role && o.role !== 'Member' ? rolePill(o.role) : null))),
+          h('p', { class: 'small muted' }, t(`map.cat.${p.category}`), p.facing ? ` · ${t('map.facing')}: ${p.facing} (${t('map.estimated')})` : ''),
+          o?.plot_keys?.length > 1 ? h('p', { class: 'small' }, t('map.alsoOwns'), ' ', ...o.plot_keys.map((k) => plotChip(label(k)))) : null,
+          o?.mobile ? h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, t('profile.mobile')),
+            h('a', { href: `tel:${o.mobile.replace(/\s/g, '')}` }, icon('call', 'sm'), ' ', o.mobile)) : null,
+          ...Object.entries(p.profile || {}).map(([k, v]) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'min-width:96px' }, k), h('div', {}, String(v)))));
+      });
     } catch (e) { openPanel(errorState(friendly(e, t), () => showProfile(key))); }
   }
 
@@ -97,13 +98,14 @@ export default function render(ctx) {
   async function showCommittee() {
     openPanel(h('h2', {}, t('map.committee')), loadingRegion(2));
     try {
-      const { items } = await ctx.api.call('map.committee');
-      openPanel(h('h2', {}, t('map.committee')), ...items.map((i) => h('div', { class: 'list-row' },
-        i.member ? avatar(i.member.name) : h('span', { class: 'avatar off', 'aria-hidden': 'true' }, '–'),
-        h('div', { class: 'grow' }, h('div', {}, rolePill(i.role)),
-          i.member ? h('div', {}, i.member.name) : h('div', { class: 'muted' }, t('map.vacant')),
-          i.member ? h('div', { class: 'row small' }, i.member.plot_keys.map((k) => plotChip(label(norm(k))))) : null),
-        i.member?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${i.member.mobile.replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${i.member.name}` }) : null)));
+      await ctx.api.swr('map.committee', {}, ({ items }) => {
+        openPanel(h('h2', {}, t('map.committee')), ...items.map((i) => h('div', { class: 'list-row' },
+          i.member ? avatar(i.member.name) : h('span', { class: 'avatar off', 'aria-hidden': 'true' }, '–'),
+          h('div', { class: 'grow' }, h('div', {}, rolePill(i.role)),
+            i.member ? h('div', {}, i.member.name) : h('div', { class: 'muted' }, t('map.vacant')),
+            i.member ? h('div', { class: 'row small' }, i.member.plot_keys.map((k) => plotChip(label(norm(k))))) : null),
+          i.member?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${i.member.mobile.replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${i.member.name}` }) : null)));
+      });
     } catch (e) { openPanel(errorState(friendly(e, t), showCommittee)); }
   }
 
@@ -135,7 +137,7 @@ export default function render(ctx) {
   async function init() {
     const stage = root.querySelector('.map-stage');
     try {
-      const [, g, d] = await Promise.all([loadLeaflet(), fetch('map/plots.json').then((r) => { if (!r.ok) throw new Error('geometry'); return r.json(); }), ctx.api.call('map.plots')]);
+      const [, g, d] = await Promise.all([loadLeaflet(), fetch('map/plots.json').then((r) => { if (!r.ok) throw new Error('geometry'); return r.json(); }), ctx.api.swr('map.plots', {}, () => {})]);
       G = g; data = d;
       g.plots.forEach((p) => geom.set(norm(p.key), p));
       d.plots.forEach((p) => {

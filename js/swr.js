@@ -3,9 +3,12 @@
 // (refreshScreen), the app coming back into focus (resetLoaded) or a write (clear) asks the server again. The first visit after the app opens still fetches once.
 // "Loaded" is kept per model (the part of the action name before the dot: complaints.list and complaints.get are the 'complaints' model), so a
 // different way of loading, such as one call that fetches every model at sync time, only has to mark the models it filled (markLoaded).
-// Answers are kept per signed-in member and dropped on sign-out and after any write. Nothing heavy (photos, proofs, videos) is stored.
+// Answers are kept per signed-in member and dropped on sign-out and after any write. Nothing heavy (photos, proofs, videos) is stored on the device.
+// Photos and proofs are kept in memory only, by id and size (media()): they never change, so a write or a focus return does not drop them and a
+// screen that draws again reuses them without a request. They are dropped on sign-out and when the memory budget is full (oldest first).
 const PREFIX = 'sre.c:';
 const MAX_CHARS = 150000;
+const MEDIA_BUDGET = 30000000;                       // characters of base64 kept in memory (about 22 MB of images)
 const SKIP = /(proof|photo|video)$/;
 
 export const modelOf = (action) => String(action).split('.')[0];
@@ -16,6 +19,8 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   const loaded = new Map();                          // model -> keys fetched from the server since the app opened (in memory only, so a new launch fetches again)
   let touched = new Set();                           // models the current screen has asked for, so Sync refreshes this screen and no other
   const idleWaiters = [];
+  const media = new Map();                           // key -> { p: promise of the answer, n: its size }, oldest first
+  let mediaChars = 0;
   const key = (action, payload) => `${PREFIX}${userKey() || ''}|${action}|${JSON.stringify(payload || {})}`;
   const cacheable = (action) => !SKIP.test(action);
   function read(k) {
@@ -37,6 +42,24 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   function clear() {
     mem.clear(); loaded.clear();
     try { if (storage) Object.keys(storage).filter((k) => k.startsWith(PREFIX)).forEach((k) => storage.removeItem(k)); } catch { /* ignore */ }
+  }
+  // Photo, proof or video answer: the same promise is shared by every screen that asks, and it is not asked for again while it is in memory.
+  function mediaGet(action, payload) {
+    const k = key(action, payload), hit = media.get(k);
+    if (hit) { media.delete(k); media.set(k, hit); return hit.p; }                // asked again: now the newest
+    const entry = { n: 0, p: null };
+    entry.p = call(action, payload).then((d) => {
+      entry.n = JSON.stringify(d ?? '').length; mediaChars += entry.n;
+      for (const [ok, e] of media) { if (mediaChars <= MEDIA_BUDGET || ok === k) break; media.delete(ok); mediaChars -= e.n; }
+      return d;
+    }, (e) => { if (media.get(k) === entry) media.delete(k); throw e; });         // a failed fetch is not remembered
+    media.set(k, entry);
+    return entry.p;
+  }
+  // No argument: everything (sign-out). With a pattern: the entries whose action matches it (a write drops the proofs, which can be replaced; photos never change).
+  function dropMedia(actionPattern) {
+    if (!actionPattern) { media.clear(); mediaChars = 0; return; }
+    for (const [k, e] of media) if (actionPattern.test(k.split('|')[1])) { media.delete(k); mediaChars -= e.n; }
   }
   // cb(data, { stale }) is called with the stored answer first (stale: true) when there is one, then with the fresh one. Resolves with the latest data.
   async function swr(action, payload, cb) {
@@ -72,5 +95,5 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   async function refreshScreen(fn) { resetLoaded([...touched]); return fn(); }
   // Resolves when no request is running (at once if none is); the pull-down indicator waits for it.
   function whenIdle() { return running === 0 ? Promise.resolve() : new Promise((res) => { idleWaiters.push(res); }); }
-  return { swr, many, clear, resetLoaded, markLoaded, fill, withoutRefresh, beginScreen, refreshScreen, whenIdle, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
+  return { swr, many, media: mediaGet, dropMedia, clear, resetLoaded, markLoaded, fill, withoutRefresh, beginScreen, refreshScreen, whenIdle, peek: (action, payload) => (cacheable(action) ? read(key(action, payload))?.data : undefined) };
 }

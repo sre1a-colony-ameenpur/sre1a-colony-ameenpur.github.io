@@ -50,7 +50,7 @@ export default async function render(ctx) {
 
 async function viewer(ctx, id) {
   try {
-    const { jpegBase64 } = await ctx.api.call('media.photo', { id, size: 'full' });
+    const { jpegBase64 } = await ctx.api.media('media.photo', { id, size: 'full' });
     openSheet({ title: ctx.t('cmp.photo'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: ctx.t('cmp.photo'), style: 'width:100%' }), actions: [{ label: ctx.t('common.close') }] });
   } catch (e) { toastError(friendly(e, ctx.t)); }
 }

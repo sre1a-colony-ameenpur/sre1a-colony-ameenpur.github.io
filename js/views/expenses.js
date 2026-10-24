@@ -74,7 +74,7 @@ export default async function render(ctx) {
     if (!items.length) box.replaceChildren(loadingRegion(3));
     try {
       await fetchPage(false);
-      queue = can('expense_approval', 'u') && stats.pending_count ? (await ctx.api.call('expenses.list', { status: 'pending' })).items : [];
+      queue = can('expense_approval', 'u') && stats.pending_count ? (await ctx.api.swr('expenses.list', { status: 'pending' }, () => {})).items : [];
       draw();
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }

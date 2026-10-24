@@ -46,14 +46,15 @@ export default function render(ctx) {
     if (!can('plot_change_requests', 'c')) return;
     reqBox.replaceChildren(loadingRegion(1));
     try {
-      const { items: list } = await ctx.api.call('plotRequests.mine');
-      reqBox.replaceChildren(...(list.length ? list.map((r) => h('div', { class: 'list-row' },
-        h('div', { class: 'grow' }, `${t(r.action === 'add' ? 'req.add' : 'req.remove')} `, plotChip(dashKey(r.plot_key)),
-          h('div', { class: 'small muted' }, dateShort(r.requested_at))),
-        statusPill(r.status === 'Pending' ? 'pending' : r.status === 'Approved' ? 'approved' : r.status === 'Rejected' ? 'rejected' : 'closed', t(`req.status.${r.status}`)),
-        r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
-          try { await ctx.api.call('plotRequests.cancel', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toastError(friendly(e, t)); }
-        } }) : null)) : [emptyState(t('req.none'), 'inbox')]));
+      await ctx.api.swr('plotRequests.mine', {}, ({ items: list }) => {
+        reqBox.replaceChildren(...(list.length ? list.map((r) => h('div', { class: 'list-row' },
+          h('div', { class: 'grow' }, `${t(r.action === 'add' ? 'req.add' : 'req.remove')} `, plotChip(dashKey(r.plot_key)),
+            h('div', { class: 'small muted' }, dateShort(r.requested_at))),
+          statusPill(r.status === 'Pending' ? 'pending' : r.status === 'Approved' ? 'approved' : r.status === 'Rejected' ? 'rejected' : 'closed', t(`req.status.${r.status}`)),
+          r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
+            try { await ctx.api.call('plotRequests.cancel', { id: r.id }); toast(t('common.saved')); loadRequests(); } catch (e) { toastError(friendly(e, t)); }
+          } }) : null)) : [emptyState(t('req.none'), 'inbox')]));
+      });
     } catch (e) { reqBox.replaceChildren(errorState(friendly(e, t), loadRequests)); }
   }
   loadRequests();

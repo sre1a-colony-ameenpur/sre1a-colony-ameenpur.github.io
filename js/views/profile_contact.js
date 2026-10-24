@@ -58,15 +58,16 @@ export function myRequests(ctx) {
   const wrap = h('div', { hidden: true }, card(t('contact.myRequests'), 'list_alt', box));
   async function load() {
     try {
-      const { items } = await ctx.api.call('contactRequests.mine');
-      wrap.hidden = !items.length;
-      box.replaceChildren(...items.map((r) => h('div', { class: 'list-row' },
-        h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, `${fieldLabel(t, r.field)}: `, h('strong', {}, r.new_value),
-          h('div', { class: 'small muted' }, dateShort(r.requested_at), r.reason ? ` · ${r.reason}` : '')),
-        statusPill(kindOf(r.status), t(`req.status.${r.status}`)),
-        r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
-          try { await ctx.api.call('contactRequests.cancel', { id: r.id }); toast(t('common.saved')); load(); } catch (e) { toastError(friendly(e, t)); }
-        } }) : null)));
+      await ctx.api.swr('contactRequests.mine', {}, ({ items }) => {
+        wrap.hidden = !items.length;
+        box.replaceChildren(...items.map((r) => h('div', { class: 'list-row' },
+          h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, `${fieldLabel(t, r.field)}: `, h('strong', {}, r.new_value),
+            h('div', { class: 'small muted' }, dateShort(r.requested_at), r.reason ? ` · ${r.reason}` : '')),
+          statusPill(kindOf(r.status), t(`req.status.${r.status}`)),
+          r.status === 'Pending' ? button(t('common.cancel'), { kind: 'text', onClick: async () => {
+            try { await ctx.api.call('contactRequests.cancel', { id: r.id }); toast(t('common.saved')); load(); } catch (e) { toastError(friendly(e, t)); }
+          } }) : null)));
+      });
     } catch { wrap.hidden = true; }
   }
   load();
@@ -94,12 +95,13 @@ export function decisions(ctx) {
   }
   async function load() {
     try {
-      const { items } = await ctx.api.call('contactRequests.list', { status: 'Pending' });
-      box.replaceChildren(...(items.length ? items.map((r) => h('div', { class: 'stack-sm', style: 'overflow-wrap:anywhere' },
-        h('div', {}, h('strong', {}, r.member_name || t('plots.unknown')), ` · ${fieldLabel(t, r.field)}`),
-        h('div', { class: 'small' }, `${r.old_value || '—'} → `, h('strong', {}, r.new_value)),
-        h('div', { class: 'small muted' }, dateShort(r.requested_at)),
-        h('div', { class: 'row' }, button(t('plots.req.approve'), { kind: 'primary', onClick: () => approve(r) }), button(t('plots.req.reject'), { kind: 'danger', onClick: () => reject(r) })))) : [emptyState(t('contact.noneToDecide'), 'inbox')]));
+      await ctx.api.swr('contactRequests.list', { status: 'Pending' }, ({ items }) => {
+        box.replaceChildren(...(items.length ? items.map((r) => h('div', { class: 'stack-sm', style: 'overflow-wrap:anywhere' },
+          h('div', {}, h('strong', {}, r.member_name || t('plots.unknown')), ` · ${fieldLabel(t, r.field)}`),
+          h('div', { class: 'small' }, `${r.old_value || '—'} → `, h('strong', {}, r.new_value)),
+          h('div', { class: 'small muted' }, dateShort(r.requested_at)),
+          h('div', { class: 'row' }, button(t('plots.req.approve'), { kind: 'primary', onClick: () => approve(r) }), button(t('plots.req.reject'), { kind: 'danger', onClick: () => reject(r) })))) : [emptyState(t('contact.noneToDecide'), 'inbox')]));
+      });
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();

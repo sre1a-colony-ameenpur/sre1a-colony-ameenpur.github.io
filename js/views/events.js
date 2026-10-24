@@ -9,7 +9,7 @@ import { compressPhoto } from '../photo.js';
 // A photo thumbnail that fills in when loaded; falls back to an icon.
 export function photoImg(ctx, id, cls = 'photo-thumb') {
   const img = h('img', { alt: '', class: cls, loading: 'lazy' });
-  ctx.api.call('media.photo', { id, size: 'thumb' }).then((d) => { img.src = `data:image/jpeg;base64,${d.jpegBase64}`; }).catch(() => img.replaceWith(icon('broken_image')));
+  ctx.api.media('media.photo', { id, size: 'thumb' }).then((d) => { img.src = `data:image/jpeg;base64,${d.jpegBase64}`; }).catch(() => img.replaceWith(icon('broken_image')));
   return img;
 }
 export async function uploadPhotos(ctx, parentId, files) {

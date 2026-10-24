@@ -43,14 +43,15 @@ export default function render(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(2));
     try {
-      const { items } = await ctx.api.call('documents.list');
-      body.replaceChildren(...items.map((it) => {
-        const holder = h('div', { class: 'stack-sm' });
-        if (it.has_file) holder.append(button(t('doc.read'), { kind: 'primary', icon: 'menu_book', block: true, onClick: () => readIt(it.slot, holder) }));
-        return card(it.title, 'description',
-          it.has_file ? h('p', { class: 'small muted' }, t('doc.updated', { date: dateShort(it.uploaded_at), name: it.uploaded_by_name })) : emptyState(t('doc.none'), 'inbox'),
-          holder, isPresident ? uploadControl(it) : null);
-      }));
+      await ctx.api.swr('documents.list', {}, ({ items }) => {
+        body.replaceChildren(...items.map((it) => {
+          const holder = h('div', { class: 'stack-sm' });
+          if (it.has_file) holder.append(button(t('doc.read'), { kind: 'primary', icon: 'menu_book', block: true, onClick: () => readIt(it.slot, holder) }));
+          return card(it.title, 'description',
+            it.has_file ? h('p', { class: 'small muted' }, t('doc.updated', { date: dateShort(it.uploaded_at), name: it.uploaded_by_name })) : emptyState(t('doc.none'), 'inbox'),
+            holder, isPresident ? uploadControl(it) : null);
+        }));
+      });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();

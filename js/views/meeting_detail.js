@@ -43,7 +43,7 @@ export default async function render(ctx) {
   return root;
 }
 
-async function memberList(ctx) { return (await ctx.api.call('map.plots')).members.filter((m) => m.plot_keys.length); }
+async function memberList(ctx) { return (await ctx.api.swr('map.plots', {}, () => {})).members.filter((m) => m.plot_keys.length); }
 
 async function attendanceSheet(ctx, id, current, done) {
   const { t } = ctx;

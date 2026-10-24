@@ -25,11 +25,14 @@ export default function render(ctx) {
   async function load(older = false) {
     if (!older) { items = []; cursor = null; list.replaceChildren(loadingRegion(2)); more.replaceChildren(); }
     try {
-      const r = await ctx.api.call('payments.history', { ...filters(), ...(older && cursor ? { before: cursor } : {}) });
-      items = items.concat(r.items); cursor = r.next_cursor; total = r.total;
-      list.replaceChildren(...(items.length ? items.map((x) => paymentRow(t, x, { showMember: true })) : [emptyState(t('pay.none'), 'inbox')]));
-      root.querySelector('#pf-count').textContent = t('pay.count', { n: total });
-      more.replaceChildren(...(cursor ? [button(t('pay.more'), { block: true, onClick: () => load(true) })] : []));
+      const paint = (r) => {
+        items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor; total = r.total;
+        list.replaceChildren(...(items.length ? items.map((x) => paymentRow(t, x, { showMember: true })) : [emptyState(t('pay.none'), 'inbox')]));
+        root.querySelector('#pf-count').textContent = t('pay.count', { n: total });
+        more.replaceChildren(...(cursor ? [button(t('pay.more'), { block: true, onClick: () => load(true) })] : []));
+      };
+      if (older) paint(await ctx.api.call('payments.history', { ...filters(), ...(cursor ? { before: cursor } : {}) }));
+      else await ctx.api.swr('payments.history', filters(), paint);
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
   [month, kind, status].forEach((el) => el.addEventListener('change', () => load()));

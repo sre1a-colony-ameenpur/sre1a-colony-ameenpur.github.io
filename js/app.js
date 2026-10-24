@@ -83,6 +83,7 @@ const swrCache = createSwr({ call: (a, p) => api.call(a, p), storage: lsOrNull, 
 const api = {
   swr: (action, payload, cb) => swrCache.swr(action, payload || {}, cb),
   swrMany: (specs, cb) => swrCache.many(specs, cb),
+  media: (action, payload) => swrCache.media(action, payload || {}),     // photos, proofs, videos: kept in memory by id and size
   // opts.quiet: a write the screen already shows as sent (it handles its own failure), so no blocking overlay.
   async call(action, payload, opts) {
     const block = !READ_ACTION.test(action) && !opts?.quiet;
@@ -90,7 +91,7 @@ const api = {
     try {
       const out = await client.call(action, payload);
       if (!store.get().online) store.set({ online: true });
-      if (!READ_ACTION.test(action)) swrCache.clear();                // a write may change anything we stored
+      if (!READ_ACTION.test(action)) { swrCache.clear(); swrCache.dropMedia(/proof$/); }                // a write may change anything we stored; a proof can be replaced
       return out;
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') store.set({ online: false });
@@ -157,7 +158,7 @@ async function loadMyPhoto(session) {
 const mockEmail = () => ({ unlisted: 'someone.else@example.com', removed: 'former.member@example.com' })[ss.get('sre.mockRole')] || '';
 
 function signOut() {
-  swrCache.clear(); setMyPhoto('');
+  swrCache.clear(); swrCache.dropMedia(); setMyPhoto('');
   if (!mock) forgetDevice();
   auth.signOut();
   store.set({ status: 'out', session: null, user: null, notice: null });

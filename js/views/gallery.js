@@ -42,9 +42,9 @@ export default function render(ctx) {
     const stage = h('div', { class: 'viewer' }, spin, img, prev, next);
     let token = 0, sheet;
     const srcOf = async (p) => {
-      if (proof(p)) return `data:image/jpeg;base64,${(await ctx.api.call('gallery.proof', { category: p.category, id: p.id, size: 'full' })).jpegBase64}`;
+      if (proof(p)) return `data:image/jpeg;base64,${(await ctx.api.media('gallery.proof', { category: p.category, id: p.id, size: 'full' })).jpegBase64}`;
       if (p.public_url) return p.public_url.replace('sz=w400', 'sz=w1600');
-      return `data:image/jpeg;base64,${(await ctx.api.call('media.photo', { id: p.id, size: 'full' })).jpegBase64}`;
+      return `data:image/jpeg;base64,${(await ctx.api.media('media.photo', { id: p.id, size: 'full' })).jpegBase64}`;
     };
     async function show() {
       const list = photos(), p = list[pos], mine = ++token;
@@ -88,7 +88,7 @@ export default function render(ctx) {
     if (x.kind === 'video') img.src = x.video_thumb;
     else if (x.public_url) img.src = x.public_url;
     else if (x.thumb) img.src = `data:image/jpeg;base64,${x.thumb}`;
-    else lazy(img, async () => (proof(x) ? await ctx.api.call('gallery.proof', { category: x.category, id: x.id, size: 'thumb' }) : await ctx.api.call('media.photo', { id: x.id, size: 'tiny' })).jpegBase64);
+    else lazy(img, async () => (proof(x) ? await ctx.api.media('gallery.proof', { category: x.category, id: x.id, size: 'thumb' }) : await ctx.api.media('media.photo', { id: x.id, size: 'tiny' })).jpegBase64);
     return h('button', { type: 'button', class: 'photo-btn', 'aria-label': x.item_title || t('cmp.photo'), title: x.item_title, onClick: () => open(x) }, img, x.kind === 'video' ? h('span', { class: 'play-badge' }, icon('play_circle')) : null);
   }
 
@@ -101,12 +101,16 @@ export default function render(ctx) {
   async function load(older = false) {
     if (!older) { items = []; cursor = null; grid.replaceChildren(loadingRegion(2)); more.replaceChildren(); }
     try {
-      const r = await ctx.api.call('gallery.list', { ...(category ? { category } : {}), ...(item ? { itemId: item.id } : {}), ...(kind ? { kind } : {}), ...(month ? { month } : {}), ...(older && cursor ? { before: cursor } : {}) });
-      categories = r.categories; items = items.concat(r.items); cursor = r.next_cursor; total = r.total;
-      drawChips();
-      grid.replaceChildren(...(items.length ? items.map(tile) : [emptyState(t('gal.none'), 'photo_library')]));
-      count.textContent = t('gal.count', { n: total });
-      more.replaceChildren(...(cursor ? [button(t('pay.more'), { block: true, onClick: () => load(true) })] : []));
+      const query = { ...(category ? { category } : {}), ...(item ? { itemId: item.id } : {}), ...(kind ? { kind } : {}), ...(month ? { month } : {}) };
+      const paint = (r) => {
+        categories = r.categories; items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor; total = r.total;
+        drawChips();
+        grid.replaceChildren(...(items.length ? items.map(tile) : [emptyState(t('gal.none'), 'photo_library')]));
+        count.textContent = t('gal.count', { n: total });
+        more.replaceChildren(...(cursor ? [button(t('pay.more'), { block: true, onClick: () => load(true) })] : []));
+      };
+      if (older) paint(await ctx.api.call('gallery.list', { ...query, ...(cursor ? { before: cursor } : {}) }));
+      else await ctx.api.swr('gallery.list', query, paint);
     } catch (e) { grid.replaceChildren(errorState(friendly(e, t), () => load(older))); }
   }
   kindSel.addEventListener('change', () => { kind = kindSel.value; load(); });

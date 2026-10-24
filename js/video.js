@@ -66,7 +66,7 @@ const loadYoutubeApi = () => (apiReady ||= new Promise((resolve, reject) => {
 export async function playVideo(ctx, mediaId) {
   const { t } = ctx;
   try {
-    const { youtubeId } = await ctx.api.call('media.video', { id: mediaId });
+    const { youtubeId } = await ctx.api.media('media.video', { id: mediaId });
     await loadYoutubeApi();
     const mount = h('div', { style: 'position:absolute;inset:0;width:100%;height:100%' });
     const shield = h('div', { style: 'position:absolute;inset:0;z-index:2' });

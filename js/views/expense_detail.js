@@ -44,11 +44,11 @@ export default async function render(ctx) {
   async function showProof(box, id) {
     box.replaceChildren(loadingRegion(1));
     try {
-      const { jpegBase64 } = await ctx.api.call('expenses.proof', { id, size: 'thumb' });
+      const { jpegBase64 } = await ctx.api.media('expenses.proof', { id, size: 'thumb' });
       const img = h('img', { src: `data:image/jpeg;base64,${jpegBase64}`, alt: t('exp.proof'), style: 'width:100%;border-radius:12px;cursor:zoom-in;max-height:360px;object-fit:contain;background:var(--c-surface,#f4f4f4)' });
       img.addEventListener('click', async () => {
         try {
-          const full = await ctx.api.call('expenses.proof', { id, size: 'full' });
+          const full = await ctx.api.media('expenses.proof', { id, size: 'full' });
           openSheet({ title: t('exp.proof'), wide: true, body: h('img', { src: `data:image/jpeg;base64,${full.jpegBase64}`, alt: t('exp.proof'), style: 'width:100%' }), actions: [{ label: t('common.close') }] });
         } catch (e) { toastError(friendly(e, t)); }
       });

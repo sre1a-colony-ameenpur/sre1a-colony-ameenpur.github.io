@@ -10,8 +10,9 @@ export default function render(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(2));
     try {
-      const { items } = await ctx.api.call('payments.mine');
-      body.replaceChildren(items.length ? h('div', {}, items.map((x) => paymentRow(t, x))) : emptyState(t('pay.none'), 'inbox'));
+      await ctx.api.swr('payments.mine', {}, ({ items }) => {
+        body.replaceChildren(items.length ? h('div', {}, items.map((x) => paymentRow(t, x))) : emptyState(t('pay.none'), 'inbox'));
+      });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();

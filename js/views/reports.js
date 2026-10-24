@@ -48,7 +48,7 @@ export default function render(ctx) {
   async function download(format) {
     busy = true; drawWhen(); msg.textContent = t('rep.making');
     try {
-      const r = await ctx.api.call('reports.file', { report, period, month, format, lang: getLang() });
+      const r = await ctx.api.swr('reports.file', { report, period, month, format, lang: getLang() }, () => {});      // the same report again in this run is not made again
       saveFile(r);
       toast(t('rep.done', { name: r.filename }));
       if (r.truncated) toast(t('rep.cut'), 6000);
@@ -60,28 +60,30 @@ export default function render(ctx) {
   async function loadAccess() {
     access.replaceChildren(loadingRegion(1));
     try {
-      const g = await ctx.api.call('reports.access.get');
-      const cell = (role, rep) => {
-        const box = h('input', { type: 'checkbox', checked: !!g.grants[role][rep.key], 'aria-label': `${role}: ${title(rep)}`, onChange: async () => {
-          const want = box.checked; box.disabled = true;
-          try { await ctx.api.call('reports.access.set', { role, report: rep.key, allowed: want }); g.grants[role][rep.key] = want; toast(t('rep.access.saved')); }
-          catch (e) { box.checked = !want; toastError(friendly(e, t), 6000); }
-          box.disabled = false;
-        } });
-        return h('td', {}, box);
-      };
-      access.replaceChildren(card(t('rep.access.title'), 'admin_panel_settings', h('p', { class: 'small muted' }, t('rep.access.help')),
-        h('div', { style: 'overflow-x:auto' }, h('table', { class: 'rep-table' },
-          h('thead', {}, h('tr', {}, h('th', {}, t('rep.access.role')), g.reports.map((r) => h('th', {}, title(r))))),
-          h('tbody', {}, g.roles.map((role) => h('tr', {}, h('th', { scope: 'row' }, rolePill(role)), g.reports.map((r) => cell(role, r)))))))));
+      await ctx.api.swr('reports.access.get', {}, (g) => {
+        const cell = (role, rep) => {
+          const box = h('input', { type: 'checkbox', checked: !!g.grants[role][rep.key], 'aria-label': `${role}: ${title(rep)}`, onChange: async () => {
+            const want = box.checked; box.disabled = true;
+            try { await ctx.api.call('reports.access.set', { role, report: rep.key, allowed: want }); g.grants[role][rep.key] = want; toast(t('rep.access.saved')); }
+            catch (e) { box.checked = !want; toastError(friendly(e, t), 6000); }
+            box.disabled = false;
+          } });
+          return h('td', {}, box);
+        };
+        access.replaceChildren(card(t('rep.access.title'), 'admin_panel_settings', h('p', { class: 'small muted' }, t('rep.access.help')),
+          h('div', { style: 'overflow-x:auto' }, h('table', { class: 'rep-table' },
+            h('thead', {}, h('tr', {}, h('th', {}, t('rep.access.role')), g.reports.map((r) => h('th', {}, title(r))))),
+            h('tbody', {}, g.roles.map((role) => h('tr', {}, h('th', { scope: 'row' }, rolePill(role)), g.reports.map((r) => cell(role, r)))))))));
+      });
     } catch (e) { access.replaceChildren(errorState(friendly(e, t), loadAccess)); }
   }
 
   (async () => {
     try {
-      const c = await ctx.api.call('reports.catalog');
-      items = c.items; report = items[0]?.key || '';
-      if (items.length) drawPick(); else dl.replaceChildren(emptyState(t('rep.none'), 'assessment'));
+      await ctx.api.swr('reports.catalog', {}, (c) => {
+        items = c.items; report = items.some((i) => i.key === report) ? report : items[0]?.key || '';
+        if (items.length) drawPick(); else dl.replaceChildren(emptyState(t('rep.none'), 'assessment'));
+      });
     } catch (e) { dl.replaceChildren(errorState(friendly(e, t), () => ctx.router?.refresh?.())); }
   })();
   if (can('roles_config', 'u')) loadAccess();
