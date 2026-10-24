@@ -5,6 +5,7 @@ export const RELEASES = [
     title: { en: 'Sync button', te: 'సింక్ బటన్' },
     items: [
       { en: 'A Sync button at the top fetches the screen you are on again. Screens you have already opened are not fetched again when you move between tabs, so they open at once. Change the language in My profile.', te: 'పైన ఉన్న సింక్ బటన్ మీరు ఉన్న స్క్రీన్‌ను మళ్ళీ తెస్తుంది. ఒకసారి తెరిచిన స్క్రీన్‌లు ట్యాబ్‌లు మారినప్పుడు మళ్ళీ తేవబడవు, కాబట్టి అవి వెంటనే తెరుచుకుంటాయి. భాషను నా ప్రొఫైల్‌లో మార్చుకోండి.' },
+      { en: 'When you come back to the app from another app or a locked phone, each screen fetches its data again when you open it, so you see current information.', te: 'మరో యాప్ నుండి లేదా లాక్ చేసిన ఫోన్ నుండి యాప్‌కు తిరిగి వచ్చినప్పుడు, ప్రతి స్క్రీన్ తెరిచినప్పుడు దాని డేటాను మళ్ళీ తెస్తుంది, కాబట్టి తాజా సమాచారం కనిపిస్తుంది.' },
     ] },
   { date: '2026-10-23',
     title: { en: 'Reports', te: 'నివేదికలు' },

@@ -8,7 +8,7 @@ export const SECTIONS = [
     steps: [
       ['Sign in.', 'Press Sign in with Google and choose your registered Gmail. If you see "No access", ask the President or Secretary to add your Gmail.'],
       ['Find your way.', 'Home, Issues, Money and Community are in the bar at the bottom of the phone (the side of a computer screen). Tap your picture at the top right for the menu: My profile, Map, Gallery, Reports, Bylaws & rules, What\'s new, Help and Sign out. A role also sees the extra screens it may use.'],
-      ['Language, refresh and look.', 'Change the language in My profile. The Sync button at the top fetches the data of the screen you are on again; screens you have already opened are not fetched again when you move between tabs. The app follows your phone for light or dark.'],
+      ['Language, refresh and look.', 'Change the language in My profile. The Sync button at the top fetches the data of the screen you are on again; screens you have already opened are not fetched again when you move between tabs. When you come back to the app from another app or a locked phone, each screen fetches its data again when you open it. The app follows your phone for light or dark.'],
       ['Install it.', 'Help has an Install button, or on iPhone use Share, then Add to Home Screen. The app then opens like any other app.'],
       ['Updates.', 'The app checks for new versions by itself. Help has Check for updates if you want to look now.'],
       ['This guide.', 'Help in the menu, then User guide. The role list at the top shows the guide for one role. The President and Developers can pick any role to see what that role sees; everyone else sees their own.'],

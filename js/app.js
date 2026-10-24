@@ -184,6 +184,10 @@ const ctx = () => ({
 async function renderAll() { await renderRoute(current); }
 // The Sync button in the top bar: this screen's data is fetched again (shown first, replaced when the fresh answers arrive). Opening the app again
 // or the browser's own pull-down reload also fetch each screen's data once; moving between tabs does not.
+// The app comes back into focus (from another app, a locked screen or a hidden tab): every model is marked not loaded, so each screen fetches its data
+// when the member next opens it. The screen already showing is left as it is.
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') swrCache.resetLoaded(); });
+window.addEventListener('pageshow', (e) => { if (e.persisted) swrCache.resetLoaded(); });
 async function syncScreen() { await swrCache.refreshScreen(renderAll); }
 
 async function renderRoute(r) {
