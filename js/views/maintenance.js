@@ -138,14 +138,17 @@ function feeCard(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(1));
     try {
-      const r = await ctx.api.call('maintenance.rates.list'), cur = rateFor(r.items, ymNow());
-      body.replaceChildren(
-        h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.currentFee')), cur != null ? h('strong', {}, money(cur)) : statusPill('pending', t('mt.notSet'))),
-        button(t('mt.changeFee'), { icon: 'edit', onClick: () => feeSheet(ctx, r.last_raised_month, load) }),
-        h('p', { class: 'small muted' }, t('mt.feeNote')),
-        h('h3', {}, t('mt.history')),
-        ...[...r.items].reverse().map((x) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.from', { month: monthLabel(x.from_month) })), h('strong', {}, money(x.amount_paise)))));
+      await ctx.api.swr('maintenance.rates.list', {}, (r) => paint(r));
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
+  }
+  function paint(r) {
+    const cur = rateFor(r.items, ymNow());
+    body.replaceChildren(
+      h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.currentFee')), cur != null ? h('strong', {}, money(cur)) : statusPill('pending', t('mt.notSet'))),
+      button(t('mt.changeFee'), { icon: 'edit', onClick: () => feeSheet(ctx, r.last_raised_month, load) }),
+      h('p', { class: 'small muted' }, t('mt.feeNote')),
+      h('h3', {}, t('mt.history')),
+      ...[...r.items].reverse().map((x) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.from', { month: monthLabel(x.from_month) })), h('strong', {}, money(x.amount_paise)))));
   }
   load();
   return card(t('mt.feeSettings'), 'tune', body);

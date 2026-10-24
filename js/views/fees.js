@@ -118,15 +118,17 @@ function rateCard(ctx) {
   async function load() {
     body.replaceChildren(loadingRegion(1));
     try {
-      const { items } = await ctx.api.call('membership.rates.list');
-      const today = new Date().toISOString().slice(0, 10);
-      const now = (cat) => { const r = items.filter((x) => x.category === cat && x.from_date <= today).sort((a, b) => b.from_date.localeCompare(a.from_date))[0]; return r ? r.amount_paise : null; };
-      body.replaceChildren(h('p', { class: 'small muted' }, t('fee.rateNote')), ...['house', 'open'].map((cat) => h('div', { class: 'list-row' },
-        h('div', { class: 'grow' }, t(`exp.catPlot.${cat}`)), now(cat) != null ? h('strong', {}, money(now(cat))) : statusPill('pending', t('mt.notSet')),
-        button(t('mt.changeFee'), { kind: 'text', onClick: () => membershipRateSheet(ctx, cat, load) }))),
-        h('h3', {}, t('mt.history')), ...[...items].sort((a, b) => b.from_date.localeCompare(a.from_date)).map((x) => h('div', { class: 'list-row' },
-          h('div', { class: 'grow' }, `${t(`exp.catPlot.${x.category}`)} · ${t('mt.from', { month: dateShort(x.from_date) })}`), h('strong', {}, money(x.amount_paise)))));
+      await ctx.api.swr('membership.rates.list', {}, paint);
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
+  }
+  function paint({ items }) {
+    const today = new Date().toISOString().slice(0, 10);
+    const now = (cat) => { const r = items.filter((x) => x.category === cat && x.from_date <= today).sort((a, b) => b.from_date.localeCompare(a.from_date))[0]; return r ? r.amount_paise : null; };
+    body.replaceChildren(h('p', { class: 'small muted' }, t('fee.rateNote')), ...['house', 'open'].map((cat) => h('div', { class: 'list-row' },
+      h('div', { class: 'grow' }, t(`exp.catPlot.${cat}`)), now(cat) != null ? h('strong', {}, money(now(cat))) : statusPill('pending', t('mt.notSet')),
+      button(t('mt.changeFee'), { kind: 'text', onClick: () => membershipRateSheet(ctx, cat, load) }))),
+      h('h3', {}, t('mt.history')), ...[...items].sort((a, b) => b.from_date.localeCompare(a.from_date)).map((x) => h('div', { class: 'list-row' },
+        h('div', { class: 'grow' }, `${t(`exp.catPlot.${x.category}`)} · ${t('mt.from', { month: dateShort(x.from_date) })}`), h('strong', {}, money(x.amount_paise)))));
   }
   load();
   return card(t('fee.rates'), 'badge', body);
