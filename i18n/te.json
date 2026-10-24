@@ -815,6 +815,7 @@
  "audit.a.notifications.subscribe": "నోటిఫికేషన్లను ఆన్ చేశారు",
  "audit.a.notifications.unsubscribe": "నోటిఫికేషన్లను ఆఫ్ చేశారు",
  "audit.a.plots.importCategories": "ప్లాట్ వర్గాలను లోడ్ చేశారు",
+ "audit.a.profile.sharePhotos": "సభ్యుల ఫోటోలను పంచారు",
  "audit.a.profile.photo": "ప్రొఫైల్ ఫోటోను మార్చారు",
  "audit.a.reports.access.set": "నివేదికను ఎవరు డౌన్‌లోడ్ చేయవచ్చో మార్చారు",
  "audit.a.reports.download": "నివేదికను డౌన్‌లోడ్ చేశారు",

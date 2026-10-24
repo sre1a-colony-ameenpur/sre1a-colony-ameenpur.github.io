@@ -46,10 +46,21 @@ function flush(ctx) {
 }
 // Paints a picture onto an avatar element (the initials are replaced).
 export function paintPicture(el, b64) { el.style.backgroundImage = `url("data:image/jpeg;base64,${b64}")`; el.classList.add('has-photo'); el.textContent = ''; }
+export function paintUrl(el, url) { el.style.backgroundImage = `url("${url}")`; el.classList.add('has-photo'); el.textContent = ''; }
+// The API gives a direct picture link (m.photo_url, the Google thumbnail of a link-shared file): the browser loads it itself, with no call to the API. If the link
+// does not load (a picture not shared yet), the batched API request below is the fallback.
 export function memberAvatar(ctx, m, lg = false) {
   const el = avatar(m.name, lg);
-  if (!m.photo && !m.photo_file_id) return el;
-  const fetchIt = () => pictureOf(ctx, m, lg ? 'thumb' : 'tiny').then((b64) => paintPicture(el, b64), () => { /* the initials stay */ });
+  if (!m.photo_url && !m.photo && !m.photo_file_id) return el;
+  const viaApi = () => pictureOf(ctx, m, lg ? 'thumb' : 'tiny').then((b64) => paintPicture(el, b64), () => { /* the initials stay */ });
+  const fetchIt = () => {
+    if (!m.photo_url) return viaApi();
+    const url = lg ? m.photo_url.replace('sz=w200', 'sz=w400') : m.photo_url, probe = new Image();
+    probe.onload = () => paintUrl(el, url);
+    probe.onerror = viaApi;
+    probe.src = url;
+    return undefined;
+  };
   if (!('IntersectionObserver' in window)) fetchIt();
   else { const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); fetchIt(); } }); io.observe(el); }
   return el;

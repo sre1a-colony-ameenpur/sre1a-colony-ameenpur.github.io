@@ -815,6 +815,7 @@
  "audit.a.notifications.subscribe": "Turned on notifications",
  "audit.a.notifications.unsubscribe": "Turned off notifications",
  "audit.a.plots.importCategories": "Loaded plot categories",
+ "audit.a.profile.sharePhotos": "Shared the member pictures",
  "audit.a.profile.photo": "Changed a profile photo",
  "audit.a.reports.access.set": "Changed who can download a report",
  "audit.a.reports.download": "Downloaded a report",
