@@ -67,18 +67,24 @@ export function memberAvatar(ctx, m, lg = false) {
 }
 // A member's card, like a phone contact: a big picture, name, role, plots and (when they chose to show it) their mobile number with a call button.
 // The picture full screen, with a close icon at the top right. Taps outside the picture, the close icon and Esc close it.
+// The big version of the picture is tried first; if Google does not give it, the smaller ones and then the API's copy are tried, so the viewer is never left black.
 export async function openPhotoViewer(ctx, m) {
   const { t } = ctx;
   const img = h('img', { alt: m.name, class: 'lightbox-img' });
-  const close = h('button', { type: 'button', class: 'icon-btn lightbox-close', 'aria-label': t('common.close'), title: t('common.close'), onClick: () => dlg.close() }, icon('close'));
+  const shut = () => { if (dlg.open) dlg.close(); dlg.remove(); };
+  const close = h('button', { type: 'button', class: 'icon-btn lightbox-close', 'aria-label': t('common.close'), title: t('common.close'), onClick: shut }, icon('close'));
   const dlg = h('dialog', { class: 'lightbox', 'aria-label': m.name }, img, close);
-  dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target === img) dlg.close(); });
+  dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target === img) shut(); });
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg); dlg.showModal();
-  if (m.photo_url) img.src = m.photo_url.replace('sz=w200', 'sz=w1000');
-  else {
-    try { img.src = `data:image/jpeg;base64,${(await ctx.api.media('members.picture', { photo: m.photo, size: 'thumb' })).jpegBase64}`; } catch { dlg.close(); }
-  }
+  const viaApi = async () => {
+    try { img.onerror = shut; img.src = `data:image/jpeg;base64,${(await ctx.api.media('members.picture', { photo: m.photo, size: 'thumb' })).jpegBase64}`; } catch { shut(); }
+  };
+  if (!m.photo_url) { await viaApi(); return; }
+  const sizes = ['w1000', 'w600', 'w200'];
+  let at = 0;
+  img.onerror = () => { at++; if (at < sizes.length) img.src = m.photo_url.replace('sz=w200', `sz=${sizes[at]}`); else if (m.photo) viaApi(); else shut(); };
+  img.src = m.photo_url.replace('sz=w200', `sz=${sizes[0]}`);
 }
 export function memberDetailSheet(ctx, m, role = m.role) {
   const { t } = ctx;

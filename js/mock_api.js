@@ -305,7 +305,7 @@ export function createMock({ delayMs = 120 } = {}) {
       const q = String(p.q || '').toLowerCase().replace(/[\s-]/g, '');
       const rows = members.filter((m) => m.active !== false && (!q || `${m.name},${m.plotKeys.join(',')}`.toLowerCase().replace(/[\s-]/g, '').includes(q))).sort((a, b) => a.name.localeCompare(b.name));
       const lim = p.limit || 1000, off = Number(p.before || 0), page = rows.slice(off, off + lim);
-      const out = { items: page.map((m) => ({ name: m.name, role: m.role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')) })), total: rows.length, next_cursor: off + lim < rows.length ? String(off + lim) : null };
+      const out = { items: page.map((m, i) => ({ name: m.name, role: m.role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')), ...(i % 3 === 0 ? { photo_url: `data:image/jpeg;base64,${PIXEL}` } : {}) })), total: rows.length, next_cursor: off + lim < rows.length ? String(off + lim) : null };
       if (!off && !q) out.committee = ['President', 'Treasurer', 'Vice President', 'General Secretary', 'Joint Secretary'].map((role) => { const m = members.find((x) => x.role === role); return { role, member: m ? { name: m.name, role, plot_keys: m.plotKeys.map((k) => k.replace('-', '')) } : null }; });
       return ok(out);
     },
