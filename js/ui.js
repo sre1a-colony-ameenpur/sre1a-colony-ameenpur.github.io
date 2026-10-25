@@ -154,10 +154,14 @@ export const fab = (label, onClick) => h('button', { type: 'button', class: 'fab
 export function emptyState(text, ic = 'inbox', action) {
   return h('div', { class: 'state' }, icon(ic), h('p', {}, text), action);
 }
+// Try again must really ask the server: the app sets this to forget which answers this screen already fetched in this run (see swr.js), otherwise a
+// screen whose first page is already stored would draw that page again and send nothing.
+let beforeRetry = () => {};
+export const onBeforeRetry = (fn) => { beforeRetry = fn; };
 export function errorState(text, onRetry) {
   toastError(text);                         // every failure is also a toast; the panel stays so the page can offer Try again
   return h('div', { class: 'state bad', role: 'alert' }, icon('error'), h('p', {}, text),
-    onRetry && button(t('common.retry'), { icon: 'refresh', onClick: () => onRetry() }));      // no click event: a loader with an `older` flag would read it as true
+    onRetry && button(t('common.retry'), { icon: 'refresh', onClick: () => { beforeRetry(); return onRetry(); } }));      // no click event passed on: a loader with an `older` flag would read it as true
 }
 export const skeletonCard = () => h('div', { class: 'skel card', 'aria-hidden': 'true' });
 export const loadingRegion = (n = 3) => h('div', { class: 'stack', 'aria-busy': 'true', 'aria-label': t('common.loading') },

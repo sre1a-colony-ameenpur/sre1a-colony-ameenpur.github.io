@@ -1,5 +1,6 @@
 // S6.4 Plots: list of every plot with its owner, category (President changes it), history and Transfer; plus the President's queue of plot change requests.
 import { h, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, confirmSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can, isFullRole } from '../store.js';
@@ -55,7 +56,7 @@ export default function render(ctx) {
     if (!reqItems.length) body.replaceChildren(loadingRegion(2));
     countPending();
     try {
-      if (older) { const r = await ctx.api.call('plotRequests.list', { before: reqCursor }); reqItems = reqItems.concat(r.items); reqCursor = r.next_cursor || null; paintRequests(); return; }
+      if (older) { ({ items: reqItems, cursor: reqCursor } = appendPage(reqItems, await ctx.api.call('plotRequests.list', { before: reqCursor }))); paintRequests(); return; }
       await ctx.api.swr('plotRequests.list', {}, (r) => { reqItems = r.items; reqCursor = r.next_cursor || null; paintRequests(); });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), loadRequests)); }
   }

@@ -1,5 +1,6 @@
 // S6.5 Change log (committee): read-only list of everything that was changed, with filters, a before/after view and the integrity check.
 import { h, button, rolePill, emptyState, errorState, loadingRegion, icon, toast, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
 
@@ -65,7 +66,7 @@ export default function render(ctx) {
     try {
       const r = await ctx.api.call('audit.list', params(cursor));
       if (mine !== ticket) return;
-      items = items.concat(r.items); cursor = r.next_cursor || null; remember(r.items);
+      ({ items, cursor } = appendPage(items, r, (x) => `${x.ts}|${x.action}|${x.entity_id}`)); remember(r.items);
     } catch (e) { toastError(friendly(e, t)); }
     loadingMore = false; drawList();
   }

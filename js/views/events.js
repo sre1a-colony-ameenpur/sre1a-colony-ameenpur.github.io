@@ -1,6 +1,7 @@
 // S4.1 Events list (cover photo, upcoming first) and S4.3 new event.
 import { withCamera } from '../camera.js';
 import { h, button, fab, field, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -37,7 +38,7 @@ export default async function render(ctx) {
   async function load(older = false) {
     if (!older && !items.length) list.replaceChildren(loadingRegion(2));
     try {
-      if (older) { const r = await ctx.api.call('events.list', { before: cursor }); items = items.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      if (older) { ({ items, cursor } = appendPage(items, await ctx.api.call('events.list', { before: cursor }))); draw(); return; }
       await ctx.api.swr('events.list', {}, (r) => { items = r.items; cursor = r.next_cursor || null; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }

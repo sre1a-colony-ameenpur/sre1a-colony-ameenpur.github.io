@@ -1,5 +1,6 @@
 // Money > Fees. S3.9 my dues (everyone); committee: fee requests (S3.11), membership fees, fee payments to confirm; President: membership fee amounts (S3.8).
 import { h, card, button, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -93,7 +94,7 @@ function committee(ctx) {
     if (!older && !(requests ? reqItems : memItems).length) list.replaceChildren(loadingRegion(2));
     try {
       const apply = (r, add) => {
-        if (requests) { reqItems = add ? reqItems.concat(r.items) : r.items; reqCursor = r.next_cursor || null; } else { memItems = add ? memItems.concat(r.items) : r.items; memCursor = r.next_cursor || null; }
+        if (requests) { if (add) ({ items: reqItems, cursor: reqCursor } = appendPage(reqItems, r)); else { reqItems = r.items; reqCursor = r.next_cursor || null; } } else if (add) ({ items: memItems, cursor: memCursor } = appendPage(memItems, r)); else { memItems = r.items; memCursor = r.next_cursor || null; }
         draw();
       };
       if (older) apply(await ctx.api.call(action, { before: requests ? reqCursor : memCursor }), true);

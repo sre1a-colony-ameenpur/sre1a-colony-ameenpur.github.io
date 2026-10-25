@@ -1,6 +1,7 @@
 // S2.1 Complaints list and S2.2 raise a complaint. Detail is complaint_detail.js.
 import { withCamera } from '../camera.js';
 import { h, button, field, statusPill, plotChip, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
@@ -44,7 +45,7 @@ export default async function render(ctx) {
       if (filter !== 'all') payload.group = filter;
       if (q.value.trim()) payload.q = q.value.trim();
       if (older) payload.before = cursor;
-      if (older) { const r = await ctx.api.call('complaints.list', payload); items = items.concat(r.items); cursor = r.next_cursor || null; total = r.total; }
+      if (older) { const r = await ctx.api.call('complaints.list', payload); ({ items, cursor } = appendPage(items, r)); total = r.total; }
       else await ctx.api.swr('complaints.list', payload, (r) => { items = r.items; cursor = r.next_cursor || null; total = r.total; draw(); });
       busy = false; draw();
     } catch (e) { busy = false; list.replaceChildren(errorState(friendly(e, t), () => load(older))); }

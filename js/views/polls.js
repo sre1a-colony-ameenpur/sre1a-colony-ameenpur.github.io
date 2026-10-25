@@ -1,5 +1,6 @@
 // S4.7 Polls list and S4.8 create poll. Voting and results are in poll_detail.js.
 import { h, button, fab, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -27,7 +28,7 @@ export default async function render(ctx) {
   async function load(older = false) {
     if (!older && !items.length) list.replaceChildren(loadingRegion(2));
     try {
-      if (older) { const r = await ctx.api.call('polls.list', { before: cursor }); items = items.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      if (older) { ({ items, cursor } = appendPage(items, await ctx.api.call('polls.list', { before: cursor }))); draw(); return; }
       await ctx.api.swr('polls.list', {}, (r) => { items = r.items; cursor = r.next_cursor || null; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }

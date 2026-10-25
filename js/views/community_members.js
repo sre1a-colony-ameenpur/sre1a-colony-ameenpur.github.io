@@ -1,11 +1,13 @@
 // Community > Members: the committee, then every active member by name (30 a page, searched on the server).
 // Shown from the stored answer first and refreshed in the background. Mobile numbers appear only where the member chose to show them.
 import { h, button, plotChip, rolePill, emptyState, errorState, loadingRegion } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { memberAvatar, memberDetailSheet } from './members.js';
 
 const label = (k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
+const memberKey = (m) => `${m.name}|${(m.plot_keys || []).join(',')}|${m.role}`;      // the directory has no ids
 const norm = (v) => String(v).toLowerCase().replace(/[\s-]/g, '');
 
 export default async function render(ctx) {
@@ -43,7 +45,7 @@ export default async function render(ctx) {
     if (older) payload.before = cursor;
     if (!older && !all.length) box.replaceChildren(loadingRegion(3));
     try {
-      if (older) { const r = await ctx.api.call('members.directory', payload); all = all.concat(r.items); shown = all; cursor = r.next_cursor || null; draw(); return; }
+      if (older) { ({ items: all, cursor } = appendPage(all, await ctx.api.call('members.directory', payload), memberKey)); shown = all; draw(); return; }
       await ctx.api.swr('members.directory', payload, (r) => {
         all = r.items; shown = all; cursor = r.next_cursor || null; total = r.total;
         if (r.committee) committee = r.committee; else if (payload.q) committee = [];

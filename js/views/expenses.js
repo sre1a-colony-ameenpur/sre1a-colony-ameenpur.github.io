@@ -1,6 +1,7 @@
 // S3.1 Expenses list (with S3.4 approvals queue and S3.2 add sheet). Detail is expense_detail.js.
 import { withCamera } from '../camera.js';
 import { h, card, button, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, segmented, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can, hasModule, store } from '../store.js';
@@ -59,7 +60,7 @@ export default async function render(ctx) {
     const payload = {};
     if (filter !== 'all') payload.status = filter;
     if (older) payload.before = cursor;
-    const apply = (r) => { items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor || null; stats = r; };
+    const apply = (r) => { if (older) ({ items, cursor } = appendPage(items, r)); else { items = r.items; cursor = r.next_cursor || null; } stats = r; };
     if (older) apply(await ctx.api.call('expenses.list', payload));
     else await ctx.api.swr('expenses.list', payload, (r) => { apply(r); if (box.childElementCount) draw(); });
   }

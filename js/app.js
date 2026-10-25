@@ -6,7 +6,7 @@ import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { shareWithWorker, forgetDevice } from './push.js';
 import { createRouter } from './router.js';
-import { h, icon, button, toast, toastError, busy, setMyPhoto, setCustomRoles } from './ui.js';
+import { h, icon, button, toast, toastError, busy, setMyPhoto, setCustomRoles, onBeforeRetry } from './ui.js';
 import { createSwr } from './swr.js';
 import { registerPwa, noteBackendVersion } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
@@ -196,6 +196,7 @@ function backInFocus() {
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') backInFocus(); });
 window.addEventListener('pageshow', (e) => { if (e.persisted) backInFocus(); });
+onBeforeRetry(() => { swrCache.refreshScreen(async () => {}); });       // Try again: this screen's answers are asked for again
 async function syncScreen() { await swrCache.refreshScreen(renderAll); }
 
 async function renderRoute(r) {

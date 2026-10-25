@@ -1,6 +1,7 @@
 // Sheets for maintenance: record a payment (S3.7), raise dues (S3.12), edit a due (S3.13), change the fee (S3.8), view a proof.
 import { withCamera } from '../camera.js';
 import { h, card, button, field, openSheet, toast, icon, plotChip, loadingRegion, statusPill, errorState, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -201,7 +202,7 @@ export function recentPaymentsCard(ctx, kind, onChange) {
   async function load(older = false) {
     if (!older && !all.length) body.replaceChildren(loadingRegion(1));
     try {
-      if (older) { const r = await ctx.api.call(listAction, { before: cursor }); all = all.concat(r.items); cursor = r.next_cursor || null; paint(all); return; }
+      if (older) { ({ items: all, cursor } = appendPage(all, await ctx.api.call(listAction, { before: cursor }))); paint(all); return; }
       await ctx.api.swr(listAction, {}, (r) => { all = r.items; cursor = r.next_cursor || null; paint(all); });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }

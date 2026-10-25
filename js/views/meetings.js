@@ -1,5 +1,6 @@
 // S4.4 Meetings list (upcoming highlighted, open action items) and new meeting sheet.
 import { h, button, fab, field, statusPill, emptyState, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { whenShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -30,7 +31,7 @@ export default async function render(ctx) {
   async function load(older = false) {
     if (!older && !all.length) list.replaceChildren(loadingRegion(2));
     try {
-      if (older) { const r = await ctx.api.call('meetings.list', { before: cursor }); all = all.concat(r.items); cursor = r.next_cursor || null; draw(); return; }
+      if (older) { ({ items: all, cursor } = appendPage(all, await ctx.api.call('meetings.list', { before: cursor }))); draw(); return; }
       if (can('action_items', 'r')) ctx.api.swr('actionItems.list', { status: 'open' }, (r) => { openItems = r; if (all.length) draw(); }).catch(() => {});
       await ctx.api.swr('meetings.list', {}, (r) => { all = r.items; cursor = r.next_cursor || null; draw(); });
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }

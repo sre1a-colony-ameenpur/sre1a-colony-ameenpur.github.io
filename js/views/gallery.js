@@ -1,6 +1,7 @@
 // Gallery: every photo and video by category, filtered by what it belongs to, by photos or videos, and by month. Thirty at a time.
 // Event and meeting photos load straight from Google (public links); other photos use the small picture stored with them, or ask for it.
 import { h, button, icon, errorState, loadingRegion, emptyState, openSheet, toast, toastError } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { playVideo } from '../video.js';
 
@@ -103,7 +104,7 @@ export default function render(ctx) {
     try {
       const query = { ...(category ? { category } : {}), ...(item ? { itemId: item.id } : {}), ...(kind ? { kind } : {}), ...(month ? { month } : {}) };
       const paint = (r) => {
-        categories = r.categories; items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor; total = r.total;
+        categories = r.categories; if (older) ({ items, cursor } = appendPage(items, r, (x) => `${x.category}|${x.id}`)); else { items = r.items; cursor = r.next_cursor; } total = r.total;
         drawChips();
         grid.replaceChildren(...(items.length ? items.map(tile) : [emptyState(t('gal.none'), 'photo_library')]));
         count.textContent = t('gal.count', { n: total });

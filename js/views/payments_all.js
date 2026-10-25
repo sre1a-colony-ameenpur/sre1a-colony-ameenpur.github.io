@@ -1,5 +1,6 @@
 // Money > All payments (committee): everyone's payments with filters for month, type, status and plot. Thirty at a time.
 import { h, button, errorState, loadingRegion, emptyState } from '../ui.js';
+import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { paymentRow } from './payments_common.js';
 
@@ -27,7 +28,7 @@ export default function render(ctx) {
     if (!older) { items = []; cursor = null; list.replaceChildren(loadingRegion(2)); more.replaceChildren(); }
     try {
       const paint = (r) => {
-        items = older ? items.concat(r.items) : r.items; cursor = r.next_cursor; total = r.total;
+        if (older) ({ items, cursor } = appendPage(items, r)); else { items = r.items; cursor = r.next_cursor; } total = r.total;
         list.replaceChildren(...(items.length ? items.map((x) => paymentRow(t, x, { showMember: true })) : [emptyState(t('pay.none'), 'inbox')]));
         root.querySelector('#pf-count').textContent = t('pay.count', { n: total });
         more.replaceChildren(...(cursor ? [button(t('pay.more'), { block: true, onClick: () => load(true) })] : []));
