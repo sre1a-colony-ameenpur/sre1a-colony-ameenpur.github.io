@@ -3,7 +3,7 @@ import { h, button, field, openSheet, confirmSheet, toast, icon, toastError } fr
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
 import { can, store, hasModule, isFullRole } from '../store.js';
-import { ROLES, loadRoles, dashKey, plotsOf, memberAvatar } from './members.js';
+import { ROLES, loadRoles, dashKey, plotsOf, memberPicture } from './members.js';
 
 const val = (el) => el.querySelector('input,select').value.trim();
 const today = () => new Date().toISOString().slice(0, 10);
@@ -131,7 +131,7 @@ export function memberSheet(ctx, { member, items, done }) {
 
   openSheet({ title: editing ? t('mem.edit') : t('mem.add'), wide: true,
     actions: [can('members', editing ? 'u' : 'c') ? { label: t('mem.save'), kind: 'primary', keepOpen: true, onClick: save } : null, { label: t('common.cancel') }].filter(Boolean),
-    body: h('div', { class: 'stack' }, editing ? h('div', { class: 'row', style: 'justify-content:center' }, memberAvatar(ctx, member, true)) : null,      // their picture; it is changed by the member in My profile
+    body: h('div', { class: 'stack' }, editing ? h('div', { class: 'row', style: 'justify-content:center' }, memberPicture(ctx, member)) : null,      // their picture; it is changed by the member in My profile
       email, former, name, mobile,
       h('div', { class: 'stack-sm' }, h('div', { class: 'label small', style: 'font-weight:500' }, t('mem.plots')), plotBox,
         editing ? h('p', { class: 'small muted' }, t('mem.plotsReadonly')) : [plotIn, button(t('mem.addPlotBtn'), { icon: 'add', onClick: addPlot }), plotErr, feePlot]),

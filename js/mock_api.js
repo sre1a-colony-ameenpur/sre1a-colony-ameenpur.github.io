@@ -324,7 +324,7 @@ export function createMock({ delayMs = 120 } = {}) {
         ...(p.plots ? { newPlots: keys.filter((k) => !cur.has(k)), removedPlots: [...cur].filter((k) => !on.has(k)) } : {}) });
     },
     'layout.import': () => ok({ added: 0, updated: 0, unlocated: 0 }),
-    'members.list': () => ok({ items: [...members, ...former].map(memberRow) }),
+    'members.list': () => ok({ items: [...members, ...former].map((m, i) => ({ ...memberRow(m), ...(i % 3 === 0 && m.active !== false ? { photo_url: `data:image/jpeg;base64,${PIXEL}` } : {}) })) }),
     'members.add': (u, p) => {
       const email = String(p.email || '').trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('INVALID', 'Please use a Gmail address');

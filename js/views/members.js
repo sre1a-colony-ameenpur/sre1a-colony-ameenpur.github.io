@@ -78,21 +78,27 @@ export async function openPhotoViewer(ctx, m) {
   dlg.addEventListener('close', () => dlg.remove());
   document.body.append(dlg); dlg.showModal();
   const viaApi = async () => {
-    try { img.onerror = shut; img.src = `data:image/jpeg;base64,${(await ctx.api.media('members.picture', { photo: m.photo, size: 'thumb' })).jpegBase64}`; } catch { shut(); }
+    try {
+      const d = await (m.photo ? ctx.api.media('members.picture', { photo: m.photo, size: 'thumb' }) : ctx.api.media('members.photo', { email: m.email, size: 'thumb' }));      // the Members list has the email, not the handle
+      img.onerror = shut; img.src = `data:image/jpeg;base64,${d.jpegBase64}`;
+    } catch { shut(); }
   };
   if (!m.photo_url) { await viaApi(); return; }
   const sizes = ['w1000', 'w600', 'w200'];
   let at = 0;
-  img.onerror = () => { at++; if (at < sizes.length) img.src = m.photo_url.replace('sz=w200', `sz=${sizes[at]}`); else if (m.photo) viaApi(); else shut(); };
+  img.onerror = () => { at++; if (at < sizes.length) img.src = m.photo_url.replace('sz=w200', `sz=${sizes[at]}`); else if (m.photo || m.email) viaApi(); else shut(); };
   img.src = m.photo_url.replace('sz=w200', `sz=${sizes[0]}`);
+}
+// The big picture of a member (the card, the edit sheet): with a picture, tapping it opens it full screen; without one, the initials.
+export function memberPicture(ctx, m) {
+  const pic = memberAvatar(ctx, m, true);
+  pic.classList.add('xl');
+  if (!m.photo_url && !m.photo && !m.photo_file_id) return pic;
+  return h('button', { type: 'button', class: 'avatar-open', 'aria-label': ctx.t('mem.viewPhoto'), title: ctx.t('mem.viewPhoto'), onClick: () => openPhotoViewer(ctx, m) }, pic);
 }
 export function memberDetailSheet(ctx, m, role = m.role) {
   const { t } = ctx;
-  const pic = memberAvatar(ctx, m, true);
-  pic.classList.add('xl');
-  const hasPhoto = !!(m.photo_url || m.photo);
-  // With a picture, tapping it opens it full screen.
-  const picture = hasPhoto ? h('button', { type: 'button', class: 'avatar-open', 'aria-label': t('mem.viewPhoto'), title: t('mem.viewPhoto'), onClick: () => openPhotoViewer(ctx, m) }, pic) : pic;
+  const picture = memberPicture(ctx, m);
   const line = (label, ...value) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'flex:none;width:72px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, ...value));
   const plots = plotsOf({ plot_keys: Array.isArray(m.plot_keys) ? m.plot_keys.join(',') : m.plot_keys });
   openSheet({ title: m.name, wide: true, actions: [{ label: t('common.close') }], body: h('div', { class: 'stack' },
@@ -127,12 +133,14 @@ export default function render(ctx) {
     list.replaceChildren(...(shown.length ? shown.map(row) : [emptyState(t('mem.none'), 'group')]));
   }
   function row(m) {
-    const body = [memberAvatar(ctx, m),
+    const av = memberAvatar(ctx, m); av.classList.add('md');                          // 64 px, as in Community
+    const body = [av,
       h('div', { class: 'grow' }, h('div', { style: 'font-weight:600' }, m.name), h('div', { class: 'small muted', style: 'overflow-wrap:anywhere' }, m.email),
         h('div', { class: 'row', style: 'margin-top:4px' }, plotsOf(m).map((k) => plotChip(dashKey(k))), m.active ? rolePill(m.role) : statusPill('closed', t('mem.removed'))))];
     return editable && m.active
       ? h('button', { type: 'button', class: 'list-row map-row', style: 'width:100%;text-align:start', onClick: () => memberSheet(ctx, { member: m, items, done: load }) }, ...body, icon('chevron_right'))
-      : h('div', { class: 'list-row' }, ...body);
+      : h('div', { class: 'list-row map-row', role: 'button', tabindex: '0', style: 'cursor:pointer', onClick: () => memberDetailSheet(ctx, m, m.active ? m.role : null),         // no edit right, or removed: the member's card
+        onKeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); memberDetailSheet(ctx, m, m.active ? m.role : null); } } }, ...body);
   }
 
   const search = h('input', { id: 'mem-q', type: 'search', placeholder: t('mem.search'), 'aria-label': t('mem.search'), autocomplete: 'off',
