@@ -27,7 +27,7 @@ export default function render(ctx) {
   const today = new Date().toISOString().slice(0, 10);
   let from = `${now}-01`, to = today;                                   // the custom window
   const pick = h('div', { class: 'stack-sm' }), when = h('div', { class: 'stack-sm' }), go = h('div', { class: 'btn-row' }), msg = h('p', { class: 'small muted', role: 'status' });
-  const dl = card(t('rep.download'), 'assessment', pick, when, go, msg);
+  const dl = h('div');                                                   // holds the download card, or the line saying there are no reports
   const access = h('div', { class: 'stack' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('rep.title')), dl, access);
 
@@ -89,7 +89,8 @@ export default function render(ctx) {
     try {
       await ctx.api.swr('reports.catalog', {}, (c) => {
         items = c.items; report = items.some((i) => i.key === report) ? report : items[0]?.key || '';
-        if (items.length) drawPick(); else dl.replaceChildren(emptyState(t('rep.none'), 'assessment'));
+        // The card is built again on every answer: a fresh answer after "none" (a report just granted) must bring the card back, and the reverse.
+        if (items.length) { dl.replaceChildren(card(t('rep.download'), 'assessment', pick, when, go, msg)); drawPick(); } else dl.replaceChildren(emptyState(t('rep.none'), 'assessment'));
       });
     } catch (e) { dl.replaceChildren(errorState(friendly(e, t), () => ctx.router?.refresh?.())); }
   })();
