@@ -1,6 +1,13 @@
 // "What's new" entries, newest first. Member-facing wording: say what a member can now do, not how it works.
 // Add an entry here for each release; `date` is the day it went live (YYYY-MM-DD) and `time` (HH:MM, India time) is optional: shown with the date when set.
 export const RELEASES = [
+  { date: '2026-10-25', time: '18:00',
+    title: { en: 'Ask the app: the AI tab', te: 'యాప్‌ను అడగండి: AI ట్యాబ్' },
+    items: [
+      { en: 'The AI tab answers how-to questions and shows totals, such as expenses this month or open complaints, in English or Telugu.', te: 'AI ట్యాబ్ ఎలా చేయాలి అనే ప్రశ్నలకు సమాధానం ఇస్తుంది, ఈ నెల ఖర్చులు లేదా తెరిచి ఉన్న ఫిర్యాదులు వంటి మొత్తాలను చూపిస్తుంది, ఇంగ్లీష్ లేదా తెలుగులో.' },
+      { en: 'It can also set up a change for you, for example a new poll or a complaint. You see a summary and press a button to confirm. It never changes anything by itself, and it only offers what your role is allowed to do.', te: 'ఇది మీ కోసం ఒక మార్పును సిద్ధం చేయగలదు, ఉదాహరణకు కొత్త పోల్ లేదా ఫిర్యాదు. మీకు సారాంశం కనిపిస్తుంది, నిర్ధారించడానికి బటన్ నొక్కాలి. ఇది తనంతట తానుగా ఏమీ మార్చదు, మీ పాత్ర చేయగలిగినవి మాత్రమే చూపిస్తుంది.' },
+      { en: 'Your question goes to an outside AI service with names, plots, emails and phone numbers hidden. Please do not type personal details.', te: 'మీ ప్రశ్న బయటి AI సేవకు వెళ్తుంది, పేర్లు, ప్లాట్లు, ఈమెయిళ్ళు, ఫోన్ నంబర్లు దాచబడతాయి. దయచేసి వ్యక్తిగత వివరాలు టైప్ చేయవద్దు.' },
+    ] },
   { date: '2026-10-25', time: '04:00',
     title: { en: 'Easier Money, Members, Gallery and Reports screens', te: 'సులభమైన డబ్బు, సభ్యులు, గ్యాలరీ, నివేదికల స్క్రీన్‌లు' },
     items: [
