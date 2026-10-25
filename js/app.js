@@ -150,10 +150,11 @@ async function loadSession() {
     else store.set({ status: 'down' });
   }
 }
-// First sign-in without a photo: the server takes the Google picture (if any). Then the photo is fetched once for the avatar.
+// First sign-in without a photo (or an old 256 px Google picture): the server takes the Google picture (if any). Then the photo is fetched once for the avatar.
 async function loadMyPhoto(session) {
   try {
-    if (!session.hasPhoto && !(await api.call('profile.syncGooglePhoto')).saved) return;
+    const first = !session.hasPhoto;
+    if (first || session.photoUpgrade) { const r = await api.call('profile.syncGooglePhoto'); if (first && !r.saved) return; }   // photoUpgrade: swap the old 256 px Google picture for the 512 px one, once
     setMyPhoto(`data:image/jpeg;base64,${(await api.call('profile.photo')).jpegBase64}`);
   } catch { /* initials stay */ }
 }
