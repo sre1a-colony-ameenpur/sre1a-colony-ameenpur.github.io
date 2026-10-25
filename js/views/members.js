@@ -55,7 +55,7 @@ export function memberAvatar(ctx, m, lg = false) {
   const viaApi = () => pictureOf(ctx, m, lg ? 'thumb' : 'tiny').then((b64) => paintPicture(el, b64), () => { /* the initials stay */ });
   const fetchIt = () => {
     if (!m.photo_url) return viaApi();
-    const url = lg ? m.photo_url.replace('sz=w200', 'sz=w400') : m.photo_url, probe = new Image();
+    const url = lg ? m.photo_url.replace('sz=w200', 'sz=w600') : m.photo_url, probe = new Image();
     probe.onload = () => paintUrl(el, url);
     probe.onerror = viaApi;
     probe.src = url;
@@ -66,14 +66,31 @@ export function memberAvatar(ctx, m, lg = false) {
   return el;
 }
 // A member's card, like a phone contact: a big picture, name, role, plots and (when they chose to show it) their mobile number with a call button.
+// The picture full screen, with a close icon at the top right. Taps outside the picture, the close icon and Esc close it.
+export async function openPhotoViewer(ctx, m) {
+  const { t } = ctx;
+  const img = h('img', { alt: m.name, class: 'lightbox-img' });
+  const close = h('button', { type: 'button', class: 'icon-btn lightbox-close', 'aria-label': t('common.close'), title: t('common.close'), onClick: () => dlg.close() }, icon('close'));
+  const dlg = h('dialog', { class: 'lightbox', 'aria-label': m.name }, img, close);
+  dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target === img) dlg.close(); });
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg); dlg.showModal();
+  if (m.photo_url) img.src = m.photo_url.replace('sz=w200', 'sz=w1000');
+  else {
+    try { img.src = `data:image/jpeg;base64,${(await ctx.api.media('members.picture', { photo: m.photo, size: 'thumb' })).jpegBase64}`; } catch { dlg.close(); }
+  }
+}
 export function memberDetailSheet(ctx, m, role = m.role) {
   const { t } = ctx;
   const pic = memberAvatar(ctx, m, true);
   pic.classList.add('xl');
+  const hasPhoto = !!(m.photo_url || m.photo);
+  // With a picture, tapping it opens it full screen.
+  const picture = hasPhoto ? h('button', { type: 'button', class: 'avatar-open', 'aria-label': t('mem.viewPhoto'), title: t('mem.viewPhoto'), onClick: () => openPhotoViewer(ctx, m) }, pic) : pic;
   const line = (label, ...value) => h('div', { class: 'list-row' }, h('div', { class: 'muted small', style: 'flex:none;width:72px' }, label), h('div', { class: 'grow', style: 'overflow-wrap:anywhere' }, ...value));
   const plots = plotsOf({ plot_keys: Array.isArray(m.plot_keys) ? m.plot_keys.join(',') : m.plot_keys });
-  openSheet({ title: m.name, actions: [{ label: t('common.close') }], body: h('div', { class: 'stack' },
-    h('div', { class: 'stack-sm', style: 'align-items:center;text-align:center' }, pic, role && role !== 'Member' ? rolePill(role) : null),
+  openSheet({ title: m.name, wide: true, actions: [{ label: t('common.close') }], body: h('div', { class: 'stack' },
+    h('div', { class: 'stack-sm', style: 'align-items:center;text-align:center' }, picture, role && role !== 'Member' ? rolePill(role) : null),
     h('div', { class: 'card' },
       line(t('mem.plots'), plots.length ? h('span', { class: 'row' }, plots.map((k) => plotChip(dashKey(k)))) : h('span', { class: 'muted' }, t('mem.noPlots'))),
       m.mobile ? line(t('profile.mobile'), h('span', { class: 'row-between' }, m.mobile,
