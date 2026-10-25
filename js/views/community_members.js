@@ -7,7 +7,8 @@ import { memberAvatar, memberDetailSheet } from './members.js';
 
 const label = (k) => String(k).replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
-const memberKey = (m) => `${m.name}|${(m.plot_keys || []).join(',')}|${m.role}`;      // the directory has no ids
+const keysOf = (m) => (Array.isArray(m.plot_keys) ? m.plot_keys : String(m.plot_keys || '').split(/[\s,;&]+/).filter(Boolean));      // an array from the server; older stored answers may hold text
+const memberKey = (m) => `${m.name}|${keysOf(m).join(',')}|${m.role}`;      // the directory has no ids
 const norm = (v) => String(v).toLowerCase().replace(/[\s-]/g, '');
 
 export default async function render(ctx) {
@@ -23,13 +24,13 @@ export default async function render(ctx) {
   const row = (m, extra) => h('div', { class: 'list-row map-row', role: 'button', tabindex: '0', style: 'cursor:pointer', onClick: () => memberDetailSheet(ctx, m, extra || m.role),
     onKeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); memberDetailSheet(ctx, m, extra || m.role); } } }, memberAvatar(ctx, m),
     h('div', { class: 'grow' }, extra ? h('div', {}, rolePill(extra)) : null, h('div', {}, m.name),
-      h('div', { class: 'row small' }, (m.plot_keys || []).map((k) => plotChip(label(k))), m.role && m.role !== 'Member' && !extra ? rolePill(m.role) : null)), call(m));
+      h('div', { class: 'row small' }, keysOf(m).map((k) => plotChip(label(k))), m.role && m.role !== 'Member' && !extra ? rolePill(m.role) : null)), call(m));
 
   const complete = () => !cursor && !serverQ;                    // everything is here: search locally
   function visible() {
     const f = norm(q.value.trim());
     if (!f || !complete()) return shown;
-    return all.filter((m) => norm(`${m.name},${(m.plot_keys || []).join(',')}`).includes(f));
+    return all.filter((m) => norm(`${m.name},${keysOf(m).join(',')}`).includes(f));
   }
   function draw() {
     const list = visible(), searching = !!q.value.trim();
@@ -47,7 +48,7 @@ export default async function render(ctx) {
     try {
       if (older) { ({ items: all, cursor } = appendPage(all, await ctx.api.call('members.directory', payload), memberKey)); shown = all; draw(); return; }
       await ctx.api.swr('members.directory', payload, (r) => {
-        all = r.items; shown = all; cursor = r.next_cursor || null; total = r.total;
+        all = r.items; shown = all; cursor = r.next_cursor || null; total = r.total ?? r.items.length;
         if (r.committee) committee = r.committee; else if (payload.q) committee = [];
         draw();
       });

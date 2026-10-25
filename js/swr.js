@@ -71,10 +71,15 @@ export function createSwr({ call, storage, userKey, onSync = () => {} }) {
   }
   // cb(data, { stale }) is called with the stored answer first (stale: true) when there is one, then with the fresh one. Resolves with the latest data.
   async function swr(action, payload, cb) {
-    const k = key(action, payload), model = modelOf(action), hit = cacheable(action) ? read(k) : null;
+    const k = key(action, payload), model = modelOf(action);
+    let hit = cacheable(action) ? read(k) : null;
     touched.add(model);
     if (hit && isLoaded(k, model)) { cb(hit.data, { stale: false }); return hit.data; }       // already fetched in this run: no request
-    if (hit) cb(hit.data, { stale: true });
+    if (hit) {
+      // A stored answer the screen cannot draw (an older shape, a damaged copy) is dropped, and the request below goes out as if nothing was stored; without this the
+      // screen fails on the stored copy every time, before any request is made, and Try again never reaches the server.
+      try { cb(hit.data, { stale: true }); } catch { mem.delete(k); try { storage?.removeItem(k); } catch { /* ignore */ } hit = null; }
+    }
     if (hit && holdFresh) return hit.data;             // a re-draw with no new data (language change): the stored answer is enough
     onSync(++running);
     try {
