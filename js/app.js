@@ -98,7 +98,7 @@ const api = {
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') store.set({ online: false });
       else if (e instanceof ApiError && e.code === 'BAD_TOKEN' && store.get().status === 'in') {
-        auth.signOut(); store.set({ status: 'out', session: null, notice: 'signin.expired' }); router.refresh();
+        auth.signOut(); forgetCachedSession(); store.set({ status: 'out', session: null, notice: 'signin.expired' }); router.refresh();
       }
       throw e;
     } finally {
@@ -130,25 +130,58 @@ async function boot(render = true) {
   } catch { store.set({ status: 'down' }); }
   if (render) router.refresh();
 }
+// The last session answer is kept on this device, so the app opens on the member's own screens at once and checks with the server behind them.
+// It only decides what is shown; the server still checks every call. Removed on sign-out and when the server refuses the sign-in.
+const SESSION_CACHE = 'sre.sessionCache';
+function readCachedSession() {
+  try {
+    const s = JSON.parse(ls.get(SESSION_CACHE) || 'null');
+    const mine = auth.claims?.()?.email;
+    return s && s.email && s.caps && (!mine || String(mine).toLowerCase() === String(s.email).toLowerCase()) ? s : null;
+  } catch { return null; }
+}
+function forgetCachedSession() { try { localStorage.removeItem(SESSION_CACHE); } catch { /* private mode */ } }
+function useSession(session) {
+  session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
+  setCustomRoles(session.customRoles);
+  store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
+}
+async function afterSession(session) {
+  if (!mock) auth.keepSession((a, p) => client.call(a, p));   // not awaited: a 30-day sign-in for the phone
+  loadMyPhoto(session);       // not awaited: the photo never holds up sign-in
+  if (!mock) shareWithWorker();      // not awaited: the notification worker learns the 30-day sign-in
+  if (session.language) {
+    if (session.language !== getLang()) { ls.set('sre.lang', session.language); await loadLang(session.language); await swrCache.withoutRefresh(renderAll); }
+  } else client.call('members.setLanguage', { lang: getLang() }).catch(() => {});        // the member has not chosen on the server yet: keep what this phone shows
+}
+function sessionRefused(e) {
+  forgetCachedSession();
+  if (e.code === 'NO_ACCESS') {
+    const c = mock ? { email: mockEmail() } : (auth.claims() || {});
+    store.set({ status: 'noaccess', session: null, user: { email: c.email } });
+  } else if (e.code === 'BAD_TOKEN') store.set({ status: 'out', notice: 'signin.expired' });
+  else store.set({ status: 'down' });
+}
+// What a screen is drawn from: a change here (a role, a right, a module) needs a redraw; a new photo flag or count does not.
+const sessionShape = (s) => JSON.stringify([s.role, s.caps, s.modules, s.language, s.customRoles]);
 async function loadSession() {
+  const cached = mock ? null : readCachedSession();
+  if (cached) {
+    useSession(cached);
+    // Checked behind the screen. A refused sign-in or a changed right redraws; a failed request (offline, slow) keeps what is shown.
+    api.call('session.get').then(async (session) => {
+      const changed = sessionShape(session) !== sessionShape(cached);
+      useSession(session); ls.set(SESSION_CACHE, JSON.stringify(session));
+      await afterSession(session);
+      if (changed) router.refresh();
+    }, (e) => { if (e.code === 'NO_ACCESS' || e.code === 'BAD_TOKEN') { sessionRefused(e); router.refresh(); } });
+    return;
+  }
   try {
     const session = await api.call('session.get');
-    session.plotKeys = (session.plotKeys || []).map((k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2'));   // screens show A-12; the API takes either
-    setCustomRoles(session.customRoles);
-    store.set({ status: 'in', session, user: { email: session.email, name: session.name }, online: true, notice: null });
-    if (!mock) auth.keepSession((a, p) => client.call(a, p));   // not awaited: a 30-day sign-in for the phone
-    loadMyPhoto(session);       // not awaited: the photo never holds up sign-in
-    if (!mock) shareWithWorker();      // not awaited: the notification worker learns the 30-day sign-in
-    if (session.language) {
-      if (session.language !== getLang()) { ls.set('sre.lang', session.language); await loadLang(session.language); await swrCache.withoutRefresh(renderAll); }
-    } else client.call('members.setLanguage', { lang: getLang() }).catch(() => {});        // the member has not chosen on the server yet: keep what this phone shows
-  } catch (e) {
-    if (e.code === 'NO_ACCESS') {
-      const c = mock ? { email: mockEmail() } : (auth.claims() || {});
-      store.set({ status: 'noaccess', session: null, user: { email: c.email } });
-    } else if (e.code === 'BAD_TOKEN') store.set({ status: 'out', notice: 'signin.expired' });
-    else store.set({ status: 'down' });
-  }
+    useSession(session); if (!mock) ls.set(SESSION_CACHE, JSON.stringify(session));
+    await afterSession(session);
+  } catch (e) { sessionRefused(e); }
 }
 // First sign-in without a photo (or an old 256 px Google picture): the server takes the Google picture (if any). Then the photo is fetched once for the avatar.
 async function loadMyPhoto(session) {
@@ -161,7 +194,7 @@ async function loadMyPhoto(session) {
 const mockEmail = () => ({ unlisted: 'someone.else@example.com', removed: 'former.member@example.com' })[ss.get('sre.mockRole')] || '';
 
 function signOut() {
-  swrCache.clear(); swrCache.dropMedia(); setMyPhoto('');
+  swrCache.clear(); swrCache.dropMedia(); setMyPhoto(''); forgetCachedSession();
   if (!mock) forgetDevice();
   auth.signOut();
   store.set({ status: 'out', session: null, user: null, notice: null });
@@ -262,7 +295,8 @@ applyTheme(savedTheme);
 await loadLang(ls.get('sre.lang') || 'en');
 window.addEventListener('offline', () => { store.set({ online: false }); renderAll(); });
 window.addEventListener('online', () => { store.set({ online: true }); renderAll(); });
-if (!mock) await auth.init();
+// Google's script is waited for only when the sign-in button is needed; a saved sign-in opens the app without it.
+if (!mock && !auth.current()) await auth.init(); else if (!mock) auth.init();
 await boot(false);
 router.start();
 

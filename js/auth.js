@@ -51,11 +51,16 @@ export function createAuth({ clientId, onToken, onSignedOut }) {
     onToken?.(t);
   }
 
-  async function init() {
-    const g = await waitForGis();
-    if (!g) return false;
-    g.initialize({ client_id: clientId, callback: (r) => accept(r.credential), auto_select: true, cancel_on_tap_outside: false });
-    return true;
+  // Asked once; later calls get the same answer. The app does not wait for it when a saved sign-in exists (Google's script can be slow); the sign-in button and a silent refresh do.
+  let initDone = null;
+  function init() {
+    initDone = initDone || (async () => {
+      const g = await waitForGis();
+      if (!g) return false;
+      g.initialize({ client_id: clientId, callback: (r) => accept(r.credential), auto_select: true, cancel_on_tap_outside: false });
+      return true;
+    })();
+    return initDone;
   }
   // The button is drawn by Google in an iframe: a light iframe on a dark page shows as a white box, so pick the matching theme.
   const dark = () => {
@@ -78,6 +83,7 @@ export function createAuth({ clientId, onToken, onSignedOut }) {
   async function getToken() {
     if (token && secondsLeft(token) > 120) return token;
     if (session) return session;   // expired locally: the server answers BAD_TOKEN and the person signs in again
+    await init();
     if (!gis()) return token; // let the server answer BAD_TOKEN
     return refresh();
   }
