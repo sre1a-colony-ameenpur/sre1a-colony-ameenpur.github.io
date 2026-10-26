@@ -84,15 +84,15 @@ export async function playVideo(ctx, mediaId) {
     const note = h('p', { class: 'small muted vp-note', role: 'status' });
     let player, timer = null, dragging = false, dlg = null;
     const ready = () => player && typeof player.getDuration === 'function';
-    const pp = button(t('vid.play'), { icon: 'play_arrow', onClick: () => (player?.getPlayerState() === 1 ? player.pauseVideo() : player?.playVideo()) });
-    const elapsed = h('span', { class: 'small muted vp-time' }, '0:00'), total = h('span', { class: 'small muted vp-time' }, '0:00');
-    const seek = h('input', { type: 'range', min: 0, max: 1000, value: 0, 'aria-label': t('vid.seek'), style: 'flex:1;min-width:0' });
+    const pp = button(t('vid.play'), { kind: 'primary', icon: 'play_arrow', onClick: () => (player?.getPlayerState() === 1 ? player.pauseVideo() : player?.playVideo()) });
+    const elapsed = h('span', { class: 'small vp-time' }, '0:00'), total = h('span', { class: 'small vp-time' }, '0:00');
+    const seek = h('input', { type: 'range', class: 'vp-seek-bar', min: 0, max: 1000, value: 0, 'aria-label': t('vid.seek') });
     const showTime = () => { if (!ready()) return; const d = player.getDuration() || 0; elapsed.textContent = fmtTime(dragging ? d * seek.value / 1000 : player.getCurrentTime()); total.textContent = fmtTime(d); };
     const tick = () => { if (!ready()) return; if (!dragging) { const d = player.getDuration() || 0; seek.value = d ? Math.round(player.getCurrentTime() / d * 1000) : 0; } showTime(); };
     seek.addEventListener('input', () => { dragging = true; showTime(); });
     seek.addEventListener('change', () => { if (ready()) player.seekTo((player.getDuration() || 0) * seek.value / 1000, true); dragging = false; tick(); });
     const mute = button('', { icon: 'volume_up', kind: 'text', 'aria-label': t('vid.mute'), title: t('vid.mute'), onClick: () => { if (!ready()) return; if (player.isMuted()) player.unMute(); else player.mute(); drawSound(); } });
-    const vol = h('input', { type: 'range', min: 0, max: 100, value: 100, 'aria-label': t('vid.volume'), style: 'width:80px', hidden: volumeIsFixed(),
+    const vol = h('input', { type: 'range', min: 0, max: 100, value: 100, 'aria-label': t('vid.volume'), class: 'vp-vol', hidden: volumeIsFixed(),
       onInput: (e) => { if (!ready()) return; const v = Number(e.target.value); player.setVolume(v); if (v === 0) player.mute(); else if (player.isMuted()) player.unMute(); drawSound(); } });
     function drawSound() {
       if (!ready()) return;
@@ -116,7 +116,7 @@ export async function playVideo(ctx, mediaId) {
     const onFs = () => { if (document.fullscreenElement) nativeFs = true; else if (nativeFs) { nativeFs = false; if (filled) setFull(false); } };
     document.addEventListener('fullscreenchange', onFs);
     shield.addEventListener('click', () => pp.click());
-    dlg = openSheet({ title: t('vid.title1'), wide: true, body: h('div', { class: 'stack vp' }, box, h('div', { class: 'row vp-bar' }, pp, elapsed, seek, total, mute, vol, full), note), actions: [{ label: t('common.close') }],
+    dlg = openSheet({ title: t('vid.title1'), wide: true, body: h('div', { class: 'stack vp' }, box, h('div', { class: 'vp-seek' }, elapsed, seek, total), h('div', { class: 'vp-actions' }, pp, h('span', { class: 'grow' }), mute, vol, full), note), actions: [{ label: t('common.close') }],
       onClose: () => { clearInterval(timer); document.removeEventListener('fullscreenchange', onFs); try { if (document.fullscreenElement) document.exitFullscreen?.(); } catch { /* gone */ } try { player?.destroy(); } catch { /* gone */ } } });
     player = new globalThis.YT.Player(mount, { host: 'https://www.youtube-nocookie.com', videoId: youtubeId,
       playerVars: { controls: 0, disablekb: 1, rel: 0, modestbranding: 1, playsinline: 1, fs: 0, iv_load_policy: 3 },

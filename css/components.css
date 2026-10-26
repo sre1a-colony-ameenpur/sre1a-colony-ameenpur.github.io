@@ -362,10 +362,22 @@ dialog.lightbox::backdrop { background: #000; }
 .avatar.off.md { width: 64px; height: 64px; }
 
 /* Video player full screen: the sheet fills the screen (also where the browser has no real full screen for a page element, as on iPhone). */
-dialog.sheet.vp-full { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; background: #000; color: #fff; }
-dialog.sheet.vp-full .sheet-in { height: 100%; box-sizing: border-box; justify-content: center; }
+dialog.sheet.vp-full { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; background: #000; color: #fff; overflow: hidden; }
+dialog.sheet.vp-full .sheet-in { height: 100%; box-sizing: border-box; justify-content: center; padding: max(var(--s2), env(safe-area-inset-top)) max(var(--s3), env(safe-area-inset-right)) max(var(--s2), env(safe-area-inset-bottom)) max(var(--s3), env(safe-area-inset-left)); }
 dialog.sheet.vp-full h2, dialog.sheet.vp-full .btn-row { display: none; }
-dialog.sheet.vp-full .vp-box { aspect-ratio: auto; flex: 1; min-height: 0; }
 dialog.sheet.vp-full .vp { flex: 1; min-height: 0; }
-.vp-bar { flex-wrap: wrap; align-items: center; gap: var(--s2); }
-.vp-time { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+dialog.sheet.vp-full .vp-box { aspect-ratio: auto; flex: 1; min-height: 0; }
+/* controls: the seek bar has a row of its own at full width, the buttons sit below it */
+.vp-seek { display: flex; align-items: center; gap: var(--s2); width: 100%; }
+.vp-seek-bar { flex: 1; min-width: 0; height: 32px; margin: 0; accent-color: var(--c-primary); }
+.vp-actions { display: flex; align-items: center; gap: var(--s2); width: 100%; }
+.vp-actions .grow { flex: 1; }
+.vp-vol { width: 96px; accent-color: var(--c-primary); }
+.vp-time { min-width: 3.4em; text-align: center; font-variant-numeric: tabular-nums; }
+/* on the black full screen the buttons and times use light colours, because the sheet's dark text colour would fade on black */
+dialog.sheet.vp-full .vp-time { color: #fff; }
+dialog.sheet.vp-full .btn { color: #fff; border-color: rgba(255,255,255,.7); background: rgba(255,255,255,.14); opacity: 1; }
+dialog.sheet.vp-full .btn.text { border-color: transparent; background: transparent; }
+dialog.sheet.vp-full .btn.primary { background: #fff; border-color: #fff; color: #000; }
+dialog.sheet.vp-full .btn[disabled], dialog.sheet.vp-full .btn.busy { opacity: 1; }
+dialog.sheet.vp-full .vp-seek-bar, dialog.sheet.vp-full .vp-vol { accent-color: #fff; }
