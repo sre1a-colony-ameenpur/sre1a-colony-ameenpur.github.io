@@ -62,7 +62,17 @@ const loadYoutubeApi = () => (apiReady ||= new Promise((resolve, reject) => {
   document.head.append(s);
 }));
 
-// The in-app player: YouTube's embed with its own controls hidden and a click-shield over it; our play, seek and full screen controls below.
+// "1:05" or "1:02:03" from seconds.
+export function fmtTime(sec) {
+  const n = Math.max(0, Math.floor(Number(sec) || 0)), hh = Math.floor(n / 3600), mm = Math.floor((n % 3600) / 60), ss = String(n % 60).padStart(2, '0');
+  return hh ? `${hh}:${String(mm).padStart(2, '0')}:${ss}` : `${mm}:${ss}`;
+}
+// iPhone and iPad ignore a page's volume setting (the hardware buttons decide), so only mute is offered there.
+export const volumeIsFixed = (ua = globalThis.navigator?.userAgent || '', touchPoints = globalThis.navigator?.maxTouchPoints || 0) => /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && touchPoints > 1);
+
+// The in-app player: YouTube's embed with its own controls hidden and a click-shield over it; our own controls (play, a seek bar that follows the
+// playing time with elapsed and total, sound, full screen) below. Full screen fills the whole sheet (class vp-full) and also asks the browser for real full
+// screen where it allows it for a page element (iPhone Safari does not, so the filled sheet is what you get there).
 export async function playVideo(ctx, mediaId) {
   const { t } = ctx;
   try {
@@ -70,18 +80,50 @@ export async function playVideo(ctx, mediaId) {
     await loadYoutubeApi();
     const mount = h('div', { style: 'position:absolute;inset:0;width:100%;height:100%' });
     const shield = h('div', { style: 'position:absolute;inset:0;z-index:2' });
-    const box = h('div', { style: 'position:relative;aspect-ratio:16/9;background:#000' }, mount, shield);
-    const note = h('p', { class: 'small muted', role: 'status' });
-    let player;
+    const box = h('div', { class: 'vp-box', style: 'position:relative;aspect-ratio:16/9;background:#000' }, mount, shield);
+    const note = h('p', { class: 'small muted vp-note', role: 'status' });
+    let player, timer = null, dragging = false, dlg = null;
+    const ready = () => player && typeof player.getDuration === 'function';
     const pp = button(t('vid.play'), { icon: 'play_arrow', onClick: () => (player?.getPlayerState() === 1 ? player.pauseVideo() : player?.playVideo()) });
-    const seek = h('input', { type: 'range', min: 0, max: 100, value: 0, 'aria-label': t('vid.seek'), style: 'flex:1', onInput: (e) => player?.seekTo(player.getDuration() * e.target.value / 100, true) });
-    const full = button(t('vid.fullscreen'), { icon: 'fullscreen', kind: 'text', onClick: () => box.requestFullscreen?.() });
+    const elapsed = h('span', { class: 'small muted vp-time' }, '0:00'), total = h('span', { class: 'small muted vp-time' }, '0:00');
+    const seek = h('input', { type: 'range', min: 0, max: 1000, value: 0, 'aria-label': t('vid.seek'), style: 'flex:1;min-width:0' });
+    const showTime = () => { if (!ready()) return; const d = player.getDuration() || 0; elapsed.textContent = fmtTime(dragging ? d * seek.value / 1000 : player.getCurrentTime()); total.textContent = fmtTime(d); };
+    const tick = () => { if (!ready()) return; if (!dragging) { const d = player.getDuration() || 0; seek.value = d ? Math.round(player.getCurrentTime() / d * 1000) : 0; } showTime(); };
+    seek.addEventListener('input', () => { dragging = true; showTime(); });
+    seek.addEventListener('change', () => { if (ready()) player.seekTo((player.getDuration() || 0) * seek.value / 1000, true); dragging = false; tick(); });
+    const mute = button('', { icon: 'volume_up', kind: 'text', 'aria-label': t('vid.mute'), title: t('vid.mute'), onClick: () => { if (!ready()) return; if (player.isMuted()) player.unMute(); else player.mute(); drawSound(); } });
+    const vol = h('input', { type: 'range', min: 0, max: 100, value: 100, 'aria-label': t('vid.volume'), style: 'width:80px', hidden: volumeIsFixed(),
+      onInput: (e) => { if (!ready()) return; const v = Number(e.target.value); player.setVolume(v); if (v === 0) player.mute(); else if (player.isMuted()) player.unMute(); drawSound(); } });
+    function drawSound() {
+      if (!ready()) return;
+      const off = player.isMuted() || player.getVolume() === 0;
+      mute.firstChild.textContent = off ? 'volume_off' : 'volume_up';
+      const label = t(off ? 'vid.unmute' : 'vid.mute'); mute.setAttribute('aria-label', label); mute.title = label;
+      if (!vol.hidden && !dragging) vol.value = player.isMuted() ? 0 : player.getVolume();
+    }
+    let filled = false;
+    const full = button('', { icon: 'fullscreen', kind: 'text', 'aria-label': t('vid.fullscreen'), title: t('vid.fullscreen'), onClick: () => setFull(!filled) });
+    function setFull(on) {
+      filled = on; dlg?.el.classList.toggle('vp-full', on);
+      full.firstChild.textContent = on ? 'fullscreen_exit' : 'fullscreen';
+      const label = t(on ? 'vid.exitFullscreen' : 'vid.fullscreen'); full.setAttribute('aria-label', label); full.title = label;
+      try {
+        if (on) dlg?.el.requestFullscreen?.()?.catch?.(() => {});               // refused or missing (iPhone): the filled sheet stays
+        else if (document.fullscreenElement) document.exitFullscreen?.();
+      } catch { /* keep the filled sheet */ }
+    }
+    let nativeFs = false;                                                              // real full screen was granted; leaving it (Esc, back swipe) leaves the filled sheet too
+    const onFs = () => { if (document.fullscreenElement) nativeFs = true; else if (nativeFs) { nativeFs = false; if (filled) setFull(false); } };
+    document.addEventListener('fullscreenchange', onFs);
     shield.addEventListener('click', () => pp.click());
-    const dlg = openSheet({ title: t('vid.title1'), wide: true, body: h('div', { class: 'stack' }, box, h('div', { class: 'row' }, pp, seek, full), note), actions: [{ label: t('common.close') }], onClose: () => { try { player?.destroy(); } catch { /* gone */ } } });
+    dlg = openSheet({ title: t('vid.title1'), wide: true, body: h('div', { class: 'stack vp' }, box, h('div', { class: 'row vp-bar' }, pp, elapsed, seek, total, mute, vol, full), note), actions: [{ label: t('common.close') }],
+      onClose: () => { clearInterval(timer); document.removeEventListener('fullscreenchange', onFs); try { if (document.fullscreenElement) document.exitFullscreen?.(); } catch { /* gone */ } try { player?.destroy(); } catch { /* gone */ } } });
     player = new globalThis.YT.Player(mount, { host: 'https://www.youtube-nocookie.com', videoId: youtubeId,
       playerVars: { controls: 0, disablekb: 1, rel: 0, modestbranding: 1, playsinline: 1, fs: 0, iv_load_policy: 3 },
       events: { onError: () => { note.textContent = t('vid.playerError'); },
-        onStateChange: (e) => { pp.lastChild.textContent = e.data === 1 ? t('vid.pause') : t('vid.play'); } } });
+        onReady: () => { tick(); drawSound(); },
+        onStateChange: (e) => { pp.lastChild.textContent = e.data === 1 ? t('vid.pause') : t('vid.play'); pp.firstChild.textContent = e.data === 1 ? 'pause' : 'play_arrow'; tick(); } } });
+    timer = setInterval(() => { tick(); drawSound(); }, 500);
     return dlg;
   } catch (e) { toastError(e.code ? friendly(e, t) : t('vid.playerError')); }
 }

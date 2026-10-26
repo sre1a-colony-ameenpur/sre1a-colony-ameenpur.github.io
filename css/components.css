@@ -360,3 +360,12 @@ dialog.lightbox::backdrop { background: #000; }
 .lightbox-close:hover { background: rgb(0 0 0 / 80%); }
 .avatar.md { width: 64px; height: 64px; font-size: var(--fs-h3); }
 .avatar.off.md { width: 64px; height: 64px; }
+
+/* Video player full screen: the sheet fills the screen (also where the browser has no real full screen for a page element, as on iPhone). */
+dialog.sheet.vp-full { width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; border: 0; border-radius: 0; background: #000; color: #fff; }
+dialog.sheet.vp-full .sheet-in { height: 100%; box-sizing: border-box; justify-content: center; }
+dialog.sheet.vp-full h2, dialog.sheet.vp-full .btn-row { display: none; }
+dialog.sheet.vp-full .vp-box { aspect-ratio: auto; flex: 1; min-height: 0; }
+dialog.sheet.vp-full .vp { flex: 1; min-height: 0; }
+.vp-bar { flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.vp-time { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
