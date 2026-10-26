@@ -98,6 +98,7 @@ export const SECTIONS = [
       ['Add an expense.', 'Tap the + button at the bottom right, fill the details and attach a photo of the payment proof (always required). The President\'s own entries count at once; anyone else\'s wait for approval.'],
       ['Approve or reject.', 'The person who adds an expense never approves it. Open the waiting item, check the proof, then approve, or reject with a reason. Only approved expenses count in the totals.'],
       ['Corrections.', 'An approved expense cannot be edited. Reverse it from its detail screen with a reason and add the right one. Both stay in the history.'],
+      ['Opening balance.', 'The savings icon at the top of Money opens the money in the bank handed over by the previous committee. Add one or more entries, each with a date, a description and a proof; a different person approves. Monthly accounts then shows the bank balance now: the approved entries plus everything collected, minus everything spent. Approved entries cannot be edited; cancel a wrong one with a reversing entry.'],
     ] },
   { id: 'maintenance', shots: [{ id: 'maint-committee', after: 0, caption: 'The committee month view' }, { id: 'maint-record', after: 1, caption: 'Record a payment' }, { id: 'maint-raise', after: 3, caption: 'Raise dues' }], icon: 'savings', title: 'Maintenance: committee work', needs: [['maintenance_payments', 'c'], ['payment_confirmation', 'u'], ['maintenance_dues', 'c'], ['maintenance_rates', 'u']], mods: ['maintenance'], group: 'role',
     steps: [

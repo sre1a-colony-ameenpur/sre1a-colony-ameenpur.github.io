@@ -176,6 +176,12 @@ export function createMock({ delayMs = 120 } = {}) {
     { id: 'E13', date: `${new Date().getFullYear()}-10-10`, amount_paise: 250000, category: 'Repairs', reason: 'Gate repair', status: 'pending', by: person('treasurer'), at: day(-4), proof: true },
     { id: 'E14', date: `${new Date().getFullYear()}-10-11`, amount_paise: 90000, category: 'Gardening', reason: 'Park plants', status: 'rejected', by: person('treasurer'), decider: person('president'), at: day(-3), decidedAt: day(-3), rejectReason: 'Duplicate bill', proof: true },
   ];
+  const openings = [
+    { id: 'O1', date: `${new Date().getFullYear()}-04-01`, amount_paise: 18500000, description: 'Bank balance handed over by the previous committee', status: 'approved', by: person('treasurer'), decider: person('president'), at: day(-20), decidedAt: day(-19), proof: true },
+    { id: 'O2', date: `${new Date().getFullYear()}-04-01`, amount_paise: 120000, description: 'Interest credited, found after the handover', status: 'pending', by: person('treasurer'), at: day(-2), proof: true },
+  ];
+  const viewOpening = (o, u) => ({ id: o.id, date: o.date, amount_paise: o.amount_paise, description: o.description, status: o.status, created_by_name: o.by.name, decided_by_name: o.decider?.name || '',
+    created_at: o.at, decided_at: o.decidedAt || '', reject_reason: o.rejectReason || '', reverses_id: o.reverses || '', mine: o.by.email === u.email, has_proof: !!o.proof });
   const viewExpense = (e, u) => ({ id: e.id, date: e.date, amount_paise: e.amount_paise, category: e.category, reason: e.reason, status: e.status,
     created_by_name: e.by.name, decided_by_name: e.decider?.name || '', created_at: e.at, decided_at: e.decidedAt || '', reject_reason: e.rejectReason || '',
     reverses_id: e.reverses || '', mine: e.by.email === u.email, has_proof: !!e.proof,
@@ -721,6 +727,35 @@ export function createMock({ delayMs = 120 } = {}) {
       expenses.unshift(e); return ok({ id: e.id });
     },
     'expenses.proof': (u, p) => (expenses.find((x) => x.id === p.id)?.proof ? ok({ jpegBase64: PIXEL }) : fail('NOT_FOUND', 'No screenshot')),
+    'openingBalance.list': (u) => {
+      const approved = openings.filter((o) => o.status === 'approved'), pending = openings.filter((o) => o.status === 'pending');
+      return ok({ items: openings.map((o) => viewOpening(o, u)), approved_total_paise: approved.reduce((a, o) => a + o.amount_paise, 0), pending_count: pending.length, pending_for_me: pending.filter((o) => o.by.email !== u.email).length });
+    },
+    'openingBalance.get': (u, p) => { const o = openings.find((x) => x.id === p.id); return o ? ok({ item: viewOpening(o, u), reversed: openings.some((x) => x.reverses === o.id) }) : fail('NOT_FOUND', 'Not found'); },
+    'openingBalance.create': (u, p) => {
+      if (!(p.amount_paise > 0) || !p.description || !p.proof_jpeg_base64) return fail('INVALID', 'Check the form');
+      const o = { id: 'O' + nextId++, date: p.date, amount_paise: p.amount_paise, description: p.description, status: u.role === 'President' ? 'approved' : 'pending', by: u, at: new Date().toISOString(), proof: true };
+      if (o.status === 'approved') Object.assign(o, { decider: u, decidedAt: o.at });
+      openings.unshift(o); return ok({ id: o.id });
+    },
+    'openingBalance.approve': (u, p) => {
+      const o = openings.find((x) => x.id === p.id); if (!o) return fail('NOT_FOUND', 'Not found');
+      if (o.by.email === u.email) return fail('SELF_APPROVAL', 'Someone else must approve this');
+      Object.assign(o, { status: 'approved', decider: u, decidedAt: new Date().toISOString() }); return ok({ id: o.id, status: o.status });
+    },
+    'openingBalance.reject': (u, p) => {
+      const o = openings.find((x) => x.id === p.id); if (!o) return fail('NOT_FOUND', 'Not found');
+      if (o.by.email === u.email) return fail('SELF_APPROVAL', 'Someone else must decide this');
+      Object.assign(o, { status: 'rejected', decider: u, decidedAt: new Date().toISOString(), rejectReason: p.reason }); return ok({ id: o.id, status: o.status });
+    },
+    'openingBalance.reverse': (u, p) => {
+      const o = openings.find((x) => x.id === p.id);
+      if (!o || o.status !== 'approved') return fail('CONFLICT', 'Only approved entries can be reversed');
+      if (openings.some((x) => x.reverses === o.id)) return fail('CONFLICT', 'Already reversed');
+      const r = { id: 'O' + nextId++, date: new Date().toISOString().slice(0, 10), amount_paise: -o.amount_paise, description: `Reversal of ${o.id}: ${p.reason}`, status: 'pending', by: u, at: new Date().toISOString(), reverses: o.id };
+      openings.unshift(r); return ok({ id: r.id });
+    },
+    'openingBalance.proof': (u, p) => (openings.find((x) => x.id === p.id)?.proof ? ok({ jpegBase64: PIXEL }) : fail('NOT_FOUND', 'No proof')),
     'plotRequests.list': (u, p) => ok({ items: p.status === 'Pending' ? [{ id: 'r0', member: 'Anand R.', action: 'add', plotKey: 'B-10' }] : [] }),
     'plotRequests.mine': (u) => ok({ items: plotRequests.filter((r) => r.email === u.email).map((r) => ({ id: r.id, member: r.email, action: r.action, plot_key: r.plotKey.replace('-', ''), status: r.status, requested_at: r.createdAt })) }),
     'plotRequests.create': (u, p) => {
