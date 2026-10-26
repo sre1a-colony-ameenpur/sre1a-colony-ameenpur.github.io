@@ -1,5 +1,5 @@
 // S7.2 Help: one accordion open at a time (details with the same name).
-import { h, icon, card, button, toast } from '../ui.js';
+import { h, icon, card, button, toast, openSheet } from '../ui.js';
 import { installState, promptInstall, onInstallChange, checkForUpdates, currentBuild } from '../pwa.js';
 
 const SECTIONS = ['signin', 'complaint', 'vote', 'maintenance', 'broken'];
@@ -12,10 +12,17 @@ function installCard(t) {
     const s = installState();
     body.replaceChildren(...(s.installed ? [h('p', {}, t('help.install.done'))]
       : s.canPrompt ? [h('p', {}, t('help.install.text')), button(t('help.install.button'), { kind: 'primary', icon: 'install_mobile', onClick: promptInstall })]
-        : [h('p', {}, t(s.ios ? 'help.install.ios' : 'help.install.manual'))]));
+        : s.ios ? [h('p', {}, t('help.install.ios')), button(t('help.install.button'), { kind: 'primary', icon: 'install_mobile', onClick: () => iosSteps(t) })]
+          : [h('p', {}, t('help.install.manual'))]));
   };
   draw(); onInstallChange(draw);
   return card(t('help.install.title'), 'install_mobile', body);
+}
+
+// iPhone and iPad give a web page no install button, so the steps are shown instead (the Share button is at the bottom in Safari and in the address bar in Chrome).
+function iosSteps(t) {
+  openSheet({ title: t('help.install.title'), body: h('div', { class: 'stack' }, h('ol', { class: 'agenda' }, ['1', '2', '3', '4'].map((n) => h('li', {}, t(`help.install.ios${n}`)))),
+    h('p', { class: 'small muted' }, t('help.install.iosNote'))), actions: [{ label: t('common.close') }] });
 }
 
 // "Check for updates": looks for a new release now; the Update bar appears if there is one.

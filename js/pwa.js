@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
 export function installState() {
   const standalone = globalThis.matchMedia?.('(display-mode: standalone)').matches || globalThis.navigator?.standalone === true;
   const ios = /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent || '');
-  return { canPrompt: !!deferredInstall, installed: standalone, ios };
+  return { canPrompt: !!deferredInstall && !ios, installed: standalone, ios };       // an iPhone or iPad never offers a prompt: the steps are shown instead
 }
 export async function promptInstall() {
   if (!deferredInstall) return;
