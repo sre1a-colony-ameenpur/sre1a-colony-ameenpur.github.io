@@ -4,7 +4,7 @@ import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
 import { can } from '../store.js';
 import { ymNow, shiftMonth, rateFor, summarize, tileStatus, currentTotals } from '../maint.js';
-import { recordPaymentSheet, raiseDuesSheet, editDueSheet, feeSheet, proofSheet, recentPaymentsCard, removedPaymentSheet } from './maintenance_sheets.js';
+import { recordPaymentSheet, raiseDuesSheet, editDueSheet, feeSheet, proofSheet, recentPaymentsCard, removedPaymentSheet, failPaymentSheet, ownPaymentPill } from './maintenance_sheets.js';
 
 const PILL = { paid: 'paid', partly_paid: 'partly', unpaid: 'unpaid' };
 const TILE_ICON = { paid: 'check_circle', partly_paid: 'timelapse', unpaid: 'error', future: 'remove', none: 'remove' };
@@ -58,7 +58,7 @@ function monthSheet(ctx, mine, month) {
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.amount')), h('strong', {}, money(m.amount_paise))),
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.paid')), statusPill(PILL[m.status], `${money(m.paid_paise)} · ${t(`mt.tile.${m.status}`)}`)),
     pays.length ? h('h3', {}, t('mt.payments')) : h('p', { class: 'muted' }, t('mt.noPayments')),
-    ...pays.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', p.status === 'awaiting' ? statusPill('pending', t('mt.awaiting')) : null)))) });
+    ...pays.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null))) });
 }
 
 // ---- Committee: month view + payments to confirm ----
@@ -103,7 +103,8 @@ function committee(ctx) {
           p.has_proof ? button(t('mt.proof'), { kind: 'text', icon: 'image', onClick: () => proofSheet(ctx, p.id) }) : null,
           can('payment_confirmation', 'u') && !p.mine ? button(t('mt.confirm'), { kind: 'primary', onClick: async () => {
             try { await ctx.api.call('maintenance.payments.confirm', { id: p.id }); toast(t('mt.confirmed')); load(); } catch (e) { toastError(friendly(e, t)); }
-          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null))))) : h('div')));
+          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null),
+          can('payment_confirmation', 'u') && !p.mine ? button(t('mt.fail'), { kind: 'danger', onClick: () => failPaymentSheet(ctx, 'maintenance.payments.fail', p.id, load) }) : null)))) : h('div')));
     } catch (e) { queue.replaceChildren(errorState(friendly(e, t), loadQueue)); }
   }
 

@@ -176,10 +176,20 @@ export function createMock({ delayMs = 120 } = {}) {
     { id: 'E13', date: `${new Date().getFullYear()}-10-10`, amount_paise: 250000, category: 'Repairs', reason: 'Gate repair', status: 'pending', by: person('treasurer'), at: day(-4), proof: true },
     { id: 'E14', date: `${new Date().getFullYear()}-10-11`, amount_paise: 90000, category: 'Gardening', reason: 'Park plants', status: 'rejected', by: person('treasurer'), decider: person('president'), at: day(-3), decidedAt: day(-3), rejectReason: 'Duplicate bill', proof: true },
   ];
+  // The account ledger: one entry for each approved or confirmed record, added at that moment.
+  const today0 = new Date().toISOString().slice(0, 10);
+  const ledgerRows = [];
+  let ledgerBalance = 0, ledgerOn = true;
+  const postLedger = (type, reference, signed, description, date = today0) => {
+    const d = type === 'expense' ? -signed : signed; ledgerBalance += d;
+    ledgerRows.push({ id: 'L' + (ledgerRows.length + 1), seq: ledgerRows.length + 1, date, type, reference, direction: d >= 0 ? 'credit' : 'debit', amount_paise: Math.abs(d), description, balance_after_paise: ledgerBalance, posted_at: new Date().toISOString() });
+  };
   const openings = [
     { id: 'O1', date: `${new Date().getFullYear()}-04-01`, amount_paise: 18500000, description: 'Bank balance handed over by the previous committee', status: 'approved', by: person('treasurer'), decider: person('president'), at: day(-20), decidedAt: day(-19), proof: true },
     { id: 'O2', date: `${new Date().getFullYear()}-04-01`, amount_paise: 120000, description: 'Interest credited, found after the handover', status: 'pending', by: person('treasurer'), at: day(-2), proof: true },
   ];
+  postLedger('opening', 'opening_balances/O1', 18500000, 'Bank balance handed over by the previous committee', `${new Date().getFullYear()}-04-01`);
+  postLedger('expense', 'expenses/E12', 480000, 'Electricity: Street lights, September', `${new Date().getFullYear()}-10-05`);
   const viewOpening = (o, u) => ({ id: o.id, date: o.date, amount_paise: o.amount_paise, description: o.description, status: o.status, created_by_name: o.by.name, decided_by_name: o.decider?.name || '',
     created_at: o.at, decided_at: o.decidedAt || '', reject_reason: o.rejectReason || '', reverses_id: o.reverses || '', mine: o.by.email === u.email, has_proof: !!o.proof });
   const viewExpense = (e, u) => ({ id: e.id, date: e.date, amount_paise: e.amount_paise, category: e.category, reason: e.reason, status: e.status,
@@ -467,7 +477,14 @@ export function createMock({ delayMs = 120 } = {}) {
       const x = maintPayments.find((y) => y.id === p.id);
       if (!x) return fail('NOT_FOUND', 'Not found');
       if (x.by === u.email) return fail('SELF_APPROVAL', 'Someone else must confirm this');
-      Object.assign(x, { status: 'confirmed', confirmed_by_name: u.name, confirmed_at: new Date().toISOString() }); return ok({ id: x.id, status: 'confirmed' });
+      Object.assign(x, { status: 'confirmed', confirmed_by_name: u.name, confirmed_at: new Date().toISOString() }); postLedger('maintenance', `payments/${x.id}`, x.amount_paise, 'Maintenance payment'); return ok({ id: x.id, status: 'confirmed' });
+    },
+    'maintenance.payments.fail': (u, p) => {
+      const x = maintPayments.find((y) => y.id === p.id);
+      if (!x) return fail('NOT_FOUND', 'Not found');
+      if (x.by === u.email) return fail('SELF_APPROVAL', 'Someone else must decide this');
+      if (!p.reason) return fail('INVALID', 'A reason is required');
+      Object.assign(x, { status: 'failed', fail_reason: p.reason, confirmed_by_name: u.name }); return ok({ id: x.id, status: 'failed' });
     },
     'maintenance.payments.reverse': (u, p) => {
       const o = maintPayments.find((y) => y.id === p.id);
@@ -537,7 +554,14 @@ export function createMock({ delayMs = 120 } = {}) {
       const x = feePayments.find((y) => y.id === p.id);
       if (!x) return fail('NOT_FOUND', 'Not found');
       if (x.by === u.email) return fail('SELF_APPROVAL', 'Someone else must confirm this');
-      x.status = 'confirmed'; x.confirmed_by_name = u.name; feeDues.find((d) => d.id === x.due_id).paid += x.amount_paise; return ok({ id: x.id, status: 'confirmed' });
+      x.status = 'confirmed'; x.confirmed_by_name = u.name; feeDues.find((d) => d.id === x.due_id).paid += x.amount_paise; postLedger('fee', `member_due_payments/${x.id}`, x.amount_paise, 'Fee request'); return ok({ id: x.id, status: 'confirmed' });
+    },
+    'dues.payments.fail': (u, p) => {
+      const x = feePayments.find((y) => y.id === p.id);
+      if (!x) return fail('NOT_FOUND', 'Not found');
+      if (x.by === u.email) return fail('SELF_APPROVAL', 'Someone else must decide this');
+      if (!p.reason) return fail('INVALID', 'A reason is required');
+      Object.assign(x, { status: 'failed', fail_reason: p.reason, confirmed_by_name: u.name }); return ok({ id: x.id, status: 'failed' });
     },
     'dues.payments.reverse': (u, p) => {
       const o = feePayments.find((y) => y.id === p.id);
@@ -704,7 +728,7 @@ export function createMock({ delayMs = 120 } = {}) {
       const e = expenses.find((x) => x.id === p.id);
       if (!e) return fail('NOT_FOUND', 'Not found');
       if (e.by.email === u.email) return fail('SELF_APPROVAL', 'Someone else must approve this');
-      Object.assign(e, { status: 'approved', decider: u, decidedAt: new Date().toISOString() }); return ok({ id: e.id, status: e.status });
+      Object.assign(e, { status: 'approved', decider: u, decidedAt: new Date().toISOString() }); postLedger('expense', `expenses/${e.id}`, e.amount_paise, `${e.category}: ${e.reason}`, e.date); return ok({ id: e.id, status: e.status });
     },
     'expenses.reject': (u, p) => {
       const e = expenses.find((x) => x.id === p.id);
@@ -727,6 +751,19 @@ export function createMock({ delayMs = 120 } = {}) {
       expenses.unshift(e); return ok({ id: e.id });
     },
     'expenses.proof': (u, p) => (expenses.find((x) => x.id === p.id)?.proof ? ok({ jpegBase64: PIXEL }) : fail('NOT_FOUND', 'No screenshot')),
+    'ledger.list': (u, p = {}) => {
+      const month = p.month || new Date().toISOString().slice(0, 7), committee = u.role !== 'Member';
+      const rows = ledgerOn ? ledgerRows.filter((r) => r.date.slice(0, 7) === month).slice().reverse() : [], items = [], merged = {};
+      rows.forEach((r) => {
+        if (committee || !['maintenance', 'membership', 'fee'].includes(r.type)) { items.push(committee ? r : { date: r.date, type: r.type, direction: r.direction, amount_paise: r.amount_paise, balance_after_paise: r.balance_after_paise, description: r.description }); return; }
+        const k = `${r.date}|${r.type}|${r.direction}`;
+        if (merged[k]) { merged[k].amount_paise += r.amount_paise; merged[k].count++; return; }
+        merged[k] = { date: r.date, type: r.type, direction: r.direction, amount_paise: r.amount_paise, balance_after_paise: r.balance_after_paise, count: 1, description: r.type === 'maintenance' ? 'Maintenance collected' : 'Fee requests collected' }; items.push(merged[k]);
+      });
+      return ok({ started: ledgerOn, balance_paise: ledgerBalance, month, merged: !committee, items });
+    },
+    'ledger.verify': () => ok({ started: true, ok: true, balance_paise: ledgerBalance, records_paise: ledgerBalance, kinds: ['opening', 'expense', 'maintenance', 'membership', 'fee'].map((type) => ({ type, entries: ledgerRows.filter((r) => r.type === type).length, records: ledgerRows.filter((r) => r.type === type).length, ledger_paise: 0, records_paise: 0, ok: true })) }),
+    'ledger.backfill': () => fail('CONFLICT', 'The ledger has already started'),
     'openingBalance.list': (u) => {
       const approved = openings.filter((o) => o.status === 'approved'), pending = openings.filter((o) => o.status === 'pending');
       return ok({ items: openings.map((o) => viewOpening(o, u)), approved_total_paise: approved.reduce((a, o) => a + o.amount_paise, 0), pending_count: pending.length, pending_for_me: pending.filter((o) => o.by.email !== u.email).length });
@@ -741,7 +778,7 @@ export function createMock({ delayMs = 120 } = {}) {
     'openingBalance.approve': (u, p) => {
       const o = openings.find((x) => x.id === p.id); if (!o) return fail('NOT_FOUND', 'Not found');
       if (o.by.email === u.email) return fail('SELF_APPROVAL', 'Someone else must approve this');
-      Object.assign(o, { status: 'approved', decider: u, decidedAt: new Date().toISOString() }); return ok({ id: o.id, status: o.status });
+      Object.assign(o, { status: 'approved', decider: u, decidedAt: new Date().toISOString() }); postLedger('opening', `opening_balances/${o.id}`, o.amount_paise, o.description, o.date); return ok({ id: o.id, status: o.status });
     },
     'openingBalance.reject': (u, p) => {
       const o = openings.find((x) => x.id === p.id); if (!o) return fail('NOT_FOUND', 'Not found');

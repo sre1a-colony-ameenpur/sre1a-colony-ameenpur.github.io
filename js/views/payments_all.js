@@ -9,7 +9,7 @@ export default function render(ctx) {
   let items = [], cursor = null, total = 0;
   const month = h('input', { type: 'month', id: 'pf-month', 'aria-label': t('pay.f.month') });
   const kind = h('select', { id: 'pf-kind', 'aria-label': t('pay.f.kind') }, [['', t('pay.f.all')], ['maintenance', t('pay.kind.maintenance')], ['membership', t('pay.kind.membership')], ['fee', t('pay.kind.fee')]].map(([v, l]) => h('option', { value: v }, l)));
-  const status = h('select', { id: 'pf-status', 'aria-label': t('pay.f.status') }, [['', t('pay.f.all')], ['awaiting', t('pay.s.awaiting')], ['confirmed', t('pay.s.confirmed')]].map(([v, l]) => h('option', { value: v }, l)));
+  const status = h('select', { id: 'pf-status', 'aria-label': t('pay.f.status') }, [['', t('pay.f.all')], ['awaiting', t('pay.s.awaiting')], ['confirmed', t('pay.s.confirmed')], ['failed', t('pay.s.failed')]].map(([v, l]) => h('option', { value: v }, l)));
   const plot = h('input', { type: 'search', id: 'pf-plot', placeholder: t('pay.f.plot'), 'aria-label': t('pay.f.plot'), autocapitalize: 'characters' });
   const fieldOf = (id, label, el) => h('div', { class: 'field' }, h('label', { for: id }, label), el);
   const list = h('div', {}), more = h('div', {});

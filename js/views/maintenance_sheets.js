@@ -177,6 +177,26 @@ export async function proofSheet(ctx, id) {
 }
 
 // Reverse a confirmed payment (maintenance or fee): a reversing entry cancels it, the original stays on record. `action` is the API verb.
+// A Paid payment the checker does not accept: a reason is needed; the member sees it and the due is raised again. `action` is the API verb.
+export function failPaymentSheet(ctx, action, id, done) {
+  const { t } = ctx;
+  const reason = field({ id: 'pf-why', label: t('mt.failReason'), help: t('mt.failHelp'), maxlength: 200 });
+  const note = h('div', { role: 'alert' });
+  openSheet({ title: t('mt.failTitle'), body: h('div', { class: 'stack' }, reason, note), actions: [
+    { label: t('mt.fail'), kind: 'danger solid', keepOpen: true, onClick: async (close) => {
+      const text = reason.querySelector('input').value.trim();
+      if (!text) { note.replaceChildren(h('div', { class: 'banner warn' }, t('mt.failNeeded'))); return; }
+      try { await ctx.api.call(action, { id, reason: text }); close(); toast(t('mt.failedDone')); done(); } catch (e) { toastError(friendly(e, t)); }
+    } }, { label: t('common.cancel') }] });
+}
+
+// Own payment row status: Paid (waiting for a second person), or Failed with the reason; a Confirmed one needs no pill.
+export function ownPaymentPill(t, p) {
+  if (p.status === 'awaiting') return statusPill('pending', t('pay.s.awaiting'));
+  if (p.status === 'failed') return statusPill('rejected', t('mt.failed'));
+  return null;
+}
+
 export function reversePaymentSheet(ctx, action, p, done) {
   const { t } = ctx;
   const reason = field({ id: 'rv-why', label: t('exp.reason'), help: t('mt.reverseHelp'), maxlength: 200 });

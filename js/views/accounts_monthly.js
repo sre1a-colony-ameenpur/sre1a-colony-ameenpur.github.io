@@ -26,7 +26,7 @@ export default function render(ctx) {
             button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); load(); } })),
           card(t('acc.balance'), 'savings', h('div', { class: `amount big${d.overall.net_paise < 0 ? ' neg' : ''}` }, money(d.overall.net_paise)),
             h('p', { class: 'small muted' }, t('acc.balanceNote', { amount: money(d.overall.opening_paise || 0) })),
-            h('a', { class: 'btn', href: '#/money/opening', style: 'align-self:flex-start' }, icon('account_balance'), t('ob.title'))),
+            h('div', { class: 'row' }, h('a', { class: 'btn', href: '#/money/ledger' }, icon('menu_book'), t('ledger.title')), h('a', { class: 'btn', href: '#/money/opening' }, icon('account_balance'), t('ob.title')))),
           card(t('acc.thisMonth'), 'account_balance', h('div', { class: 'stats' },
             stat(d.collected_paise, t('acc.collected')), stat(d.spent_paise, t('acc.spent')), stat(d.net_paise, t('acc.net'), d.net_paise < 0 ? 'neg' : ''), stat(d.collected_maintenance_paise, t('acc.maint'))),
             h('p', { class: 'small muted' }, t('acc.feesLine', { amount: money(d.collected_fees_paise) }))),

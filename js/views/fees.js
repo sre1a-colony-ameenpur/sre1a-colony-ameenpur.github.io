@@ -4,7 +4,7 @@ import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can } from '../store.js';
-import { recentPaymentsCard } from './maintenance_sheets.js';
+import { recentPaymentsCard, failPaymentSheet, ownPaymentPill } from './maintenance_sheets.js';
 import { raiseRequestSheet, requestDetailSheet, membershipRateSheet, recordFeePaymentSheet, feeProofSheet } from './fees_sheets.js';
 
 const plot = (k) => plotChip(k.replace(/^([A-Z])(\d+)$/, '$1-$2'));
@@ -45,7 +45,7 @@ function dueSheet(ctx, d) {
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('fee.deadline')), h('span', {}, dateShort(d.due_date))),
     statusPill(dueKind(d), dueLabel(t, d)),
     d.payments.length ? h('h3', {}, t('mt.payments')) : null,
-    ...d.payments.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', p.status === 'awaiting' ? statusPill('pending', t('mt.awaiting')) : null)))) });
+    ...d.payments.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null))) });
 }
 
 function committee(ctx) {
@@ -65,7 +65,8 @@ function committee(ctx) {
         h('div', { class: 'row' }, p.has_proof ? button(t('mt.proof'), { kind: 'text', icon: 'image', onClick: () => feeProofSheet(ctx, p.id) }) : null,
           can('payment_confirmation', 'u') && !p.mine ? button(t('mt.confirm'), { kind: 'primary', onClick: async () => {
             try { await ctx.api.call('dues.payments.confirm', { id: p.id }); toast(t('mt.confirmed')); load(); } catch (e) { toastError(friendly(e, t)); }
-          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null))))) : h('div')));
+          } }) : (p.mine ? h('span', { class: 'small muted' }, t('exp.someoneElse')) : null),
+          can('payment_confirmation', 'u') && !p.mine ? button(t('mt.fail'), { kind: 'danger', onClick: () => failPaymentSheet(ctx, 'dues.payments.fail', p.id, load) }) : null)))) : h('div')));
     } catch (e) { queue.replaceChildren(errorState(friendly(e, t), loadQueue)); }
   }
   // 30 a page: the first page shows from the stored answer and refreshes in the background; "Show more" fetches older ones.
