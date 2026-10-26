@@ -19,7 +19,7 @@ function installCard(t) {
   return card(t('help.install.title'), 'install_mobile', body);
 }
 
-// iPhone and iPad give a web page no install button, so the steps are shown instead (the Share button is at the bottom in Safari and in the address bar in Chrome).
+// iPhone and iPad give a web page no install button, so the steps are shown instead (Chrome only: Safari's Home Screen apps do not get notifications here).
 function iosSteps(t) {
   openSheet({ title: t('help.install.title'), body: h('div', { class: 'stack' }, h('ol', { class: 'agenda' }, ['1', '2', '3', '4'].map((n) => h('li', {}, t(`help.install.ios${n}`)))),
     h('p', { class: 'small muted' }, t('help.install.iosNote'))), actions: [{ label: t('common.close') }] });
