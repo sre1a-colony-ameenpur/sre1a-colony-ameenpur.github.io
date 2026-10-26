@@ -15,7 +15,9 @@ export default async function render(ctx) {
     root.replaceChildren(loadingRegion(2));
     try {
       await ctx.api.swr('meetings.get', { id: ctx.params.id }, (d) => {
-      const m = d.meeting;
+      const m = d.meeting, began = m.status !== 'scheduled';
+      const setStatus = async (status) => { try { await ctx.api.call('meetings.update', { id: m.id, status }); load(); } catch (e) { toastError(friendly(e, t)); } };
+      const needStart = () => h('p', { class: 'small muted' }, t('mtg.startFirst'));
       const item = (a, carried) => h('div', { class: 'list-row' },
         can('action_items', 'u') ? h('input', { type: 'checkbox', checked: a.status === 'done', style: 'width:24px;height:24px', 'aria-label': t('mtg.markDone'), onChange: async (e) => {
           try { await ctx.api.call('actionItems.update', { id: a.id, status: e.target.checked ? 'done' : 'open' }); load(); } catch (err) { e.target.checked = !e.target.checked; toastError(friendly(err, t)); }
@@ -25,17 +27,18 @@ export default async function render(ctx) {
         a.overdue ? statusPill('overdue', t('mtg.overdue')) : a.status === 'done' ? statusPill('paid', t('mtg.done')) : null);
       root.replaceChildren(
         card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
-          h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : 'mtg.scheduled')),
-            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.markHeld'), { kind: 'text', onClick: async () => { try { await ctx.api.call('meetings.update', { id: m.id, status: 'held' }); load(); } catch (e) { toastError(friendly(e, t)); } } }) : null)),
+          h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : m.status === 'started' ? 'mtg.started' : 'mtg.scheduled')),
+            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.start'), { icon: 'play_arrow', onClick: () => setStatus('started') }) : null,
+            can('meetings', 'u') && m.status === 'started' ? button(t('mtg.markHeld'), { kind: 'text', onClick: () => setStatus('held') }) : null)),
         card(t('mtg.agenda'), 'format_list_numbered', agendaLines(m.agenda).length ? h('ol', { class: 'agenda' }, agendaLines(m.agenda).map((l) => h('li', {}, l))) : h('p', { class: 'muted' }, t('mtg.noAgenda'))),
         card(`${t('mtg.attendance')} (${d.attendees.length})`, 'groups',
           d.attendees.length ? h('div', { class: 'stack-sm' }, d.attendees.map((a) => h('div', { class: 'row' }, avatar(a.name), h('span', { class: 'grow' }, a.name), a.plot_keys.map(plot)))) : h('p', { class: 'muted' }, t('mtg.noAttendance')),
-          can('attendance', 'u') ? button(t('mtg.editAttendance'), { icon: 'how_to_reg', onClick: () => attendanceSheet(ctx, m.id, d.attendees, load) }) : null),
+          !began ? needStart() : can('attendance', 'u') ? button(t('mtg.editAttendance'), { icon: 'how_to_reg', onClick: () => attendanceSheet(ctx, m.id, d.attendees, load) }) : null),
         card(t('mtg.notes'), 'sticky_note_2', m.notes ? h('p', { style: 'white-space:pre-wrap' }, m.notes) : h('p', { class: 'muted' }, t('mtg.noNotes')),
           can('notes', 'u') ? button(t('mtg.editNotes'), { icon: 'edit_note', onClick: () => notesSheet(ctx, m, load) }) : null),
         card(t('mtg.actionItems'), 'checklist', ...(d.action_items.length ? d.action_items.map((a) => item(a, false)) : [h('p', { class: 'muted' }, t('mtg.noItems'))]),
           d.carried_open.length ? h('h3', {}, t('mtg.carriedTitle')) : null, ...d.carried_open.map((a) => item(a, true)),
-          can('action_items', 'c') ? button(t('mtg.addItem'), { icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null));
+          !began ? needStart() : can('action_items', 'c') ? button(t('mtg.addItem'), { icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null));
       });
     } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('mtg.notFound') : friendly(e, t), load)); }
   }

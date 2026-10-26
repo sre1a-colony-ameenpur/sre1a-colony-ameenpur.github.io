@@ -111,7 +111,7 @@ export default function render(ctx) {
   if (r('meetings')) {
     cards.push(lazyCard(ctx, { title: t('home.meeting.title'), ic: 'event_note', load: async () => {
         const today = new Date().toISOString().slice(0, 10);
-        const next = (await home('meetings.list')).items.filter((m) => m.status === 'scheduled' && m.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
+        const next = (await home('meetings.list')).items.filter((m) => m.status !== 'held' && m.date >= today).sort((a, b) => a.date.localeCompare(b.date))[0];
         const open = next && r('action_items') ? (await home('actionItems.list')).items.length : 0;
         return next ? [{ ...next, open }] : [];
       },

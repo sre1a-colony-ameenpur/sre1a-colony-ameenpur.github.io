@@ -130,7 +130,7 @@ export const SECTIONS = [
   { id: 'meetings', shots: [{ id: 'meeting-new', after: 0, caption: 'New meeting' }, { id: 'meeting-detail', after: 1, caption: 'A meeting' }, { id: 'event-new', after: 3, caption: 'New event' }], icon: 'event', title: 'Meetings, action items and events', needs: [['meetings', 'c'], ['action_items', 'c'], ['events', 'c'], ['attendance', 'u']], mods: ['meetings', 'events'], group: 'role',
     steps: [
       ['Schedule a meeting.', 'New meeting: date, time, place and agenda.'],
-      ['Run it.', 'Open it to take attendance, write notes and add action items with an owner and a due date. Press Mark as held when it is done.'],
+      ['Run it.', 'Open it and press Start meeting; attendance and action items (with an owner and a due date) can be added only after that. Notes can be written any time. Press Mark as held when it is done.'],
       ['Follow up.', 'The Action items overview lists every open item; mark yours done.'],
       ['Events.', 'New event: name, date, place and description; photos are optional.'],
     ] },

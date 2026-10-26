@@ -18,7 +18,7 @@ export default async function render(ctx) {
     {
       const counts = {}; open.items.forEach((a) => { counts[a.meeting_id] = (counts[a.meeting_id] || 0) + 1; });
       const today = new Date().toISOString().slice(0, 10);
-      const upcoming = items.filter((m) => m.status === 'scheduled' && m.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+      const upcoming = items.filter((m) => m.status !== 'held' && m.date >= today).sort((a, b) => a.date.localeCompare(b.date));
       const rest = items.filter((m) => !upcoming.includes(m));
       const card = (m, hi) => h('a', { class: `card${hi ? ' accent' : ''}`, href: `#/community/meetings/${m.id}`, style: 'display:block;text-decoration:none;color:inherit' },
         h('div', { class: 'row', style: 'justify-content:space-between;align-items:flex-start' }, h('strong', {}, meetingTitle(m, t('mtg.meeting'))), hi ? statusPill('open', t('mtg.upcoming')) : null),

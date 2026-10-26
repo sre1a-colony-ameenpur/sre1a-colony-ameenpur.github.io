@@ -589,9 +589,10 @@ export function createMock({ delayMs = 120 } = {}) {
     },
     'meetings.create': (u, p) => { const m = { id: 'G' + nextId++, date: p.date, time: p.time, place: p.place, agenda: p.agenda || '', notes: '', status: 'scheduled', attendees: [] }; meetings.unshift(m); return ok({ id: m.id }); },
     'meetings.update': (u, p) => { const m = meetings.find((x) => x.id === p.id); if (!m) return fail('NOT_FOUND', 'Not found'); ['notes', 'status', 'place', 'date', 'time', 'agenda'].forEach((k) => { if (p[k] !== undefined) m[k] = p[k]; }); return ok({ id: m.id }); },
-    'attendance.set': (u, p) => { const m = meetings.find((x) => x.id === p.meeting_id); if (!m) return fail('NOT_FOUND', 'Not found'); m.attendees = [...new Set(p.plotKeys)]; return ok({ count: m.attendees.length }); },
+    'attendance.set': (u, p) => { const m = meetings.find((x) => x.id === p.meeting_id); if (!m) return fail('NOT_FOUND', 'Not found'); if (m.status === 'scheduled') return fail('CONFLICT', 'Start the meeting first'); m.attendees = [...new Set(p.plotKeys)]; return ok({ count: m.attendees.length }); },
     'actionItems.list': (u, p) => ok({ items: actionItems.filter((a) => (!p.status || a.status === p.status) && (!p.meeting_id || a.meeting_id === p.meeting_id)).map((a) => itemView(a, u)) }),
     'actionItems.create': (u, p) => {
+      if ((meetings.find((x) => x.id === p.meeting_id) || {}).status === 'scheduled') return fail('CONFLICT', 'Start the meeting first');
       const o = members.find((x) => x.plotKeys.some((pk) => pk.replace('-', '') === p.owner_plot_key)); if (!o) return fail('INVALID', 'Not an active member');
       const a = { id: 'A' + nextId++, meeting_id: p.meeting_id, text: p.text, owner: o.name, owner_email: o.email, due_date: p.due_date, status: 'open' }; actionItems.push(a); return ok({ id: a.id });
     },
