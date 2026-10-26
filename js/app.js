@@ -11,6 +11,7 @@ import { createSwr } from './swr.js';
 import { registerPwa, noteBackendVersion } from './pwa.js';
 import { buildNav, buildTopbar } from './shell.js';
 import { devbar } from './devbar.js';
+import { staleModels } from './write_map.js';
 
 const root = document.getElementById('app');
 const mock = isMock();
@@ -93,7 +94,7 @@ const api = {
     try {
       const out = await client.call(action, payload);
       if (!store.get().online) store.set({ online: true });
-      if (!READ_ACTION.test(action)) { swrCache.clear(); swrCache.dropMedia(/proof$/); }                // a write may change anything we stored; a proof can be replaced
+      if (!READ_ACTION.test(action)) { swrCache.resetLoaded(staleModels(action)); swrCache.dropMedia(/proof$/); }      // stored answers stay on screen and are fetched again; a proof can be replaced
       return out;
     } catch (e) {
       if (e instanceof ApiError && e.code === 'NETWORK') store.set({ online: false });
