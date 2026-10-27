@@ -25,20 +25,21 @@ export default async function render(ctx) {
         h('div', { class: 'grow' }, h('div', { class: a.status === 'done' ? 'muted' : '' }, a.text),
           h('div', { class: 'small muted' }, `${a.owner_name}${a.mine ? ` (${t('mtg.you')})` : ''} · ${t('mtg.due', { date: dateShort(a.due_date) })}`, carried ? ` · ${t('mtg.carried')}` : '')),
         a.overdue ? statusPill('overdue', t('mtg.overdue')) : a.status === 'done' ? statusPill('paid', t('mtg.done')) : null);
+      const tag = (el, k) => { el.setAttribute('data-tour', k); return el; };
       root.replaceChildren(
-        card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
+        tag(card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
           h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : m.status === 'started' ? 'mtg.started' : 'mtg.scheduled')),
-            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.start'), { icon: 'play_arrow', onClick: () => setStatus('started') }) : null,
-            can('meetings', 'u') && m.status === 'started' ? button(t('mtg.markHeld'), { kind: 'text', onClick: () => setStatus('held') }) : null)),
-        card(t('mtg.agenda'), 'format_list_numbered', agendaLines(m.agenda).length ? h('ol', { class: 'agenda' }, agendaLines(m.agenda).map((l) => h('li', {}, l))) : h('p', { class: 'muted' }, t('mtg.noAgenda'))),
-        card(`${t('mtg.attendance')} (${d.attendees.length})`, 'groups',
+            can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.start'), { 'data-tour': 'md-start', icon: 'play_arrow', onClick: () => setStatus('started') }) : null,
+            can('meetings', 'u') && m.status === 'started' ? button(t('mtg.markHeld'), { 'data-tour': 'md-held', kind: 'text', onClick: () => setStatus('held') }) : null)), 'md-head'),
+        tag(card(t('mtg.agenda'), 'format_list_numbered', agendaLines(m.agenda).length ? h('ol', { class: 'agenda' }, agendaLines(m.agenda).map((l) => h('li', {}, l))) : h('p', { class: 'muted' }, t('mtg.noAgenda'))), 'md-agenda'),
+        tag(card(`${t('mtg.attendance')} (${d.attendees.length})`, 'groups',
           d.attendees.length ? h('div', { class: 'stack-sm' }, d.attendees.map((a) => h('div', { class: 'row' }, avatar(a.name), h('span', { class: 'grow' }, a.name), a.plot_keys.map(plot)))) : h('p', { class: 'muted' }, t('mtg.noAttendance')),
-          !began ? needStart() : can('attendance', 'u') ? button(t('mtg.editAttendance'), { icon: 'how_to_reg', onClick: () => attendanceSheet(ctx, m.id, d.attendees, load) }) : null),
-        card(t('mtg.notes'), 'sticky_note_2', m.notes ? h('p', { style: 'white-space:pre-wrap' }, m.notes) : h('p', { class: 'muted' }, t('mtg.noNotes')),
-          can('notes', 'u') ? button(t('mtg.editNotes'), { icon: 'edit_note', onClick: () => notesSheet(ctx, m, load) }) : null),
-        card(t('mtg.actionItems'), 'checklist', ...(d.action_items.length ? d.action_items.map((a) => item(a, false)) : [h('p', { class: 'muted' }, t('mtg.noItems'))]),
+          !began ? needStart() : can('attendance', 'u') ? button(t('mtg.editAttendance'), { 'data-tour': 'md-att-btn', icon: 'how_to_reg', onClick: () => attendanceSheet(ctx, m.id, d.attendees, load) }) : null), 'md-att'),
+        tag(card(t('mtg.notes'), 'sticky_note_2', m.notes ? h('p', { style: 'white-space:pre-wrap' }, m.notes) : h('p', { class: 'muted' }, t('mtg.noNotes')),
+          can('notes', 'u') ? button(t('mtg.editNotes'), { 'data-tour': 'md-notes-btn', icon: 'edit_note', onClick: () => notesSheet(ctx, m, load) }) : null), 'md-notes'),
+        tag(card(t('mtg.actionItems'), 'checklist', ...(d.action_items.length ? d.action_items.map((a) => item(a, false)) : [h('p', { class: 'muted' }, t('mtg.noItems'))]),
           d.carried_open.length ? h('h3', {}, t('mtg.carriedTitle')) : null, ...d.carried_open.map((a) => item(a, true)),
-          !began ? needStart() : can('action_items', 'c') ? button(t('mtg.addItem'), { icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null));
+          !began ? needStart() : can('action_items', 'c') ? button(t('mtg.addItem'), { 'data-tour': 'md-item-btn', icon: 'add_task', onClick: () => itemSheet(ctx, m.id, load) }) : null), 'md-items'));
       });
     } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('mtg.notFound') : friendly(e, t), load)); }
   }

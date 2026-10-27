@@ -20,7 +20,7 @@ export default function render(ctx) {
   const PAGE = 50;
   let items = [], cursor = null, loadingMore = false, lastVerify = null, bad = null, q = '', person = '', action = '', from = '', to = '', open = new Set(), ticket = 0, timer = null;
   const people = new Set(), actions = new Set();                 // everything seen so far, so a filter choice never makes its own option vanish
-  const top = h('div'), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'stack-sm' }), more = h('div');
+  const top = h('div', { 'data-tour': 'au-top' }), filters = h('div', { class: 'stack-sm' }), count = h('p', { class: 'small muted', 'aria-live': 'polite' }), list = h('div', { class: 'stack-sm' }), more = h('div', { 'data-tour': 'au-more' });
   let filtersOpen = false;
   const filterLabel = h('span', {});
   const filterBtn = h('button', { type: 'button', class: 'btn text filter-btn', onClick: () => { filtersOpen = !filtersOpen; drawFilterBtn(); } }, icon('filter_list'), filterLabel);

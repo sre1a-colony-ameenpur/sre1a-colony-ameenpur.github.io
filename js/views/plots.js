@@ -14,8 +14,8 @@ export default function render(ctx) {
   const { t } = ctx;
   const canQueue = can('plot_change_requests', 'u');   // listing is President-only
   let tab = 'plots', q = '', filter = 'all', plots = [], pending = 0;
-  const body = h('div', { class: 'stack' });
-  const tabs = h('div');
+  const body = h('div', { class: 'stack', 'data-tour': 'pl-body' });
+  const tabs = h('div', { 'data-tour': 'pl-tabs' });
 
   async function loadPlots() {
     if (!plots.length) body.replaceChildren(loadingRegion(2));

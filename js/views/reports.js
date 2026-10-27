@@ -27,8 +27,8 @@ export default function render(ctx) {
   const today = new Date().toISOString().slice(0, 10);
   let from = `${now}-01`, to = today;                                   // the custom window
   const pick = h('div', { class: 'stack-sm' }), when = h('div', { class: 'stack-sm' }), go = h('div', { class: 'btn-row' }), msg = h('p', { class: 'small muted', role: 'status' });
-  const dl = h('div');                                                   // holds the download card, or the line saying there are no reports
-  const access = h('div', { class: 'stack' });
+  const dl = h('div', { 'data-tour': 'rp-dl' });                                                   // holds the download card, or the line saying there are no reports
+  const access = h('div', { class: 'stack', 'data-tour': 'rp-access' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('rep.title')), dl, access);
 
   const dropdown = (id, label, value, options, onChange) => h('div', { class: 'field' }, h('label', { for: id }, label),

@@ -4,6 +4,7 @@ import { t } from './i18n.js';
 import { can, hasModule } from './store.js';
 import { CONFIG } from './config.js';
 import { latestRelease } from './releases.js';
+import { runTour } from './tour.js';
 
 // Nav items are shown only if `caps` allows reading something in that area.
 export function navItems(s) {
@@ -57,7 +58,7 @@ export function langToggle(lang, setLang) {
   return h('div', { class: 'lang', role: 'group', 'aria-label': t('lang.label') }, b('en', 'EN', 'English'), b('te', 'తె', 'తెలుగు'));
 }
 
-export function buildTopbar(s, { title, back, onSignOut, onSync }) {
+export function buildTopbar(s, { title, back, onSignOut, onSync, tour }) {
   const session = s.session;
   const btn = h('button', { class: 'avatar-btn', type: 'button', 'aria-haspopup': 'menu', 'aria-expanded': 'false',
     'aria-label': t('menu.open', { name: session.name }), onClick: () => toggle() }, avatar(session.name, false, true));
@@ -70,6 +71,7 @@ export function buildTopbar(s, { title, back, onSignOut, onSync }) {
       h('header', {}, avatar(session.name, true, true), h('div', { class: 'grow' },
         h('div', { style: 'font-weight:600' }, session.name), h('div', { class: 'small muted', style: 'overflow-wrap:anywhere' }, session.email),
         h('div', { style: 'margin-top:4px' }, rolePill(session.role)))),
+      tour ? h('button', { class: 'item', type: 'button', role: 'menuitem', onClick: () => { close(); runTour(tour, document.getElementById('main') || document); } }, icon('tour'), t('tour.thisScreen')) : null,
       menuItems(s).map((i) => h('a', { href: '#' + i.path, role: 'menuitem', onClick: close }, icon(i.icon),
         h('span', { class: 'grow' }, t(i.label)), i.hint ? h('span', { class: 'small muted' }, i.hint) : null)),
       h('button', { class: 'item danger', type: 'button', role: 'menuitem', onClick: () => { close(); onSignOut(); } }, icon('logout'), t('menu.signOut')));

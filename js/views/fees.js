@@ -34,7 +34,9 @@ function myDues(ctx) {
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return card(t('fee.mine'), 'request_quote', body);
+  const c = card(t('fee.mine'), 'request_quote', body);
+  c.setAttribute('data-tour', 'f-mine');
+  return c;
 }
 
 function dueSheet(ctx, d) {
@@ -53,9 +55,9 @@ function committee(ctx) {
   let tab = nextTab, filter = 'all';
   nextTab = 'requests';
   const box = h('div', { class: 'stack' });
-  const queue = h('div', { class: 'stack' });
-  const list = h('div', { class: 'stack-sm' });
-  const filters = h('div');
+  const queue = h('div', { class: 'stack', 'data-tour': 'f-queue' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'f-list' });
+  const filters = h('div', { 'data-tour': 'f-filters' });
   async function loadQueue() {
     if (!can('maintenance_payments', 'r')) return;
     try {
@@ -107,9 +109,12 @@ function committee(ctx) {
   }
   drawFilters();
   box.append(h('h2', {}, t('fee.committee')),
-    can('fee_requests', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('fee.raise'), title: t('fee.raise'), onClick: () => raiseRequestSheet(ctx, load) }, icon('add')) : null,
+    can('fee_requests', 'c') ? h('button', { type: 'button', class: 'fab', 'data-tour': 'f-raise', 'aria-label': t('fee.raise'), title: t('fee.raise'), onClick: () => raiseRequestSheet(ctx, load) }, icon('add')) : null,
     queue, segmented([['requests', t('fee.requests')], ['membership', t('fee.membership')]], tab, (v) => { tab = v; drawFilters(); load(); }, t('fee.committee')), filters, list, more,
     can('maintenance_payments', 'r') ? recentPaymentsCard(ctx, 'fee', load) : null);
+  const tabs = box.querySelector(':scope > .seg');
+  tabs?.setAttribute('data-tour', 'f-tabs');
+  tabs?.children[0]?.setAttribute('data-tour', 'f-tab-requests'); tabs?.children[1]?.setAttribute('data-tour', 'f-tab-membership');
   load();
   return box;
 }
@@ -133,5 +138,7 @@ function rateCard(ctx) {
         h('div', { class: 'grow' }, `${t(`exp.catPlot.${x.category}`)} · ${t('mt.from', { month: dateShort(x.from_date) })}`), h('strong', {}, money(x.amount_paise)))));
   }
   load();
-  return card(t('fee.rates'), 'badge', body);
+  const c = card(t('fee.rates'), 'badge', body);
+  c.setAttribute('data-tour', 'f-rates');
+  return c;
 }

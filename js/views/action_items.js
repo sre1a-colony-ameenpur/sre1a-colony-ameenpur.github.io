@@ -9,7 +9,7 @@ import { meetingTitle } from './meetings.js';
 export default async function render(ctx) {
   const { t } = ctx;
   let scope = 'all', items = [], titles = {};
-  const body = h('div', { class: 'stack' });
+  const body = h('div', { class: 'stack', 'data-tour': 'ai-body' });
   const today = new Date().toISOString().slice(0, 10);
 
   function row(a) {

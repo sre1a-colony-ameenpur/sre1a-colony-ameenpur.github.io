@@ -11,7 +11,7 @@ const localInput = (d) => { const p = (n) => String(n).padStart(2, '0'); return 
 export default async function render(ctx) {
   const { t } = ctx;
   let tab = 'open', items = [];
-  const list = h('div', { class: 'stack-sm' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'po-list' });
   function draw() {
     const rows = items.filter((p) => (tab === 'open' ? p.status === 'open' || p.status === 'upcoming' : p.status === 'closed' || p.status === 'cancelled'));
     list.replaceChildren(...(rows.length ? rows.map((p) => h('a', { class: 'card', href: `#/community/polls/${p.id}`, style: 'display:block;text-decoration:none;color:inherit' },
@@ -33,7 +33,9 @@ export default async function render(ctx) {
     } catch (e) { list.replaceChildren(errorState(friendly(e, t), load)); }
   }
   load();
-  return h('div', { class: 'stack' }, segmented([['open', t('poll.tabOpen')], ['closed', t('poll.tabClosed')]], 'open', (v) => { tab = v; draw(); }, t('com.polls')),
+  const seg = segmented([['open', t('poll.tabOpen')], ['closed', t('poll.tabClosed')]], 'open', (v) => { tab = v; draw(); }, t('com.polls'));
+  seg.querySelectorAll('button').forEach((b, i) => b.setAttribute('data-tour', `po-tab-${i ? 'closed' : 'open'}`));
+  return h('div', { class: 'stack' }, seg,
     list, more, can('polls', 'c') ? fab(t('poll.new'), () => createSheet(ctx, load)) : null);
 }
 

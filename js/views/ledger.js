@@ -12,7 +12,7 @@ export default function render(ctx) {
   const now = new Date().toISOString().slice(0, 7);
   let month = now;
   const body = h('div', { class: 'stack' });
-  const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('ledger.title')), h('p', { class: 'muted' }, t('ledger.intro')), body);
+  const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('ledger.title')), h('p', { class: 'muted', 'data-tour': 'lg-intro' }, t('ledger.intro')), body);
   const admin = can('roles_config', 'u');
 
   const entry = (x) => {
@@ -44,17 +44,18 @@ export default function render(ctx) {
       await ctx.api.swr('ledger.list', { month }, (d) => {
         if (!d.started) {
           body.replaceChildren(card(t('ledger.title'), 'menu_book', h('p', {}, t(admin ? 'ledger.notStartedAdmin' : 'ledger.notStarted')),
-            admin ? button(t('ledger.start'), { kind: 'primary', icon: 'play_arrow', onClick: start }) : null));
+            admin ? button(t('ledger.start'), { kind: 'primary', icon: 'play_arrow', 'data-tour': 'lg-start', onClick: start }) : null));
           return;
         }
         body.replaceChildren(
           card(t('ledger.balance'), 'account_balance', h('div', { class: `amount big${d.balance_paise < 0 ? ' neg' : ''}` }, money(d.balance_paise)),
-            admin ? button(t('ledger.check'), { kind: 'text', icon: 'fact_check', onClick: check }) : null),
+            admin ? button(t('ledger.check'), { kind: 'text', icon: 'fact_check', 'data-tour': 'lg-check', onClick: check }) : null),
           h('div', { class: 'row-between' },
             button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('cmp.m.prev'), onClick: () => { month = shift(month, -1); load(); } }),
             h('strong', {}, monthLabel(month)),
             button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('cmp.m.next'), disabled: month >= now, onClick: () => { month = shift(month, 1); load(); } })),
           d.items.length ? h('div', { class: 'stack-sm' }, d.items.map(entry)) : emptyState(t('ledger.none'), 'menu_book'));
+        ['lg-balance', 'lg-nav', 'lg-list'].forEach((k, i) => body.children[i]?.setAttribute('data-tour', k));
       });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }

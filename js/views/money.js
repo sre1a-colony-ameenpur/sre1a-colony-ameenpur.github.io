@@ -1,7 +1,6 @@
 // Money landing: one page with a segmented control (Expenses | Maintenance | Fees). Each tab is its own module.
 import { h, segmented, emptyState, icon } from '../ui.js';
 import { isDevHost } from '../config.js';
-import { takeTour, runTourWhenReady } from '../tour.js';
 import { can, canAny, hasModule } from '../store.js';
 
 let lastTab = (isDevHost() && new URLSearchParams(location.search).get('tab')) || 'expenses';   // ?tab= opens a tab directly (also used by the smoke test)
@@ -31,7 +30,7 @@ export default async function render(ctx) {
       can('expenses', 'r') ? h('a', { class: 'icon-btn', href: '#/money/accounts', 'data-tour': 'm-accounts', 'aria-label': t('acc.title'), title: t('acc.title') }, icon('account_balance')) : null)),
     tabs.length > 1 ? segmented(tabs, lastTab, show, t('nav.money')) : null, body);
   root.querySelector('.seg')?.setAttribute('data-tour', 'm-tabs');
+  root.querySelectorAll('.seg > button').forEach((b, i) => b.setAttribute('data-tour', `m-tab-${tabs[i][0]}`));
   show(lastTab);
-  if (takeTour('money')) runTourWhenReady('money', root);
   return root;
 }

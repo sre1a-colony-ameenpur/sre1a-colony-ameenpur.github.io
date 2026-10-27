@@ -23,24 +23,25 @@ export default async function render(ctx) {
         const failed = await uploadPhotos(ctx, e.id, ev.target.files);
         toast(failed ? t('evt.publishedSome') : t('evt.photosAdded')); load();
       } });
+      const tag = (el, k) => { el?.setAttribute('data-tour', k); return el; };
       root.replaceChildren(
         photos[0] ? h('div', { class: 'cover' }, photoImg(ctx, photos[0].id, 'cover-img')) : null,
-        card(null, null, h('h2', {}, e.title), h('p', { class: 'muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`), e.description ? h('p', { style: 'white-space:pre-wrap' }, e.description) : null,
+        tag(card(null, null, h('h2', {}, e.title), h('p', { class: 'muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`), e.description ? h('p', { style: 'white-space:pre-wrap' }, e.description) : null,
           h('div', { class: 'row' },
-            can('events', 'u') ? button(t('fee.edit'), { icon: 'edit', onClick: () => editSheet(ctx, e, load) }) : null,
-            can('events', 'd') ? button(t('cmp.hide'), { kind: 'danger', onClick: () => hideSheet(ctx, e.id) }) : null)),
-        card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
+            can('events', 'u') ? button(t('fee.edit'), { 'data-tour': 'ed-edit', icon: 'edit', onClick: () => editSheet(ctx, e, load) }) : null,
+            can('events', 'd') ? button(t('cmp.hide'), { 'data-tour': 'ed-hide', kind: 'danger', onClick: () => hideSheet(ctx, e.id) }) : null)), 'ed-card'),
+        tag(card(t('evt.photosTitle', { n: photos.length }), 'photo_library',
           photos.length ? h('div', { class: 'photo-grid' }, photos.map((m) => h('button', { type: 'button', class: 'photo-btn', 'aria-label': t('cmp.photo'), onClick: () => viewer(ctx, m.id) }, photoImg(ctx, m.id)))) : h('p', { class: 'muted' }, t('evt.noPhotos')),
-          can('media', 'c') ? h('div', { class: 'stack-sm' }, withCamera(files, t), h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null),
-        spend ? card(t('evt.spendTitle'), 'payments',
+          can('media', 'c') ? h('div', { class: 'stack-sm' }, withCamera(files, t), h('label', { class: 'btn block', for: 'ev-add' }, icon('add_a_photo'), t('evt.addPhotos'))) : null), 'ed-photos'),
+        spend ? tag(card(t('evt.spendTitle'), 'payments',
           h('div', { class: 'amount big' }, money(spend.total_paise)),
           h('p', { class: 'small muted' }, t('evt.spendApproved')),
           spend.pending_paise ? h('p', { class: 'small' }, t('evt.spendPending', { amount: money(spend.pending_paise) })) : null,
           spend.items.length ? h('div', {}, spend.items.map((x) => h('a', { class: 'list-row', href: `#/money/expense/${x.id}` },
             h('div', { class: 'grow' }, h('div', {}, x.reason), h('div', { class: 'small muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`)),
             h('div', { style: 'text-align:end' }, h('div', { class: 'amount' }, money(x.amount_paise)), x.status === 'approved' ? null : h('div', { class: 'small muted' }, t(`status.${x.status}`)))))) : h('p', { class: 'muted' }, t('evt.noSpend')),
-          can('expenses', 'c') ? button(t('evt.addExpense'), { icon: 'add', block: true, onClick: () => addSheet(ctx, load, e.id) }) : null) : null,
-        videosCard(ctx, { videos: media.filter((m) => m.kind === 'video'), parentType: 'event', parentId: e.id, canAdd: can('media', 'c'), done: load }));
+          can('expenses', 'c') ? button(t('evt.addExpense'), { icon: 'add', block: true, onClick: () => addSheet(ctx, load, e.id) }) : null), 'ed-spend') : null,
+        tag(videosCard(ctx, { videos: media.filter((m) => m.kind === 'video'), parentType: 'event', parentId: e.id, canAdd: can('media', 'c'), done: load }), 'ed-videos'));
       });
     } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('evt.notFound') : friendly(e, t), load)); }
   }

@@ -12,7 +12,7 @@ export default function render(ctx) {
   const status = h('select', { id: 'pf-status', 'aria-label': t('pay.f.status') }, [['', t('pay.f.all')], ['awaiting', t('pay.s.awaiting')], ['confirmed', t('pay.s.confirmed')], ['failed', t('pay.s.failed')]].map(([v, l]) => h('option', { value: v }, l)));
   const plot = h('input', { type: 'search', id: 'pf-plot', placeholder: t('pay.f.plot'), 'aria-label': t('pay.f.plot'), autocapitalize: 'characters' });
   const fieldOf = (id, label, el) => h('div', { class: 'field' }, h('label', { for: id }, label), el);
-  const list = h('div', {}), more = h('div', {});
+  const list = h('div', { 'data-tour': 'pa-list' }), more = h('div', {});
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('pay.allTitle')),
     h('div', { class: 'filters-grid' }, fieldOf('pf-month', t('pay.f.month'), month), fieldOf('pf-kind', t('pay.f.kind'), kind), fieldOf('pf-status', t('pay.f.status'), status), fieldOf('pf-plot', t('pay.f.plotLabel'), plot)), h('p', { class: 'small muted', role: 'status', id: 'pf-count' }), list, more);
   let timer = null;

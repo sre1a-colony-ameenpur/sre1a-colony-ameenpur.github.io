@@ -243,7 +243,9 @@ export function recentPaymentsCard(ctx, kind, onChange) {
     }
   }
   load();
-  return card(t('mt.recent'), 'history', body, more);
+  const c = card(t('mt.recent'), 'history', body, more);
+  c.setAttribute('data-tour', fee ? 'f-recent' : 'mt-recent');
+  return c;
 }
 
 // Record a payment for a removed member's debt. "What is it for" is either their unpaid monthly maintenance or one fee due.

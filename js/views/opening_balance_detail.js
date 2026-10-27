@@ -22,9 +22,9 @@ export default async function render(ctx) {
         if (x.status === 'rejected') steps.push(h('li', {}, t('exp.rejectedBy', { name: x.decided_by_name }), x.reject_reason ? `: ${x.reject_reason}` : '', ` · ${when(x.decided_at)}`));
         const canDecide = x.status === 'pending' && can('expense_approval', 'u'), actions = [];
         if (canDecide && x.mine) actions.push(h('p', { class: 'banner info', style: 'border-radius:12px' }, icon('info'), t('exp.someoneElseNote')));
-        if (canDecide && !x.mine) actions.push(button(t('exp.approve'), { kind: 'primary', block: true, icon: 'check', onClick: () => decide(ctx, 'approve', x.id, load) }),
-          button(t('exp.reject'), { kind: 'danger', block: true, onClick: () => rejectSheet(ctx, x.id, load) }));
-        if (x.status === 'approved' && !isReversal && !reversed && can('expenses', 'c')) actions.push(button(t('exp.reverse'), { block: true, icon: 'undo', onClick: () => reverseSheet(ctx, x.id, load) }));
+        if (canDecide && !x.mine) actions.push(button(t('exp.approve'), { kind: 'primary', block: true, icon: 'check', 'data-tour': 'od-approve', onClick: () => decide(ctx, 'approve', x.id, load) }),
+          button(t('exp.reject'), { kind: 'danger', block: true, 'data-tour': 'od-reject', onClick: () => rejectSheet(ctx, x.id, load) }));
+        if (x.status === 'approved' && !isReversal && !reversed && can('expenses', 'c')) actions.push(button(t('exp.reverse'), { block: true, icon: 'undo', 'data-tour': 'od-reverse', onClick: () => reverseSheet(ctx, x.id, load) }));
         if (x.status === 'approved') actions.push(h('p', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('exp.locked')));
         if (reversed) actions.push(h('p', { class: 'small muted' }, t('exp.alreadyReversed')));
         root.replaceChildren(card(null, null, h('div', { class: 'amount big' }, money(x.amount_paise)), statusPill(x.status, t(`exp.status.${x.status}`)),
@@ -33,6 +33,8 @@ export default async function render(ctx) {
           x.has_proof ? card(t('ob.proof'), 'image', proof) : null,
           card(t('exp.history'), 'history', h('ul', { class: 'timeline' }, steps)),
           ...actions);
+        const kids = [...root.children];          // the guided tour finds these by their marks: summary, [proof], history
+        kids[0].setAttribute('data-tour', 'od-sum'); if (x.has_proof) kids[1].setAttribute('data-tour', 'od-proof'); kids[x.has_proof ? 2 : 1].setAttribute('data-tour', 'od-hist');
       });
     } catch (e) { root.replaceChildren(e.code === 'NOT_FOUND' ? errorState(t('ob.notFound'), () => { location.hash = '#/money/opening'; }) : errorState(friendly(e, t), load)); }
   }

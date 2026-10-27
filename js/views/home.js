@@ -5,7 +5,6 @@ import { friendly, ApiError } from '../api.js';
 import { money, monthLabel, dateShort, whenShort, daysUntil } from '../fmt.js';
 import { can, hasModule } from '../store.js';
 import { summarize, currentTotals } from '../maint.js';
-import { takeTour, runTourWhenReady } from '../tour.js';
 import { STAGE_KIND, STAGE_KEY, titleOf } from './complaints.js';
 
 // A card that loads independently. render(data) returns nodes, or null to hide the card.
@@ -153,7 +152,6 @@ export default function render(ctx) {
   const sync = () => { none.hidden = !!grid.querySelector(':scope > .card'); };
   sync();
   new MutationObserver(sync).observe(grid, { childList: true });
-  if (takeTour('home')) runTourWhenReady('home', grid);
 
   return h('div', { class: 'page wide' },
     newPres,

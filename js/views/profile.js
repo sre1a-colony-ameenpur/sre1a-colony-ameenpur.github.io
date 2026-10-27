@@ -8,6 +8,7 @@ import { pushSupport, isOn, turnOn, turnOff } from '../push.js';
 import { isFull } from '../guide.js';
 import { editName, changeContact, myRequests, decisions } from './profile_contact.js';
 
+const tag = (k, el) => { el?.setAttribute('data-tour', k); return el; };       // marks a part of the page for the guided tour
 const dashKey = (k) => String(k).toUpperCase().replace(/^([A-Z])-?(\d+)$/, '$1-$2');
 
 export default function render(ctx) {
@@ -20,23 +21,23 @@ export default function render(ctx) {
 
   const root = h('div', { class: 'page stack' },
     h('div', { class: 'row-between' }, h('h1', {}, t('profile.title')),
-      h('button', { type: 'button', class: 'icon-btn', 'aria-label': t('profile.edit'), title: t('profile.edit'), onClick: () => editProfileSheet(ctx, redraw) }, icon('edit'))),
-    card(null, null,
+      h('button', { type: 'button', 'data-tour': 'p-edit', class: 'icon-btn', 'aria-label': t('profile.edit'), title: t('profile.edit'), onClick: () => editProfileSheet(ctx, redraw) }, icon('edit'))),
+    tag('p-details', card(null, null,
       h('div', { class: 'row', style: 'margin-bottom:8px' }, avatar(s.name, true, true), h('div', { class: 'grow' }, h('h2', {}, s.name), rolePill(s.role))),
       row(t('profile.email'), s.email),
       row(t('profile.mobile'), s.mobile || h('span', { class: 'muted' }, t('profile.notAdded'))),
       row(t('profile.plots'), h('span', { class: 'row' }, s.plotKeys.length ? s.plotKeys.map(plotChip) : t('profile.noPlots'))),
       isFull(s.role) ? null : h('p', { class: 'small muted', style: 'margin-top:8px' }, t('profile.readonly')),
-      can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, onClick: () => requestSheet(ctx, loadRequests) })) : null),
-    mine.el,
-    isFull(s.role) ? decisions(ctx) : null,
-    (hasModule('maintenance') || hasModule('fees')) ? button(t('pay.mineTitle'), { icon: 'receipt_long', block: true, onClick: () => { location.hash = '#/profile/payments'; } }) : null,
-    card(t('profile.showMobile'), 'call', mobileSwitch(ctx, s)),
-    s.push ? card(t('notify.title'), 'notifications', notifySwitch(ctx, s.push)) : null,
-    can('plot_change_requests', 'c') ? card(t('profile.myRequests'), 'list_alt', reqBox) : null,
-    card(t('profile.language'), 'translate', segmented([['en', 'English'], ['te', 'తెలుగు']], ctx.lang, ctx.setLang, t('lang.label'))),
-    card(t('profile.appearance'), 'contrast', segmented([['auto', t('theme.auto')], ['light', t('theme.light')], ['dark', t('theme.dark')]], store.get().theme, ctx.setTheme, t('profile.appearance'))),
-    button(t('menu.signOut'), { kind: 'danger', block: true, icon: 'logout', onClick: async () => {
+      can('plot_change_requests', 'c') ? h('div', { style: 'margin-top:16px' }, button(t('profile.requestPlot'), { icon: 'edit_location_alt', block: true, 'data-tour': 'p-plotreq', onClick: () => requestSheet(ctx, loadRequests) })) : null)),
+    tag('p-contactreq', mine.el),
+    isFull(s.role) ? tag('p-decide', decisions(ctx)) : null,
+    (hasModule('maintenance') || hasModule('fees')) ? button(t('pay.mineTitle'), { icon: 'receipt_long', block: true, 'data-tour': 'p-payments', onClick: () => { location.hash = '#/profile/payments'; } }) : null,
+    tag('p-mobile', card(t('profile.showMobile'), 'call', mobileSwitch(ctx, s))),
+    s.push ? tag('p-notify', card(t('notify.title'), 'notifications', notifySwitch(ctx, s.push))) : null,
+    can('plot_change_requests', 'c') ? tag('p-myreq', card(t('profile.myRequests'), 'list_alt', reqBox)) : null,
+    tag('p-lang', card(t('profile.language'), 'translate', segmented([['en', 'English'], ['te', 'తెలుగు']], ctx.lang, ctx.setLang, t('lang.label')))),
+    tag('p-theme', card(t('profile.appearance'), 'contrast', segmented([['auto', t('theme.auto')], ['light', t('theme.light')], ['dark', t('theme.dark')]], store.get().theme, ctx.setTheme, t('profile.appearance')))),
+    button(t('menu.signOut'), { kind: 'danger', block: true, icon: 'logout', 'data-tour': 'p-signout', onClick: async () => {
       if (await confirmSheet(t('signout.title'), t('signout.text'), { confirmLabel: t('menu.signOut'), danger: true })) ctx.signOut();
     } }));
 

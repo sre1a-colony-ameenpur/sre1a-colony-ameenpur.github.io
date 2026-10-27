@@ -27,7 +27,7 @@ export default async function render(ctx) {
   const { t } = ctx;
   const box = h('div', { class: 'stack' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('ob.title')), h('p', { class: 'muted' }, t('ob.intro')), box,
-    can('expenses', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('ob.add'), title: t('ob.add'), onClick: () => addSheet(ctx, load) }, icon('add')) : null);
+    can('expenses', 'c') ? h('button', { type: 'button', class: 'fab', 'data-tour': 'ob-add', 'aria-label': t('ob.add'), title: t('ob.add'), onClick: () => addSheet(ctx, load) }, icon('add')) : null);
 
   const row = (x) => h('a', { class: 'list-row', href: `#/money/opening/${x.id}`, style: x.reverses_id ? 'opacity:.75' : '' },
     h('div', { class: 'grow' }, h('div', {}, x.description), h('div', { class: 'small muted' }, `${t('ob.asOf', { date: dateShort(x.date) })} · ${t('exp.addedBy', { name: x.created_by_name })}`)),
@@ -46,6 +46,8 @@ export default async function render(ctx) {
               button(t('exp.approve'), { kind: 'primary', onClick: () => decide(ctx, 'approve', x.id, load) }),
               button(t('exp.reject'), { kind: 'danger', onClick: () => rejectSheet(ctx, x.id, load) }))))) : null,
           r.items.length ? h('div', { class: 'stack-sm' }, r.items.map(row)) : emptyState(t('ob.none'), 'savings'));
+        const kids = [...box.children];          // the guided tour finds these by their marks: total, [queue], list
+        kids[0].setAttribute('data-tour', 'ob-total'); kids.at(-1).setAttribute('data-tour', 'ob-list'); if (waiting.length) kids[1].setAttribute('data-tour', 'ob-queue');
       });
     } catch (e) { box.replaceChildren(errorState(friendly(e, t), load)); }
   }

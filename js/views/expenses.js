@@ -52,6 +52,8 @@ export default async function render(ctx) {
     parts.push(segmented([['all', t('exp.f.all')], ['pending', t('exp.f.pending')], ['approved', t('exp.f.approved')], ['rejected', t('exp.f.rejected')]], filter, (v) => { filter = v; loadList(); }, t('exp.filter')));
     parts.push(items.length ? h('div', { class: 'stack-sm' }, items.map(row)) : emptyState(t('exp.none'), 'receipt_long'));
     if (cursor) parts.push(button(t('audit.more'), { block: true, disabled: busy, onClick: () => loadList(true) }));
+    const k = parts.length - (cursor ? 1 : 0);          // the guided tour finds the parts by these marks: [queue], filter, list, [show more]
+    parts[k - 1].setAttribute('data-tour', 'x-list'); parts[k - 2].setAttribute('data-tour', 'x-filter'); if (k > 2) parts[0].setAttribute('data-tour', 'x-queue');
     box.replaceChildren(...parts);
   }
 
@@ -78,7 +80,7 @@ export default async function render(ctx) {
   }
   load();
   return h('div', { class: 'stack' }, box,
-    can('expenses', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('exp.add'), title: t('exp.add'), onClick: () => addSheet(ctx, load) }, icon('add')) : null);
+    can('expenses', 'c') ? h('button', { type: 'button', class: 'fab', 'data-tour': 'x-add', 'aria-label': t('exp.add'), title: t('exp.add'), onClick: () => addSheet(ctx, load) }, icon('add')) : null);
 }
 
 // "Which event is this for?" (optional). Only offered while the Events module is on and the person may read events.

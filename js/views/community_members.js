@@ -16,8 +16,8 @@ export default async function render(ctx) {
   // The server sends every member in one answer. When all of them are here (nothing left to fetch) the search runs on this device;
   // only if the answer was cut short does a search go to the server.
   let all = [], committee = [], cursor = null, total = 0, shown = [], timer = null, serverQ = '';
-  const q = h('input', { type: 'search', class: 'map-q', placeholder: t('com.membersSearch'), 'aria-label': t('com.membersSearch'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
-  const box = h('div', { class: 'stack-sm' }), more = h('div'), head = h('div', { class: 'stack-sm' });
+  const q = h('input', { 'data-tour': 'cm-search', type: 'search', class: 'map-q', placeholder: t('com.membersSearch'), 'aria-label': t('com.membersSearch'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
+  const box = h('div', { class: 'stack-sm', 'data-tour': 'cm-list' }), more = h('div'), head = h('div', { class: 'stack-sm', 'data-tour': 'cm-head' });
 
   const bigAvatar = (m) => { const a = memberAvatar(ctx, m); a.classList.add('md'); return a; };      // 64 px; the 200 px picture from the API is sharp at this size
   const call = (m) => (m?.mobile ? button('', { kind: 'text', icon: 'call', href: `tel:${String(m.mobile).replace(/\s/g, '')}`, 'aria-label': `${t('map.call')} ${m.name}`, onClick: (e) => e.stopPropagation() }) : null);

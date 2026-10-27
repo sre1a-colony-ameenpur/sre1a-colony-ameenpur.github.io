@@ -24,7 +24,7 @@ export default function render(ctx) {
 
   const progress = () => h('div', { class: 'stack-sm' }, h('div', { class: 'small muted', 'aria-live': 'polite' }, t('ho.step', { n: step, total: STEPS })),
     h('div', { class: 'progress', role: 'progressbar', 'aria-valuemin': 0, 'aria-valuemax': STEPS, 'aria-valuenow': step }, h('i', { style: `width:${(step / STEPS) * 100}%` })));
-  const nav = (next, nextLabel, disabled, danger) => h('div', { class: 'row', style: 'gap:8px' },
+  const nav = (next, nextLabel, disabled, danger) => h('div', { class: 'row', style: 'gap:8px', 'data-tour': 'ho-nav' },
     step > 1 ? button(t('ho.back'), { onClick: () => { step--; draw(); } }) : null,
     button(nextLabel, { kind: danger ? 'danger solid' : 'primary', disabled, onClick: next }));
 
@@ -35,7 +35,7 @@ export default function render(ctx) {
 
   function stepOne() {
     const search = h('input', { id: 'ho-q', type: 'search', value: q, placeholder: t('ho.search'), 'aria-label': t('ho.search'), autocomplete: 'off' });
-    const list = h('div', { class: 'card' });
+    const list = h('div', { class: 'card', 'data-tour': 'ho-list' });
     const drawList = () => {
       const rows = members.filter((m) => m.email !== me && m.role !== 'President' && (!q || norm(`${m.name} ${m.plot_keys}`).includes(norm(q))));
       list.replaceChildren(...(rows.length ? rows.slice(0, 40).map((m) => h('button', { type: 'button', class: 'list-row', style: 'width:100%;text-align:start', 'aria-pressed': String(pick?.email === m.email),

@@ -46,6 +46,7 @@ export default async function render(ctx) {
           h('p', { class: 'small muted' }, t('mt.flat'))),
         card(t('mt.year', { year }), 'calendar_month', h('div', { class: 'tiles' }, tiles)),
         card(t('mt.colony'), 'groups', h('p', {}, t('mt.colonyLine', { got: money(tot.collected_paise), out: money(tot.outstanding_paise) }))));
+      ['mt-mine', 'mt-year', 'mt-colony'].forEach((k, i) => mineBox.children[i]?.setAttribute('data-tour', k));
     }
   }
 }
@@ -66,11 +67,11 @@ function committee(ctx) {
   const { t } = ctx;
   let month = ymNow(), filter = 'all', data = null;
   const box = h('div', { class: 'stack' });
-  const queue = h('div', { class: 'stack' });
-  const q = h('input', { type: 'search', class: 'map-q', placeholder: t('mt.search'), 'aria-label': t('mt.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
+  const queue = h('div', { class: 'stack', 'data-tour': 'mt-queue' });
+  const q = h('input', { 'data-tour': 'mt-search', type: 'search', class: 'map-q', placeholder: t('mt.search'), 'aria-label': t('mt.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
   q.addEventListener('input', draw);
-  const list = h('div', { class: 'stack-sm' });
-  const head = h('div', { class: 'stack' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'mt-list' });
+  const head = h('div', { class: 'stack', 'data-tour': 'mt-head' });
 
   async function load() {
     if (!data || data.month !== month) list.replaceChildren(loadingRegion(2));
@@ -110,13 +111,13 @@ function committee(ctx) {
 
   const label = h('strong', {}, monthLabel(month));
   const step = (n) => { const next = shiftMonth(month, n); if (next > ymNow()) return; month = next; label.textContent = monthLabel(month); load(); };
-  const picker = h('div', { class: 'row', style: 'justify-content:space-between' },
+  const picker = h('div', { class: 'row', style: 'justify-content:space-between', 'data-tour': 'mt-picker' },
     button('', { kind: 'text', icon: 'chevron_left', 'aria-label': t('mt.prev'), onClick: () => step(-1) }), label,
     button('', { kind: 'text', icon: 'chevron_right', 'aria-label': t('mt.next'), onClick: () => step(1) }));
-  const actions = h('div', { class: 'btn-row', style: 'flex-direction:row;flex-wrap:wrap;justify-content:flex-start' },
+  const actions = h('div', { class: 'btn-row', 'data-tour': 'mt-actions', style: 'flex-direction:row;flex-wrap:wrap;justify-content:flex-start' },
     can('maintenance_payments', 'c') ? button(t('mt.record'), { kind: 'primary', icon: 'receipt_long', onClick: () => recordPaymentSheet(ctx, load) }) : null,
     can('maintenance_dues', 'c') ? button(t('mt.raise'), { icon: 'playlist_add', onClick: () => raiseDuesSheet(ctx, month, load) }) : null);
-  const removedBox = h('div');
+  const removedBox = h('div', { 'data-tour': 'mt-removed' });
   async function loadRemoved() {
     try {
       await ctx.api.swr('maintenance.removedBalances', {}, ({ items, total_paise: total }) => removedBox.replaceChildren(items.length ? card(t('mt.removedOwe', { amount: money(total) }), 'person_off', h('p', { class: 'small muted' }, t('mt.removedHelp')),
@@ -152,5 +153,7 @@ function feeCard(ctx) {
       ...[...r.items].reverse().map((x) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.from', { month: monthLabel(x.from_month) })), h('strong', {}, money(x.amount_paise)))));
   }
   load();
-  return card(t('mt.feeSettings'), 'tune', body);
+  const c = card(t('mt.feeSettings'), 'tune', body);
+  c.setAttribute('data-tour', 'mt-fee');
+  return c;
 }

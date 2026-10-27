@@ -5,6 +5,7 @@ import { loadLang, t, getLang } from './i18n.js';
 import { createClient, fetchTransport, ApiError, friendly } from './api.js';
 import { createAuth, decodeJwt } from './auth.js';
 import { shareWithWorker, forgetDevice } from './push.js';
+import { tourForRoute, startPendingTour } from './tour.js';
 import { createRouter } from './router.js';
 import { h, icon, button, toast, toastError, busy, setMyPhoto, setCustomRoles, onBeforeRetry } from './ui.js';
 import { createSwr } from './swr.js';
@@ -256,9 +257,10 @@ async function renderRoute(r) {
   const main = h('main', { class: 'content', id: 'main', tabindex: '-1' }, banners(), view);
   root.replaceChildren(
     dev, h('a', { class: 'skip', href: '#main', onClick: (e) => { e.preventDefault(); main.focus(); } }, t('common.skip')),
-    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, back: route.back, onSignOut: signOut, onSync: syncScreen }), main));
+    h('div', { class: 'app' }, buildNav(s, r.path), buildTopbar(s, { title: r.path === '/home' ? CONFIG.appName : title, back: route.back, tour: tourForRoute(route.path), onSignOut: signOut, onSync: syncScreen }), main));
   document.title = `${title} · ${CONFIG.appName}`;
   main.focus({ preventScroll: true });
+  startPendingTour(route.path, main);
 }
 
 // Offline / error banner with Try again.

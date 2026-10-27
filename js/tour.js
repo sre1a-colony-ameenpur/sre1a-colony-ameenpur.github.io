@@ -1,63 +1,44 @@
 // Guided tours: the real screen with one part lit at a time (Driver.js, vendored in js/vendor, loaded only when a tour starts).
-// A tour is a list of { key, title, text } looked up by [data-tour="key"]; parts that are not on the screen (a hidden card, a nav item
-// the role does not have) are left out. Help sets a request, the screen starts the tour once it has drawn.
+// Every tour is { route, help?, needs?, label?, steps } in js/tours/*.js, found by the route it belongs to. A step is one of
+//   { plain: true, title, text }          a centred note (welcome, end)
+//   { sel | key, title, text }            a part of the screen: `sel` is a CSS selector, `key` is data-tour="key"
+//   { ..., click: 'css' }                 first clicks that control (a tab) and waits for the screen to settle, so the part can be found
+// title and text are i18n keys. A part that is not on the screen (a role without it, an empty list) is left out, except after a `click`.
+// `help: true` puts the tour on the Help page (needs = [entity, verb] like the route; label = i18n key of the button). Every tour is also in
+// the avatar menu as "Tour of this screen". Help sets a request; app.js starts it once the screen has drawn.
 import { t } from './i18n.js';
+import { can } from './store.js';
+import core from './tours/core.js';
+import community from './tours/community.js';
+import moneyIssues from './tours/money_issues.js';
+import people from './tours/people.js';
+
+export const TOURS = { ...core, ...community, ...moneyIssues, ...people };
 
 const KEY = 'sre.tour';
 export const requestTour = (name) => { try { sessionStorage.setItem(KEY, name); } catch { /* private mode: no tour */ } };
-export function takeTour(name) {
-  try { if (sessionStorage.getItem(KEY) !== name) return false; sessionStorage.removeItem(KEY); return true; } catch { return false; }
-}
+const pending = () => { try { return sessionStorage.getItem(KEY); } catch { return null; } };
+const clearRequest = () => { try { sessionStorage.removeItem(KEY); } catch { /* ignore */ } };
+
+const toRegex = (pattern) => new RegExp('^' + pattern.replace(/:[^/]+/g, '[^/]+') + '$');
+// The tour that belongs to a route pattern such as '/issues/:id', or null.
+export const tourForRoute = (pattern) => Object.keys(TOURS).find((k) => TOURS[k].route === pattern) || null;
+export const tourPath = (name) => '#' + TOURS[name].route;
+// The tours for the Help page that this member may take: [name, label key].
+export const helpTours = (state) => Object.keys(TOURS).filter((k) => TOURS[k].help && !/:/.test(TOURS[k].route)
+  && (!TOURS[k].needs || can(TOURS[k].needs[0], TOURS[k].needs[1], state))).map((k) => [k, TOURS[k].label]);
+export { toRegex };
 
 const shown = (el) => !!el && el.getClientRects().length > 0;
-
-// A step is { key, title, text } for a part marked data-tour="key", or { plain: true, title, text } for a centred note (welcome, end).
-const plain = (title, text) => ({ plain: true, title, text });
-const END = plain('tour.end.title', 'tour.end');
-const HOME = [
-  plain('tour.welcome.title', 'tour.welcome.text'),
-  { key: 'action', title: 'home.action.title', text: 'tour.action' },
-  { key: 'maint', title: 'home.maint.title', text: 'tour.maint' },
-  { key: 'fees', title: 'home.fees.title', text: 'tour.fees' },
-  { key: 'polls', title: 'home.polls.title', text: 'tour.polls' },
-  { key: 'meeting', title: 'home.meeting.title', text: 'tour.meeting' },
-  { key: 'complaints', title: 'home.complaints.title', text: 'tour.complaints' },
-  { key: 'event', title: 'home.event.title', text: 'tour.event' },
-  { key: 'money', title: 'home.money.title', text: 'tour.money' },
-  { key: 'balance', title: 'acc.balance', text: 'tour.balance' },
-  { key: 'nav', title: 'tour.nav.title', text: 'tour.nav' },
-  { key: 'menu', title: 'tour.menu.title', text: 'tour.menu' },
-  END,
-];
-const MONEY = [
-  plain('tour.money.welcome.title', 'tour.money.welcome.text'),
-  { key: 'm-tabs', title: 'tour.money.tabs.title', text: 'tour.money.tabs' },
-  { key: 'm-payments', title: 'pay.allTitle', text: 'tour.money.payments' },
-  { key: 'm-ledger', title: 'ledger.title', text: 'tour.money.ledger' },
-  { key: 'm-opening', title: 'ob.title', text: 'tour.money.opening' },
-  { key: 'm-accounts', title: 'acc.title', text: 'tour.money.accounts' },
-  { key: 'm-body', title: 'tour.money.body.title', text: 'tour.money.body' },
-  END,
-];
-const ISSUES = [
-  plain('tour.issues.welcome.title', 'tour.issues.welcome.text'),
-  { key: 'i-pending', title: 'pend.title', text: 'tour.issues.pending' },
-  { key: 'i-monthly', title: 'cmp.monthly', text: 'tour.issues.monthly' },
-  { key: 'i-filter', title: 'tour.issues.filter.title', text: 'tour.issues.filter' },
-  { key: 'i-search', title: 'tour.issues.search.title', text: 'tour.issues.search' },
-  { key: 'i-list', title: 'tour.issues.list.title', text: 'tour.issues.list' },
-  { key: 'i-raise', title: 'cmp.raise', text: 'tour.issues.raise' },
-  END,
-];
-const TOURS = { home: HOME, money: MONEY, issues: ISSUES };
-export const TOUR_PAGE = { home: '#/home', money: '#/money', issues: '#/issues' };
-const SELECT = { nav: 'nav.nav', menu: '.avatar-btn' };
+const find = (s, root) => root.querySelector(s.sel || `[data-tour="${s.key}"]`);
+const pop = (s) => ({ title: t(s.title), description: t(s.text) });
 
 export function stepsFor(name, root = document) {
-  return (TOURS[name] || []).map((s) => {
-    if (s.plain) return { popover: { title: t(s.title), description: t(s.text) } };
-    const el = root.querySelector(SELECT[s.key] || `[data-tour="${s.key}"]`);
-    return shown(el) ? { element: el, popover: { title: t(s.title), description: t(s.text) } } : null;
+  return (TOURS[name]?.steps || []).map((s) => {
+    if (s.plain) return { popover: pop(s) };
+    if (s.click && !root.querySelector(s.click)) return null;                                                   // the tab is not there for this role
+    if (s.click) return { element: () => find(s, root) || undefined, click: s.click, popover: pop(s) };       // found after the click
+    return shown(find(s, root)) ? { element: find(s, root), popover: pop(s) } : null;
   }).filter(Boolean);
 }
 
@@ -66,25 +47,47 @@ function loadCss() {
   document.head.append(Object.assign(document.createElement('link'), { id: 'driver-css', rel: 'stylesheet', href: 'css/driver.css' }));
 }
 
+const settle = (root, ms = 3000) => new Promise((resolve) => {
+  const t0 = Date.now();
+  const tick = () => (Date.now() - t0 > ms || !root.querySelector('[aria-busy="true"], .skel') ? resolve() : setTimeout(tick, 120));
+  setTimeout(tick, 350);
+});
+
 export async function runTour(name, root = document) {
   const steps = stepsFor(name, root);
   if (steps.length < 2) return;
   loadCss();
   const { driver } = await import('./vendor/driver.esm.js');
-  driver({
-    steps, showProgress: true, progressText: '{{current}} / {{total}}', allowClose: true, overlayOpacity: 0.55, stagePadding: 6, stageRadius: 12,
+  let d;
+  // Moves to step i: clicks its tab first when it has one.
+  const enter = async (i) => {
+    const c = steps[i]?.click, el = c && root.querySelector(c);
+    if (!el || el.getAttribute('aria-pressed') === 'true' || el.getAttribute('aria-selected') === 'true') return;       // already on that tab
+    el.click(); await settle(root);
+  };
+  steps.forEach((s, i) => {
+    if (steps[i + 1]?.click) s.popover.onNextClick = async () => { await enter(i + 1); d.moveNext(); };
+    if (steps[i - 1]?.click) s.popover.onPrevClick = async () => { await enter(i - 1); d.movePrevious(); };
+  });
+  d = driver({
+    steps: steps.map(({ click, ...s }) => s), showProgress: true, progressText: '{{current}} / {{total}}', allowClose: true, overlayOpacity: 0.55, stagePadding: 6, stageRadius: 12,
     animate: !matchMedia('(prefers-reduced-motion: reduce)').matches, smoothScroll: true,
     nextBtnText: t('tour.next'), prevBtnText: t('tour.prev'), doneBtnText: t('tour.done'), popoverClass: 'sre-tour',
-  }).drive();
+  });
+  await enter(0);
+  d.drive();
 }
 
-// Waits until the screen has stopped loading (or 6 s), then runs the tour. Gives up if the screen is left meanwhile.
-export function runTourWhenReady(name, grid) {
+// Called by app.js after a screen has drawn: starts the tour Help asked for, if it belongs to this screen.
+export function startPendingTour(routePattern, main) {
+  const name = pending();
+  if (!name || TOURS[name]?.route !== routePattern) return;
+  clearRequest();
   const t0 = Date.now();
   const tick = () => {
-    if (!grid.isConnected) return;
-    if (grid.querySelector('[aria-busy="true"], .skel') && Date.now() - t0 < 6000) return void setTimeout(tick, 150);
-    runTour(name);
+    if (!main.isConnected) return;
+    if (main.querySelector('[aria-busy="true"], .skel') && Date.now() - t0 < 6000) return void setTimeout(tick, 150);
+    runTour(name, main);
   };
   setTimeout(tick, 300);
 }

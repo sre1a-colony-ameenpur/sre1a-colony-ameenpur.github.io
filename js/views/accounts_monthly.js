@@ -39,6 +39,10 @@ export default function render(ctx) {
           card(t('exp.yearTotal', { year: new Date().getFullYear() }), 'event_available', h('div', { class: 'amount big' }, money(ex.year_total_paise))),
         card(t('acc.allTime'), 'savings', h('div', { class: 'stats' },
             stat(d.overall.collected_paise, t('acc.collected')), stat(d.overall.spent_paise, t('acc.spent')), stat(d.overall.net_paise, t('acc.net'), d.overall.net_paise < 0 ? 'neg' : ''))));
+        // the guided tour finds the cards by these marks, in the order they are drawn (the opening and category cards only when present)
+        body.firstElementChild?.setAttribute('data-tour', 'am-nav');
+        const keys = ['am-balance', 'am-month', ...((d.opening || []).length ? ['am-opening'] : []), 'am-expenses', ...(d.by_category.length ? ['am-cat'] : []), 'am-year', 'am-all'];
+        body.querySelectorAll(':scope > section.card').forEach((el, i) => el.setAttribute('data-tour', keys[i]));
       });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }

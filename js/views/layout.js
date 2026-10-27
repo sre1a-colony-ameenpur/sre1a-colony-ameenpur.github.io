@@ -8,7 +8,7 @@ const label = (k) => k.replace(/^([A-Z])(\d+)$/, '$1-$2');
 
 export default function render(ctx) {
   const { t } = ctx;
-  const out = h('div', { class: 'stack' });
+  const out = h('div', { class: 'stack', 'data-tour': 'ly-out' });
   let candidate = null;
 
   function summary(r, preview) {

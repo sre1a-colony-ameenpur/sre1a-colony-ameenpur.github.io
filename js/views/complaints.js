@@ -4,7 +4,6 @@ import { h, button, field, statusPill, plotChip, emptyState, errorState, loading
 import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
-import { takeTour, runTourWhenReady } from '../tour.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
 
 export const STAGES = ['Open', 'Acknowledged', 'In progress', 'Resolved', 'Closed'];
@@ -58,7 +57,6 @@ export default async function render(ctx) {
     h('a', { class: 'icon-btn', 'data-tour': 'i-pending', href: '#/issues/pending', 'aria-label': t('pend.title'), title: t('pend.title') }, icon('pending_actions')),
     h('a', { class: 'icon-btn', 'data-tour': 'i-monthly', href: '#/issues/monthly', 'aria-label': t('cmp.monthly'), title: t('cmp.monthly') }, icon('insights')))),
     seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'data-tour': 'i-raise', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
-  if (takeTour('issues')) runTourWhenReady('issues', page);
   return page;
 }
 

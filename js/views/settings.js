@@ -4,7 +4,7 @@ import { friendly } from '../api.js';
 
 export default function render(ctx) {
   const { t } = ctx;
-  const body = h('div', { class: 'stack' });
+  const body = h('div', { class: 'stack', 'data-tour': 'st-body' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.settings')), body);
 
   async function load() {

@@ -5,7 +5,7 @@ import { paymentRow } from './payments_common.js';
 
 export default function render(ctx) {
   const { t } = ctx;
-  const body = h('div', { class: 'stack' });
+  const body = h('div', { class: 'stack', 'data-tour': 'pm-list' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('pay.mineTitle')), body);
   async function load() {
     body.replaceChildren(loadingRegion(2));

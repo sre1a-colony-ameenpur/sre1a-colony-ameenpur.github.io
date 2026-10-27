@@ -14,7 +14,7 @@ export default function render(ctx) {
   const kindSel = h('select', { id: 'gal-kind' }, [['', t('gal.all')], ['photo', t('gal.photos')], ['video', t('gal.videos')]].map(([v, l]) => h('option', { value: v }, l)));
   const monthIn = h('input', { type: 'month', id: 'gal-month' });
   const fieldOf = (id, label, el) => h('div', { class: 'field' }, h('label', { for: id }, label), el);
-  const grid = h('div', { class: 'photo-grid gallery-grid' }), more = h('div', {}), count = h('p', { class: 'small muted', role: 'status', id: 'gal-count' });
+  const grid = h('div', { class: 'photo-grid gallery-grid', 'data-tour': 'gal-grid' }), more = h('div', {}), count = h('p', { class: 'small muted', role: 'status', id: 'gal-count' });
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('menu.gallery')),
     h('div', { class: 'filters-grid' }, fieldOf('gal-cat', t('gal.category'), catSel), fieldOf('gal-kind', t('gal.kind'), kindSel), fieldOf('gal-month', t('pay.f.month'), monthIn)), itemChip, count, grid, more);
 

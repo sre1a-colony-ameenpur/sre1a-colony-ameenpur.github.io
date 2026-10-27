@@ -43,8 +43,8 @@ export default function render(ctx) {
 
   function holderStrip() {
     const hd = holders.filter((x) => x.role === role && x.member);
-    if (role === 'Member') return h('div', { class: 'stack-sm' }, rolePill(role), h('p', { class: 'small muted' }, t('roles.everyone')));
-    return h('div', { class: 'stack-sm', style: 'padding-bottom:12px' },
+    if (role === 'Member') return h('div', { class: 'stack-sm', 'data-tour': 'r-holders' }, rolePill(role), h('p', { class: 'small muted' }, t('roles.everyone')));
+    return h('div', { class: 'stack-sm', style: 'padding-bottom:12px', 'data-tour': 'r-holders' },
       h('div', { class: 'row' }, rolePill(role), h('span', { class: 'muted small' }, t('roles.holds'))),
       ...(hd.length ? hd.map((x) => h('div', { class: 'row' }, avatar(x.member.name), h('strong', {}, x.member.name), x.member.plot_keys.map((k) => plotChip(dashKey(k)))))
         : [h('div', { class: 'row' }, statusPill('closed', t('roles.vacant')), h('span', { class: 'small muted' }, t('roles.nobody')))]),
@@ -56,7 +56,7 @@ export default function render(ctx) {
   // The President may rename a role she created and switch it between one holder and several.
   function editButton() {
     const d = defs.items.find((x) => x.role === role);
-    return !d || d.builtin ? null : button(t('roles.edit'), { icon: 'edit', onClick: () => editRoleSheet(d) });
+    return !d || d.builtin ? null : button(t('roles.edit'), { icon: 'edit', 'data-tour': 'r-edit', onClick: () => editRoleSheet(d) });
   }
   function editRoleSheet(d) {
     let one = d.single_holder;
@@ -87,7 +87,7 @@ export default function render(ctx) {
     const d = defs.items.find((x) => x.role === role);
     if (!d || d.builtin) return null;
     return d.holder_count ? h('p', { class: 'small muted' }, icon('info', 'sm'), ' ', t('roles.deleteBlocked', { n: d.holder_count }))
-      : button(t('roles.delete'), { kind: 'danger', icon: 'delete', onClick: () => confirmDelete(d.role) });
+      : button(t('roles.delete'), { kind: 'danger', icon: 'delete', 'data-tour': 'r-delete', onClick: () => confirmDelete(d.role) });
   }
   function confirmDelete(name) {
     openSheet({ title: t('roles.deleteTitle', { role: name }), body: h('p', {}, t('roles.deleteBody')), actions: [
@@ -117,7 +117,7 @@ export default function render(ctx) {
 
   function toggleRow(e) {
     const have = working[role][e];
-    return h('div', { class: 'list-row', style: 'align-items:flex-start' },
+    return h('div', { class: 'list-row', style: 'align-items:flex-start', 'data-tour': 'r-row' },
       h('div', { class: 'grow' }, h('div', {}, t(`roles.e.${e}`)),
         PRESIDENT_ONLY[e] ? h('div', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('roles.presidentOnly')) : null),
       h('div', { class: 'row', style: 'gap:4px;flex:none' }, VERBS.map((v) => {
@@ -156,7 +156,7 @@ export default function render(ctx) {
         cols.map((r) => cell(r, e)))))));
   }
 
-  const foot = h('div', { class: 'stack-sm' });
+  const foot = h('div', { class: 'stack-sm', 'data-tour': 'r-save' });
   function drawFoot() {
     const n = changes().length;
     foot.replaceChildren(editable ? button(t('roles.save'), { kind: 'primary', block: true, disabled: !n, icon: 'save', onClick: confirmSave }) : h('p', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('roles.viewOnly')));
@@ -216,7 +216,7 @@ export default function render(ctx) {
   const page = h('div', { class: 'page stack' },
     h('div', { class: 'row-between', style: 'flex-wrap:nowrap' },
       h('div', { class: 'row', style: 'gap:0;flex-wrap:nowrap' }, h('h1', {}, t('menu.roles')), info),
-      can('roles_config', 'c') ? button(t('roles.newShort'), { icon: 'add', onClick: newRoleSheet }) : null),
+      can('roles_config', 'c') ? button(t('roles.newShort'), { icon: 'add', 'data-tour': 'r-new', onClick: newRoleSheet }) : null),
     tip, box);
   return page;
 }

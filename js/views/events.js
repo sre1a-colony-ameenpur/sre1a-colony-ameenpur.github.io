@@ -23,7 +23,7 @@ export async function uploadPhotos(ctx, parentId, files) {
 
 export default async function render(ctx) {
   const { t } = ctx;
-  const list = h('div', { class: 'stack-sm' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'ev-list' });
   let items = [], cursor = null;
   const more = h('div');
   function draw() {

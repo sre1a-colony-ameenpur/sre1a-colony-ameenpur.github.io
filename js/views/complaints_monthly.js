@@ -25,7 +25,8 @@ export default function render(ctx) {
           card(t('cmp.m.title'), 'insights', h('div', { class: 'stats' },
             stat(d.raised, t('cmp.m.raised')), stat(d.resolved, t('cmp.m.resolved')), stat(d.still_open, t('cmp.m.stillOpen')), stat(d.reopened, t('cmp.m.reopened')),
             stat(d.closed_by_hand, t('cmp.m.closedHand')), stat(d.closed_by_system, t('cmp.m.closedAuto'))),
-            h('p', {}, icon('timer', 'sm'), ' ', d.avg_hours_to_resolve === null ? t('cmp.m.noAvg') : t('cmp.m.avg', { d: (({ key, n }) => t(key, { n }))(duration(d.avg_hours_to_resolve * 3600000)) }))));
+            h('p', { 'data-tour': 'cm-avg' }, icon('timer', 'sm'), ' ', d.avg_hours_to_resolve === null ? t('cmp.m.noAvg') : t('cmp.m.avg', { d: (({ key, n }) => t(key, { n }))(duration(d.avg_hours_to_resolve * 3600000)) }))));
+        body.children[0]?.setAttribute('data-tour', 'cm-nav'); body.children[1]?.setAttribute('data-tour', 'cm-stats');
       });
     } catch (e) { body.replaceChildren(errorState(friendly(e, t), load)); }
   }

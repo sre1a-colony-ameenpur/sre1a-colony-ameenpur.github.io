@@ -14,15 +14,16 @@ export default async function render(ctx) {
     try {
       await ctx.api.swr('polls.get', { id: ctx.params.id }, ({ poll: p, my_vote: mv, results: r }) => {
       const stateText = p.status === 'open' ? t('poll.closes', { date: dateShort(p.closes_at) }) : p.status === 'upcoming' ? t('poll.opens', { date: dateShort(p.opens_at) }) : p.status === 'cancelled' ? t('poll.cancelled') : t('poll.closed');
-      const head = card(null, null, h('h2', {}, p.question),
+      const tag = (el, k) => { el.setAttribute('data-tour', k); return el; };
+      const head = tag(card(null, null, h('h2', {}, p.question),
         h('div', { class: 'row' }, h('span', { class: 'pill role' }, icon(p.type === 'secret' ? 'lock' : 'visibility', 'sm'), t(p.type === 'secret' ? 'poll.secret' : 'poll.open')), h('span', { class: 'small muted' }, stateText)),
-        p.cancel_reason ? h('p', { class: 'small muted' }, p.cancel_reason) : null);
+        p.cancel_reason ? h('p', { class: 'small muted' }, p.cancel_reason) : null), 'pd-head');
       const parts = [head];
-      if (p.status === 'open' && !mv.voted && can('polls', 'vote')) parts.push(voteCard(ctx, p, load));
-      else if (mv.voted) parts.push(card(null, null, statusPill('voted', t('poll.youVoted'))));
-      parts.push(resultsCard(ctx, p, r));
-      if (can('polls', 'u') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.edit'), { block: true, icon: 'edit', onClick: () => createSheet(ctx, load, p) }));
-      if (can('polls', 'd') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.cancelPoll'), { kind: 'danger', block: true, onClick: () => cancelSheet(ctx, p.id, load) }));
+      if (p.status === 'open' && !mv.voted && can('polls', 'vote')) parts.push(tag(voteCard(ctx, p, load), 'pd-vote'));
+      else if (mv.voted) parts.push(tag(card(null, null, statusPill('voted', t('poll.youVoted'))), 'pd-voted'));
+      parts.push(tag(resultsCard(ctx, p, r), 'pd-results'));
+      if (can('polls', 'u') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.edit'), { 'data-tour': 'pd-edit', block: true, icon: 'edit', onClick: () => createSheet(ctx, load, p) }));
+      if (can('polls', 'd') && (p.status === 'open' || p.status === 'upcoming')) parts.push(button(t('poll.cancelPoll'), { 'data-tour': 'pd-cancel', kind: 'danger', block: true, onClick: () => cancelSheet(ctx, p.id, load) }));
       root.replaceChildren(...parts);
       });
     } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('poll.notFound') : friendly(e, t), load)); }

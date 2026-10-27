@@ -43,14 +43,14 @@ export default async function render(ctx) {
           h('p', { class: 'small muted' }, ...withWhen(t('cmp.raisedOn', { date: '{when}', name: c.raised_by_name }), c.raised_at)),
           c.resolved_at ? h('p', { class: 'small muted' }, ...withWhen(t('cmp.resolvedOn', { date: '{when}' }), c.resolved_at)) : null,
           h('div', { class: 'row-between' }, h('p', { class: 'small' }, icon('assignment_ind', 'sm'), ' ', c.assigned_to_me ? t('cmp.assignedYou') : t('cmp.lookedAfter', { name: c.assigned_to_name })),
-            isFullRole(store.get().session?.role) && c.stage !== 'Closed' ? button(t('cmp.assign'), { kind: 'text', onClick: () => assignSheet(ctx, c, load) }) : null),
-          c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', onClick: async () => {
+            isFullRole(store.get().session?.role) && c.stage !== 'Closed' ? button(t('cmp.assign'), { kind: 'text', 'data-tour': 'cd-assign', onClick: () => assignSheet(ctx, c, load) }) : null),
+          c.can_take_on ? button(t('cmp.takeOn'), { kind: 'primary', icon: 'front_hand', 'data-tour': 'cd-takeon', onClick: async () => {
             try { await ctx.api.call('complaints.takeOn', { id: c.id }); toast(t('cmp.tookOn')); load(); } catch (e) { toastError(friendly(e, t)); }
           } }) : null)),
         flow(card(t('cmp.progress'), 'timeline', tracker,
           ...d.history.filter((x) => x.note).map((x) => h('p', { class: 'small' }, icon('sticky_note_2', 'sm'), ' ', h('strong', {}, t(`cmp.stage.${STAGE_KEY[x.to_stage]}`)), `: ${x.note} `, h('span', { class: 'muted' }, `· ${x.by_name}, `, when(x.at)))),
           h('p', { class: 'small' }, c.resolved_at ? t('cmp.resolvedIn', { d: took }) : t('cmp.timeSoFar', { d: took })),
-          (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', block: true, onClick: () => stageSheet(ctx, c, next, load) }) : null)),
+          (can('complaint_stage', 'u') || c.assigned_to_me) && next.length ? button(t('cmp.changeStatus'), { kind: 'primary', icon: 'sync_alt', block: true, 'data-tour': 'cd-status', onClick: () => stageSheet(ctx, c, next, load) }) : null)),
         requesterCard(ctx, c, load),
         fixPhotos.length || d.contributors?.length ? flow(card(t('cmp.fixPhotosTitle'), 'task_alt',
           fixPhotos.length ? h('div', { class: 'photo-grid' }, fixPhotos.map((m) => thumb(ctx, m.id))) : null,
@@ -60,10 +60,17 @@ export default async function render(ctx) {
         flow(card(t('cmp.discussion', { n: d.comments.filter((m) => !m.hidden).length }), 'forum',
           ...(d.comments.length ? d.comments.map((m) => m.hidden ? h('div', { class: 'queue-item small muted', style: 'opacity:.7' }, icon('visibility_off', 'sm'), ' ', t('cmp.hiddenByCommittee'), ' · ', when(m.at)) : h('div', { class: 'stack-sm queue-item' },
             h('div', { class: 'row' }, avatar(m.author_name), h('div', { class: 'grow' }, h('strong', {}, m.author_name), h('div', { class: 'small muted' }, when(m.at))),
-              can('comments', 'd') ? button(t('cmp.hide'), { kind: 'text', onClick: () => hideSheet(ctx, 'comments.hide', m.id, load) }) : null),
+              can('comments', 'd') ? button(t('cmp.hide'), { kind: 'text', 'data-tour': 'cd-hidecomment', onClick: () => hideSheet(ctx, 'comments.hide', m.id, load) }) : null),
             h('p', {}, m.body), commentPhotos(m.id).length ? h('div', { class: 'photo-grid' }, commentPhotos(m.id).map((p) => thumb(ctx, p.id))) : null)) : [h('p', { class: 'muted' }, t('cmp.noComments'))]),
           can('comments', 'c') ? commentBox(ctx, c.id, load) : null)),
-        can('complaints', 'd') ? button(t('cmp.hideComplaint'), { kind: 'danger', block: true, onClick: () => hideSheet(ctx, 'complaints.hide', c.id, () => { location.hash = '#/issues'; }) }) : null);
+        can('complaints', 'd') ? button(t('cmp.hideComplaint'), { kind: 'danger', block: true, 'data-tour': 'cd-hide', onClick: () => hideSheet(ctx, 'complaints.hide', c.id, () => { location.hash = '#/issues'; }) }) : null);
+      // the guided tour finds the cards by these marks, in the order they are drawn
+      const kids = [...root.children];
+      let at = 2;
+      const mark = (here, k) => { if (here) kids[at++]?.setAttribute('data-tour', k); };
+      kids[0].setAttribute('data-tour', 'cd-main'); kids[1].setAttribute('data-tour', 'cd-progress');
+      mark(c.stage === 'Resolved', 'cd-say'); mark(fixPhotos.length || d.contributors?.length, 'cd-fix'); mark(photos.length, 'cd-photos');
+      mark(d.media.some((m) => m.kind === 'video' && m.parent_type === 'complaint') || can('complaints', 'c'), 'cd-videos'); mark(true, 'cd-comments');
       });
     } catch (e) { root.replaceChildren(errorState(e.code === 'NOT_FOUND' ? t('cmp.notFound') : friendly(e, t), load)); }
   }
@@ -87,7 +94,7 @@ function thumb(ctx, id) {
 // and nothing is lost. A comment with a photo is refreshed from the server when the photo is saved, so the photo shows.
 function commentBox(ctx, complaintId, done) {
   const { t } = ctx;
-  const text = h('textarea', { rows: 2, maxlength: 1000, 'aria-label': t('cmp.writeComment'), placeholder: t('cmp.writeComment') });
+  const text = h('textarea', { 'data-tour': 'cd-text', rows: 2, maxlength: 1000, 'aria-label': t('cmp.writeComment'), placeholder: t('cmp.writeComment') });
   const file = h('input', { type: 'file', accept: 'image/*', 'aria-label': t('cmp.addPhoto') });
 
   function post(body, photo, item, status) {
@@ -107,7 +114,7 @@ function commentBox(ctx, complaintId, done) {
     });
   }
 
-  const box = h('div', { class: 'stack-sm' }, text, withCamera(file, t), button(t('cmp.send'), { kind: 'primary', icon: 'send', onClick: () => {
+  const box = h('div', { class: 'stack-sm' }, text, withCamera(file, t), button(t('cmp.send'), { kind: 'primary', icon: 'send', 'data-tour': 'cd-send', onClick: () => {
     const body = text.value.trim(); if (!body) return;
     const photo = file.files[0] || null;
     text.value = ''; file.value = '';
@@ -152,8 +159,8 @@ function requesterCard(ctx, c, done) {
   if (!c.raised_by_me) return flow(card(null, null, h('p', { class: 'small muted' }, icon('hourglass_top', 'sm'), ' ', t('cmp.closeWaits'))));
   const close = async () => { try { await ctx.api.call('complaints.close', { id: c.id }); toast(t('cmp.closed')); done(); } catch (e) { toastError(friendly(e, t)); } };
   return flow(card(t('cmp.yourSay'), 'how_to_reg', h('p', {}, t('cmp.closeAsk')),
-    button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, onClick: close }),
-    button(t('cmp.reopen'), { icon: 'undo', block: true, onClick: () => reopenSheet(ctx, c, done) })));
+    button(t('cmp.confirmClose'), { kind: 'primary', icon: 'check_circle', block: true, 'data-tour': 'cd-close', onClick: close }),
+    button(t('cmp.reopen'), { icon: 'undo', block: true, 'data-tour': 'cd-reopen', onClick: () => reopenSheet(ctx, c, done) })));
 }
 
 // Asks before reopening; the reason is optional and goes into the history next to the new status.

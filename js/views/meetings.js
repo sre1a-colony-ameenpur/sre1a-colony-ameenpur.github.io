@@ -10,7 +10,7 @@ export const meetingTitle = (m, fallback) => agendaLines(m.agenda)[0] || fallbac
 
 export default async function render(ctx) {
   const { t } = ctx;
-  const list = h('div', { class: 'stack-sm' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'mt-list' });
   let all = [], cursor = null, openItems = { items: [] };
   const more = h('div');
   function draw() {
