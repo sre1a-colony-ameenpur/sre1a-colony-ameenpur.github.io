@@ -39,7 +39,7 @@ function lazyCard(ctx, { title, ic, load, render, act, cls = '', more }) {
 // Home data comes in three requests sent at the same time, grouped by the spreadsheets they read (Apps Script runs separate requests in
 // parallel, but one request reads its sheets one after another). Each card draws as soon as its group answers; a group is asked for only
 // if some card needs it, so switched-off modules cost nothing. Retry on a failed card or group asks again.
-const GROUP = { 'maintenance.mine': 'money', 'dues.mine': 'money', 'maintenance.totals': 'money', 'expenses.list': 'money',
+const GROUP = { 'maintenance.mine': 'money', 'dues.mine': 'money', 'maintenance.totals': 'money', 'accounts.balance': 'money', 'expenses.list': 'money',
   'polls.list': 'community', 'meetings.list': 'community', 'actionItems.list': 'community',
   'complaints.list': 'around', 'complaints.pending': 'around', 'events.list': 'around', 'plotRequests.list': 'around' };
 
@@ -133,6 +133,12 @@ export default function render(ctx) {
   if (hasModule('maintenance')) cards.push(lazyCard(ctx, { title: t('home.money.title'), ic: 'savings', load: async () => currentTotals(await home('maintenance.totals')),
     render: (d) => { const exp = d.collected_paise + d.outstanding_paise || 1; if (!d.collected_paise && !d.outstanding_paise) return null; return [h('p', {}, t('home.money.collected', { month: monthLabel(d.month), got: money(d.collected_paise), of: money(exp) })),
       h('div', { class: 'progress', role: 'img', 'aria-label': `${Math.round(d.collected_paise / exp * 100)}%` }, h('i', { style: `width:${Math.min(100, d.collected_paise / exp * 100)}%` }))]; } }));
+
+  // The bank balance from the account ledger; hidden until the President has started the ledger.
+  if (hasModule('expenses') && r('expenses')) {
+    cards.push(lazyCard(ctx, { title: t('acc.balance'), ic: 'account_balance', load: () => home('accounts.balance'),
+      render: (d) => d.started ? [h('div', { class: `amount big${d.balance_paise < 0 ? ' neg' : ''}` }, money(d.balance_paise)), link('#/money/accounts', t('common.view'))] : null }));
+  }
 
   // For 14 days after a handover everyone sees who the President is now. No message is sent anywhere.
   const sinceMs = Date.parse(s.presidentSince || '');

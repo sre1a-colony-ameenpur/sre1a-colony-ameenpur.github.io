@@ -220,7 +220,7 @@ export function createMock({ delayMs = 120 } = {}) {
     'home.summary': (u) => {
       const out = {};
       for (const [k, p] of [['expenses.list', {}], ['plotRequests.list', { status: 'Pending' }], ['maintenance.mine', {}], ['dues.mine', {}], ['polls.list', {}], ['meetings.list', {}],
-        ['actionItems.list', { status: 'open' }], ['complaints.list', {}], ['events.list', {}], ['maintenance.totals', {}]]) {
+        ['actionItems.list', { status: 'open' }], ['complaints.list', {}], ['events.list', {}], ['maintenance.totals', {}], ['accounts.balance', {}]]) {
         const f = handlers[k]; const r = f && f(u, p);
         if (r && r.ok) out[k] = r.data;
       }
@@ -762,6 +762,7 @@ export function createMock({ delayMs = 120 } = {}) {
       });
       return ok({ started: ledgerOn, balance_paise: ledgerBalance, month, merged: !committee, items });
     },
+    'accounts.balance': () => ok({ started: ledgerOn, balance_paise: ledgerOn ? ledgerBalance : 0 }),
     'ledger.verify': () => ok({ started: true, ok: true, balance_paise: ledgerBalance, records_paise: ledgerBalance, kinds: ['opening', 'expense', 'maintenance', 'membership', 'fee'].map((type) => ({ type, entries: ledgerRows.filter((r) => r.type === type).length, records: ledgerRows.filter((r) => r.type === type).length, ledger_paise: 0, records_paise: 0, ok: true })) }),
     'ledger.backfill': () => fail('CONFLICT', 'The ledger has already started'),
     'openingBalance.list': (u) => {
