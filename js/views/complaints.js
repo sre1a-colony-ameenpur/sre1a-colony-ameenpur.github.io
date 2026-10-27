@@ -4,6 +4,7 @@ import { h, button, field, statusPill, plotChip, emptyState, errorState, loading
 import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { can } from '../store.js';
+import { takeTour, runTourWhenReady } from '../tour.js';
 import { compressPhoto, photoWithThumb } from '../photo.js';
 
 export const STAGES = ['Open', 'Acknowledged', 'In progress', 'Resolved', 'Closed'];
@@ -23,8 +24,8 @@ export default async function render(ctx) {
   let filter = initialFilter;
   initialFilter = 'all';
   let items = [], cursor = null, total = 0, busy = false, timer = null;
-  const list = h('div', { class: 'stack-sm' }), more = h('div');
-  const q = h('input', { type: 'search', class: 'map-q', placeholder: t('cmp.search'), 'aria-label': t('cmp.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
+  const list = h('div', { class: 'stack-sm', 'data-tour': 'i-list' }), more = h('div');
+  const q = h('input', { 'data-tour': 'i-search', type: 'search', class: 'map-q', placeholder: t('cmp.search'), 'aria-label': t('cmp.search'), style: 'border:1px solid var(--c-border);border-radius:var(--r);padding:0 12px' });
   q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { items = []; load(); }, 350); });     // the server searches every complaint
 
   function draw() {
@@ -52,10 +53,13 @@ export default async function render(ctx) {
   }
   const seg = segmented([['all', t('exp.f.all')], ['open', t('cmp.stage.open')], ['progress', t('cmp.stage.progress')], ['resolved', t('cmp.stage.resolved')], ['closed', t('cmp.stage.closed')]], filter, (v) => { filter = v; items = []; load(); }, t('exp.filter'));
   load();
-  return h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('div', { class: 'row' },
-    h('a', { class: 'icon-btn', href: '#/issues/pending', 'aria-label': t('pend.title'), title: t('pend.title') }, icon('pending_actions')),
-    h('a', { class: 'icon-btn', href: '#/issues/monthly', 'aria-label': t('cmp.monthly'), title: t('cmp.monthly') }, icon('insights')))),
-    seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
+  seg.setAttribute('data-tour', 'i-filter');
+  const page = h('div', { class: 'page stack' }, h('div', { class: 'row-between' }, h('h1', { style: 'margin:0' }, t('cmp.title')), h('div', { class: 'row' },
+    h('a', { class: 'icon-btn', 'data-tour': 'i-pending', href: '#/issues/pending', 'aria-label': t('pend.title'), title: t('pend.title') }, icon('pending_actions')),
+    h('a', { class: 'icon-btn', 'data-tour': 'i-monthly', href: '#/issues/monthly', 'aria-label': t('cmp.monthly'), title: t('cmp.monthly') }, icon('insights')))),
+    seg, q, list, more, can('complaints', 'c') ? h('button', { type: 'button', class: 'fab', 'data-tour': 'i-raise', 'aria-label': t('cmp.raise'), onClick: () => raiseSheet(ctx, load) }, icon('add'), h('span', { class: 'sr-only' }, t('cmp.raise'))) : null);
+  if (takeTour('issues')) runTourWhenReady('issues', page);
+  return page;
 }
 
 function raiseSheet(ctx, done) {

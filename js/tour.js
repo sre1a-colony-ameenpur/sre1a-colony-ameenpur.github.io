@@ -11,9 +11,11 @@ export function takeTour(name) {
 
 const shown = (el) => !!el && el.getClientRects().length > 0;
 
-// Home: the cards that are on the screen, then the nav and the avatar menu.
+// A step is { key, title, text } for a part marked data-tour="key", or { plain: true, title, text } for a centred note (welcome, end).
+const plain = (title, text) => ({ plain: true, title, text });
+const END = plain('tour.end.title', 'tour.end');
 const HOME = [
-  { key: 'welcome', title: 'tour.welcome.title', text: 'tour.welcome.text' },
+  plain('tour.welcome.title', 'tour.welcome.text'),
   { key: 'action', title: 'home.action.title', text: 'tour.action' },
   { key: 'maint', title: 'home.maint.title', text: 'tour.maint' },
   { key: 'fees', title: 'home.fees.title', text: 'tour.fees' },
@@ -25,17 +27,37 @@ const HOME = [
   { key: 'balance', title: 'acc.balance', text: 'tour.balance' },
   { key: 'nav', title: 'tour.nav.title', text: 'tour.nav' },
   { key: 'menu', title: 'tour.menu.title', text: 'tour.menu' },
-  { key: 'end', title: 'tour.end.title', text: 'tour.end' },
+  END,
 ];
-const TOURS = { home: HOME };
+const MONEY = [
+  plain('tour.money.welcome.title', 'tour.money.welcome.text'),
+  { key: 'm-tabs', title: 'tour.money.tabs.title', text: 'tour.money.tabs' },
+  { key: 'm-payments', title: 'pay.allTitle', text: 'tour.money.payments' },
+  { key: 'm-ledger', title: 'ledger.title', text: 'tour.money.ledger' },
+  { key: 'm-opening', title: 'ob.title', text: 'tour.money.opening' },
+  { key: 'm-accounts', title: 'acc.title', text: 'tour.money.accounts' },
+  { key: 'm-body', title: 'tour.money.body.title', text: 'tour.money.body' },
+  END,
+];
+const ISSUES = [
+  plain('tour.issues.welcome.title', 'tour.issues.welcome.text'),
+  { key: 'i-pending', title: 'pend.title', text: 'tour.issues.pending' },
+  { key: 'i-monthly', title: 'cmp.monthly', text: 'tour.issues.monthly' },
+  { key: 'i-filter', title: 'tour.issues.filter.title', text: 'tour.issues.filter' },
+  { key: 'i-search', title: 'tour.issues.search.title', text: 'tour.issues.search' },
+  { key: 'i-list', title: 'tour.issues.list.title', text: 'tour.issues.list' },
+  { key: 'i-raise', title: 'cmp.raise', text: 'tour.issues.raise' },
+  END,
+];
+const TOURS = { home: HOME, money: MONEY, issues: ISSUES };
+export const TOUR_PAGE = { home: '#/home', money: '#/money', issues: '#/issues' };
 const SELECT = { nav: 'nav.nav', menu: '.avatar-btn' };
 
 export function stepsFor(name, root = document) {
   return (TOURS[name] || []).map((s) => {
-    const sel = SELECT[s.key] || `[data-tour="${s.key}"]`;
-    const el = s.key === 'welcome' || s.key === 'end' ? null : root.querySelector(sel);
-    if (s.key !== 'welcome' && s.key !== 'end' && !shown(el)) return null;
-    return { ...(el ? { element: el } : {}), popover: { title: t(s.title), description: t(s.text) } };
+    if (s.plain) return { popover: { title: t(s.title), description: t(s.text) } };
+    const el = root.querySelector(SELECT[s.key] || `[data-tour="${s.key}"]`);
+    return shown(el) ? { element: el, popover: { title: t(s.title), description: t(s.text) } } : null;
   }).filter(Boolean);
 }
 
@@ -56,12 +78,12 @@ export async function runTour(name, root = document) {
   }).drive();
 }
 
-// Waits until the cards have stopped loading (or 6 s), then runs the tour. Gives up if the screen is left meanwhile.
+// Waits until the screen has stopped loading (or 6 s), then runs the tour. Gives up if the screen is left meanwhile.
 export function runTourWhenReady(name, grid) {
   const t0 = Date.now();
   const tick = () => {
     if (!grid.isConnected) return;
-    if (grid.querySelector('[aria-busy="true"]') && Date.now() - t0 < 6000) return void setTimeout(tick, 150);
+    if (grid.querySelector('[aria-busy="true"], .skel') && Date.now() - t0 < 6000) return void setTimeout(tick, 150);
     runTour(name);
   };
   setTimeout(tick, 300);
