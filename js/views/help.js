@@ -39,13 +39,25 @@ function updateCard(t) {
   return card(t('help.update.title'), 'system_update', h('div', { class: 'stack-sm' }, h('p', {}, t('help.update.text')), build, btn));
 }
 
+// One dropdown with every tour this member may take, and one button to start the chosen one.
+function tourPicker(t, state) {
+  const list = helpTours(state), pick = h('select', { id: 'tour-pick' }, list.map(([name, label]) => h('option', { value: name }, t(label))));
+  const go = () => {
+    const name = pick.value;
+    if (location.hash.split('?')[0] === tourPath(name)) return runTour(name, document.getElementById('main') || document);
+    requestTour(name); location.hash = tourPath(name);
+  };
+  return h('div', { class: 'stack-sm', style: 'margin-top:12px', 'data-tour': 'h-tours' },
+    h('div', { class: 'field' }, h('label', { for: 'tour-pick' }, t('tour.pick')), pick),
+    button(t('tour.go'), { kind: 'primary', icon: 'tour', onClick: go }));
+}
+
 export default function render(ctx) {
   const { t, store } = ctx;
   const pres = store.get().session?.presidentName;
   return h('div', { class: 'page' }, h('h1', {}, t('help.title')),
     h('div', { style: 'margin-bottom:16px' }, card(t('tour.help.title'), 'tour', h('p', {}, t('tour.help.text')), h('p', { class: 'small muted' }, t('tour.help.menu')),
-      h('div', { class: 'row', style: 'margin-top:12px;flex-wrap:wrap' }, helpTours(store.get()).map(([name, label]) => button(t(label), { kind: name === 'home' ? 'primary' : '', icon: 'tour',
-        onClick: () => { if (location.hash.split('?')[0] === tourPath(name)) return runTour(name, document.getElementById('main') || document); requestTour(name); location.hash = tourPath(name); } }))))),
+      tourPicker(t, store.get()))),
     h('div', { style: 'margin-bottom:16px', 'data-tour': 'h-guide' }, card(t('help.guide.title'), 'menu_book', h('p', {}, t('help.guide.text')), button(t('help.guide.button'), { kind: 'primary', icon: 'menu_book', href: '#/help/guide', style: 'margin-top:12px' }))),
     h('div', { class: 'stack-sm', 'data-tour': 'h-faq' }, SECTIONS.map((k) => h('details', { class: 'acc', name: 'help' },
       h('summary', {}, h('span', {}, t(`help.${k}.q`)), icon('expand_more')),

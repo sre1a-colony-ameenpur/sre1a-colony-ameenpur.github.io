@@ -1967,5 +1967,7 @@
  "tour.guide.s1": "The guide is for your own role. The President and Developers can pick any role to see what that role can do; a banner then says whose guide you are reading.",
  "tour.guide.s2": "Every section of the guide. Tap one to jump to it. Sections for features your role does not have are left out.",
  "tour.guide.s3.title": "A section",
- "tour.guide.s3": "Each section explains one area in numbered steps, with screenshots where they help. A round arrow button appears when you scroll down; it takes you back to the top."
+ "tour.guide.s3": "Each section explains one area in numbered steps, with screenshots where they help. A round arrow button appears when you scroll down; it takes you back to the top.",
+ "tour.pick": "Choose a screen",
+ "tour.go": "Start the tour"
 }
