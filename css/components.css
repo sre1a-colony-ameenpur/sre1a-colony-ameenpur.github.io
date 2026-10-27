@@ -381,3 +381,15 @@ dialog.sheet.vp-full .btn.text { border-color: transparent; background: transpar
 dialog.sheet.vp-full .btn.primary { background: #fff; border-color: #fff; color: #000; }
 dialog.sheet.vp-full .btn[disabled], dialog.sheet.vp-full .btn.busy { opacity: 1; }
 dialog.sheet.vp-full .vp-seek-bar, dialog.sheet.vp-full .vp-vol { accent-color: #fff; }
+
+/* Guided tour (Driver.js popover) in the app's colours */
+.driver-popover.sre-tour { background: var(--c-bg); color: var(--c-text); border: 1px solid var(--c-border); border-radius: var(--r); font-family: var(--font); max-width: min(340px, 92vw); }
+.driver-popover.sre-tour .driver-popover-title { font-size: var(--fs-h3); font-weight: 600; }
+.driver-popover.sre-tour .driver-popover-description, .driver-popover.sre-tour .driver-popover-progress-text { color: var(--c-muted); font-size: var(--fs-body); }
+.driver-popover.sre-tour .driver-popover-arrow-side-left.driver-popover-arrow { border-left-color: var(--c-bg); }
+.driver-popover.sre-tour .driver-popover-arrow-side-right.driver-popover-arrow { border-right-color: var(--c-bg); }
+.driver-popover.sre-tour .driver-popover-arrow-side-top.driver-popover-arrow { border-top-color: var(--c-bg); }
+.driver-popover.sre-tour .driver-popover-arrow-side-bottom.driver-popover-arrow { border-bottom-color: var(--c-bg); }
+.driver-popover.sre-tour button { min-height: var(--tap-min); padding: 0 var(--s3); border-radius: var(--r-pill); border: 1px solid var(--c-border); background: var(--c-surface); color: var(--c-text); font-family: var(--font); font-size: var(--fs-body); text-shadow: none; }
+.driver-popover.sre-tour .driver-popover-next-btn { background: var(--c-primary); color: var(--c-on-primary); border-color: var(--c-primary); }
+.driver-popover.sre-tour .driver-popover-close-btn { min-height: 0; padding: 0; border: 0; background: none; color: var(--c-muted); }

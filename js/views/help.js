@@ -1,5 +1,6 @@
 // S7.2 Help: one accordion open at a time (details with the same name).
 import { h, icon, card, button, toast, openSheet } from '../ui.js';
+import { requestTour } from '../tour.js';
 import { installState, promptInstall, onInstallChange, checkForUpdates, currentBuild } from '../pwa.js';
 
 const SECTIONS = ['signin', 'complaint', 'vote', 'maintenance', 'broken'];
@@ -42,6 +43,8 @@ export default function render(ctx) {
   const { t, store } = ctx;
   const pres = store.get().session?.presidentName;
   return h('div', { class: 'page' }, h('h1', {}, t('help.title')),
+    h('div', { style: 'margin-bottom:16px' }, card(t('tour.help.title'), 'tour', h('p', {}, t('tour.help.text')),
+      button(t('tour.start'), { kind: 'primary', icon: 'tour', style: 'margin-top:12px', onClick: () => { requestTour('home'); location.hash = '#/home'; } }))),
     h('div', { style: 'margin-bottom:16px' }, card(t('help.guide.title'), 'menu_book', h('p', {}, t('help.guide.text')), button(t('help.guide.button'), { kind: 'primary', icon: 'menu_book', href: '#/help/guide', style: 'margin-top:12px' }))),
     h('div', { class: 'stack-sm' }, SECTIONS.map((k) => h('details', { class: 'acc', name: 'help' },
       h('summary', {}, h('span', {}, t(`help.${k}.q`)), icon('expand_more')),
