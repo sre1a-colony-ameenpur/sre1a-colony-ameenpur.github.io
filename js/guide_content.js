@@ -4,7 +4,7 @@
 //   steps: [lead, text]  (lead is the bold start of the paragraph)
 //   shots: pictures kept in Google Drive, shown after step number `after` (see guide_shots)
 export const SECTIONS = [
-  { id: 'start', shots: [{ id: 'start-signin', after: 0, caption: 'The sign-in screen' }, { id: 'start-menu', after: 1, caption: 'The menu under your picture' }, { id: 'guide-role', after: 5, caption: 'The role list at the top of the guide' }], icon: 'waving_hand', title: 'Start here', intro: 'The app is free and runs in the browser. You sign in with the Gmail address the colony has on record for you.',
+  { id: 'start', shots: [{ id: 'start-signin', after: 0, caption: 'The sign-in screen' }, { id: 'start-menu', after: 1, caption: 'The menu under your picture' }, { id: 'guide-role', after: 5, caption: 'The role list at the top of the guide' }, { id: 'help-tours', after: 6, caption: 'Help: choose a screen and start its tour' }, { id: 'tour-home', after: 6, caption: 'A tour pointing at the parts of Home' }], icon: 'waving_hand', title: 'Start here', intro: 'The app is free and runs in the browser. You sign in with the Gmail address the colony has on record for you.',
     steps: [
       ['Sign in.', 'Press Sign in with Google and choose your registered Gmail. If you see "No access", ask the President or Secretary to add your Gmail.'],
       ['Find your way.', 'Home, Issues, Money and Community are in the bar at the bottom of the phone (the side of a computer screen). Tap your picture at the top right for the menu: My profile, Map, Gallery, Reports, Bylaws & rules, What\'s new, Help and Sign out. A role also sees the extra screens it may use.'],
@@ -12,12 +12,14 @@ export const SECTIONS = [
       ['Install it.', 'Help has an Install button, or on iPhone open the app in Chrome and use Share, then Add to Home Screen (notifications work only for the app added from Chrome). The app then opens like any other app.'],
       ['Updates.', 'The app checks for new versions by itself. Help has Check for updates if you want to look now.'],
       ['This guide.', 'Help in the menu, then User guide. The role list at the top shows the guide for one role. The President and Developers can pick any role to see what that role sees; everyone else sees their own.'],
+      ['Tours.', 'A tour walks you through a screen and points at each part. Open Help, choose a screen, then press Start the tour; or open your menu on any screen and choose Tour of this screen. Press Next and Back to move, or the cross to stop.'],
     ] },
   { id: 'home', shots: [{ id: 'home-member', after: 0, caption: 'Home for a member' }, { id: 'home-president', after: 2, caption: 'Home with the "Needs your action" box' }], icon: 'home', title: 'Home', intro: 'Home shows what needs you today. A card appears only when it has something to show, so an empty Home means nothing is waiting.',
     steps: [
       ['Money you owe.', 'Maintenance and other fees show here with the amount and the pay-by date. Cards that need you come first.'],
       ['Polls, meeting, events and issues.', 'Open polls you have not voted in, the next meeting, the next event and recent issues show when there is one.'],
       ['Needs your action.', 'A blue box at the top counts expenses and plot requests waiting for you, if your role approves them.'],
+      ['Bank balance.', 'Once the President has started the account ledger, a Bank balance now card shows the colony money in the bank, with a link to Monthly accounts.'],
     ] },
   { id: 'profile', shots: [{ id: 'profile-member', after: 0, caption: 'My profile' }, { id: 'map-member', after: 1, caption: 'The map' }, { id: 'gallery', after: 2, caption: 'The gallery' }, { id: 'docs-member', after: 3, caption: 'Bylaws and rules' }], icon: 'person', title: 'Your profile, the map and the gallery',
     steps: [
@@ -93,7 +95,7 @@ export const SECTIONS = [
       ['Plot requests.', 'Members ask to add or remove a plot. The President approves or rejects, with a reason when rejecting. A plot that belongs to someone else must go through a transfer.'],
       ['Layout check.', 'At the bottom of the Plots list, compares the plot list with the colony map.'],
     ] },
-  { id: 'expenses', shots: [{ id: 'expense-add', after: 0, caption: 'Add an expense' }, { id: 'expenses-list', after: 1, caption: 'Expenses waiting for approval' }, { id: 'expense-detail', after: 1, caption: 'An expense with its proof' }], icon: 'receipt_long', title: 'Expenses', needs: [['expenses', 'c'], ['expense_approval', 'u'], ['expenses', 'r']], mods: ['expenses'], group: 'role',
+  { id: 'expenses', shots: [{ id: 'expense-add', after: 0, caption: 'Add an expense' }, { id: 'expenses-list', after: 1, caption: 'Expenses waiting for approval' }, { id: 'expense-detail', after: 1, caption: 'An expense with its proof' }, { id: 'ledger', after: 3, caption: 'The account ledger' }, { id: 'opening-balance', after: 4, caption: 'Opening balance entries' }], icon: 'receipt_long', title: 'Expenses', needs: [['expenses', 'c'], ['expense_approval', 'u'], ['expenses', 'r']], mods: ['expenses'], group: 'role',
     steps: [
       ['Add an expense.', 'Tap the + button at the bottom right, fill the details and attach a photo of the payment proof (always required). The President\'s own entries count at once; anyone else\'s wait for approval.'],
       ['Approve or reject.', 'The person who adds an expense never approves it. Open the waiting item, check the proof, then approve, or reject with a reason. Only approved expenses count in the totals.'],
