@@ -1,5 +1,6 @@
 // S2.3 Complaint detail: stage tracker, photos, comments, change status, hide.
 import { withCamera } from '../camera.js';
+import { shareHead, entityPath, clip } from '../share.js';
 import { h, card, button, field, statusPill, avatar, errorState, loadingRegion, openSheet, toast, icon, when, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { duration } from '../fmt.js';
@@ -38,7 +39,7 @@ export default async function render(ctx) {
       const commentPhotos = (cid) => d.media.filter((m) => m.kind === 'photo' && m.parent_type === 'comment' && m.parent_id === cid);
       const next = STAGES.slice(idx + 1).filter((s) => s !== 'Closed');        // closing is the requester's (or the System's) call, never a stage you pick
       root.replaceChildren(
-        flow(card(null, null, h('h2', {}, titleOf(c)), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
+        flow(card(null, null, shareHead(ctx, h('h2', {}, titleOf(c)), { title: t('share.issue', { title: clip(titleOf(c)) }), path: entityPath('/issues', c.id) }), c.description.length > titleOf(c).length ? h('p', {}, c.description) : null,
           h('div', { class: 'row' }, whereChip(t, c), statusPill(STAGE_KIND[c.stage], t(`cmp.stage.${STAGE_KEY[c.stage]}`))),
           h('p', { class: 'small muted' }, ...withWhen(t('cmp.raisedOn', { date: '{when}', name: c.raised_by_name }), c.raised_at)),
           c.resolved_at ? h('p', { class: 'small muted' }, ...withWhen(t('cmp.resolvedOn', { date: '{when}' }), c.resolved_at)) : null,

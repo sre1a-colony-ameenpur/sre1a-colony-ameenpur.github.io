@@ -1,5 +1,6 @@
 // S4.2 Event detail: details, photo grid with full-size viewer, add photos, edit and hide for allowed roles.
 import { withCamera } from '../camera.js';
+import { shareHead, entityPath, clip } from '../share.js';
 import { h, card, button, field, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
 import { friendly } from '../api.js';
 import { dateShort, money } from '../fmt.js';
@@ -26,7 +27,7 @@ export default async function render(ctx) {
       const tag = (el, k) => { el?.setAttribute('data-tour', k); return el; };
       root.replaceChildren(
         photos[0] ? h('div', { class: 'cover' }, photoImg(ctx, photos[0].id, 'cover-img')) : null,
-        tag(card(null, null, h('h2', {}, e.title), h('p', { class: 'muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`), e.description ? h('p', { style: 'white-space:pre-wrap' }, e.description) : null,
+        tag(card(null, null, shareHead(ctx, h('h2', {}, e.title), { title: t('share.event', { title: clip(e.title, 60), when: dateShort(e.date) }), path: entityPath('/community/events', e.id) }), h('p', { class: 'muted' }, `${dateShort(e.date)}${e.place ? ` · ${e.place}` : ''}`), e.description ? h('p', { style: 'white-space:pre-wrap' }, e.description) : null,
           h('div', { class: 'row' },
             can('events', 'u') ? button(t('fee.edit'), { 'data-tour': 'ed-edit', icon: 'edit', onClick: () => editSheet(ctx, e, load) }) : null,
             can('events', 'd') ? button(t('cmp.hide'), { 'data-tour': 'ed-hide', kind: 'danger', onClick: () => hideSheet(ctx, e.id) }) : null)), 'ed-card'),

@@ -1,5 +1,6 @@
 // S4.5 Meeting detail: agenda, attendance, notes, action items.
 import { h, card, button, field, statusPill, avatar, plotChip, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { shareHead, entityPath, clip } from '../share.js';
 import { friendly } from '../api.js';
 import { dateShort, whenShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -27,7 +28,7 @@ export default async function render(ctx) {
         a.overdue ? statusPill('overdue', t('mtg.overdue')) : a.status === 'done' ? statusPill('paid', t('mtg.done')) : null);
       const tag = (el, k) => { el.setAttribute('data-tour', k); return el; };
       root.replaceChildren(
-        tag(card(null, null, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
+        tag(card(null, null, shareHead(ctx, h('h2', {}, meetingTitle(m, t('mtg.meeting'))), { title: t('share.meeting', { title: clip(meetingTitle(m, t('mtg.meeting')), 60), when: whenShort(m.date, m.time) }), path: entityPath('/community/meetings', m.id) }), h('p', { class: 'muted' }, `${whenShort(m.date, m.time)} · ${m.place}`),
           h('div', { class: 'row' }, statusPill(m.status === 'held' ? 'paid' : 'open', t(m.status === 'held' ? 'mtg.held' : m.status === 'started' ? 'mtg.started' : 'mtg.scheduled')),
             can('meetings', 'u') && m.status === 'scheduled' ? button(t('mtg.start'), { 'data-tour': 'md-start', icon: 'play_arrow', onClick: () => setStatus('started') }) : null,
             can('meetings', 'u') && m.status === 'started' ? button(t('mtg.markHeld'), { 'data-tour': 'md-held', kind: 'text', onClick: () => setStatus('held') }) : null)), 'md-head'),

@@ -27,6 +27,7 @@ export default {
     { key: "pd-results", title: "poll.results", text: "tour.pollDetail.results" },
     { key: "pd-edit", title: "poll.edit", text: "tour.pollDetail.edit" },
     { key: "pd-cancel", title: "poll.cancelPoll", text: "tour.pollDetail.cancel" },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
     END,
   ] },
   eventDetail: { route: "/community/events/:id", steps: [
@@ -40,6 +41,7 @@ export default {
     { key: "ed-spend", title: "evt.spendTitle", text: "tour.eventDetail.spend" },
     { sel: "[data-tour=\"ed-spend\"] button.btn", title: "evt.addExpense", text: "tour.eventDetail.addExpense" },
     { key: "ed-videos", title: "tour.eventDetail.videos.title", text: "tour.eventDetail.videos" },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
     END,
   ] },
   meetingDetail: { route: "/community/meetings/:id", steps: [
@@ -54,6 +56,7 @@ export default {
     { key: "md-notes-btn", title: "mtg.editNotes", text: "tour.meetingDetail.notesBtn" },
     { key: "md-items", title: "mtg.actionItems", text: "tour.meetingDetail.items" },
     { key: "md-item-btn", title: "mtg.addItem", text: "tour.meetingDetail.itemBtn" },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
     END,
   ] },
   actionItems: { route: "/community/action-items", help: true, label: "tour.actionItems.btn", needs: ["action_items", "r"], steps: [

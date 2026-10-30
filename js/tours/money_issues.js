@@ -50,6 +50,14 @@ export default {
     { key: 'od-reject', title: 'exp.reject', text: 'tour.openingDetail.reject' },
     { key: 'od-reverse', title: 'exp.reverse', text: 'tour.openingDetail.reverse' },
     END] },
+  maintenanceDue: { route: '/money/maintenance/:month', steps: [
+    { plain: true, title: 'tour.maintDue.welcome.title', text: 'tour.maintDue.welcome' },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
+    END] },
+  feeDue: { route: '/money/fees/:id', steps: [
+    { plain: true, title: 'tour.feeDue.welcome.title', text: 'tour.feeDue.welcome' },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
+    END] },
   expenseDetail: { route: '/money/expense/:id', steps: [
     { plain: true, title: 'tour.expenseDetail.welcome.title', text: 'tour.expenseDetail.welcome' },
     { key: 'xd-sum', title: 'tour.expenseDetail.sum.title', text: 'tour.expenseDetail.sum' },
@@ -59,6 +67,7 @@ export default {
     { key: 'xd-reject', title: 'exp.reject', text: 'tour.expenseDetail.reject' },
     { key: 'xd-edit', title: 'exp.edit', text: 'tour.expenseDetail.edit' },
     { key: 'xd-reverse', title: 'exp.reverse', text: 'tour.expenseDetail.reverse' },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
     END] },
   issuesPending: { route: '/issues/pending', help: true, needs: ['complaints', 'r'], label: 'tour.issuesPending.btn', steps: [
     { plain: true, title: 'pend.title', text: 'tour.issuesPending.welcome' },
@@ -91,5 +100,6 @@ export default {
     { key: 'cd-send', title: 'cmp.send', text: 'tour.issueDetail.send' },
     { key: 'cd-hidecomment', title: 'cmp.hide', text: 'tour.issueDetail.hidecomment' },
     { key: 'cd-hide', title: 'cmp.hideComplaint', text: 'tour.issueDetail.hide' },
+    { key: 'share', title: 'share.button', text: 'tour.share' },
     END] },
 };

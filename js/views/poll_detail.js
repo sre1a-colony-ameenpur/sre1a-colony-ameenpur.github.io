@@ -1,5 +1,6 @@
 // S4.9 Poll voting and S4.10 results.
 import { h, card, button, statusPill, errorState, loadingRegion, openSheet, toast, icon, field, toastError } from '../ui.js';
+import { shareHead, entityPath, clip } from '../share.js';
 import { friendly } from '../api.js';
 import { dateShort } from '../fmt.js';
 import { can } from '../store.js';
@@ -15,7 +16,7 @@ export default async function render(ctx) {
       await ctx.api.swr('polls.get', { id: ctx.params.id }, ({ poll: p, my_vote: mv, results: r }) => {
       const stateText = p.status === 'open' ? t('poll.closes', { date: dateShort(p.closes_at) }) : p.status === 'upcoming' ? t('poll.opens', { date: dateShort(p.opens_at) }) : p.status === 'cancelled' ? t('poll.cancelled') : t('poll.closed');
       const tag = (el, k) => { el.setAttribute('data-tour', k); return el; };
-      const head = tag(card(null, null, h('h2', {}, p.question),
+      const head = tag(card(null, null, shareHead(ctx, h('h2', {}, p.question), { title: t('share.poll', { title: clip(p.question) }), path: entityPath('/community/polls', p.id) }),
         h('div', { class: 'row' }, h('span', { class: 'pill role' }, icon(p.type === 'secret' ? 'lock' : 'visibility', 'sm'), t(p.type === 'secret' ? 'poll.secret' : 'poll.open')), h('span', { class: 'small muted' }, stateText)),
         p.cancel_reason ? h('p', { class: 'small muted' }, p.cancel_reason) : null), 'pd-head');
       const parts = [head];

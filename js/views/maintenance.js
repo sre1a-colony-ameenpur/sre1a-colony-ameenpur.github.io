@@ -3,6 +3,7 @@ import { h, card, button, statusPill, plotChip, emptyState, errorState, loadingR
 import { friendly } from '../api.js';
 import { money, monthLabel, dateShort } from '../fmt.js';
 import { can } from '../store.js';
+import { shareEntity, entityPath } from '../share.js';
 import { ymNow, shiftMonth, rateFor, summarize, tileStatus, currentTotals } from '../maint.js';
 import { recordPaymentSheet, raiseDuesSheet, editDueSheet, feeSheet, proofSheet, recentPaymentsCard, removedPaymentSheet, failPaymentSheet, ownPaymentPill } from './maintenance_sheets.js';
 
@@ -51,16 +52,21 @@ export default async function render(ctx) {
   }
 }
 
-function monthSheet(ctx, mine, month) {
+export function monthBody(ctx, mine, month) {
   const { t } = ctx;
   const m = mine.months.find((x) => x.month === month);
   const pays = mine.payments.filter((p) => String(p.months).split(',').includes(month));
-  openSheet({ title: monthLabel(month), actions: [{ label: t('common.close') }], body: h('div', { class: 'stack-sm' },
+  return h('div', { class: 'stack-sm' },
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.amount')), h('strong', {}, money(m.amount_paise))),
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.paid')), statusPill(PILL[m.status], `${money(m.paid_paise)} · ${t(`mt.tile.${m.status}`)}`)),
     pays.length ? h('h3', {}, t('mt.payments')) : h('p', { class: 'muted' }, t('mt.noPayments')),
-    ...pays.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null))) });
+    ...pays.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null)));
 }
+function monthSheet(ctx, mine, month) {
+  const { t } = ctx;
+  openSheet({ title: monthLabel(month), actions: [{ label: t('share.button'), onClick: () => shareEntity(ctx, monthShare(ctx, month)), keepOpen: true }, { label: t('common.close') }], body: monthBody(ctx, mine, month) });
+}
+export const monthShare = (ctx, month) => ({ title: ctx.t('share.maint', { month: monthLabel(month) }), path: entityPath('/money/maintenance', month) });
 
 // ---- Committee: month view + payments to confirm ----
 function committee(ctx) {

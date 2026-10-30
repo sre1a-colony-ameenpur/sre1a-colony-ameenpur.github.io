@@ -4,6 +4,7 @@ import { appendPage } from '../paging.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can } from '../store.js';
+import { shareEntity, entityPath, clip } from '../share.js';
 import { recentPaymentsCard, failPaymentSheet, ownPaymentPill } from './maintenance_sheets.js';
 import { raiseRequestSheet, requestDetailSheet, membershipRateSheet, recordFeePaymentSheet, feeProofSheet } from './fees_sheets.js';
 
@@ -39,15 +40,20 @@ function myDues(ctx) {
   return c;
 }
 
-function dueSheet(ctx, d) {
+export function dueBody(ctx, d) {
   const { t } = ctx;
-  openSheet({ title: d.title, actions: [{ label: t('common.close') }], body: h('div', { class: 'stack-sm' },
+  return h('div', { class: 'stack-sm' },
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('mt.amount')), h('strong', {}, money(d.amount_paise))),
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('fee.paidSoFar')), h('strong', {}, money(d.paid_paise))),
     h('div', { class: 'list-row' }, h('div', { class: 'grow' }, t('fee.deadline')), h('span', {}, dateShort(d.due_date))),
     statusPill(dueKind(d), dueLabel(t, d)),
     d.payments.length ? h('h3', {}, t('mt.payments')) : null,
-    ...d.payments.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null))) });
+    ...d.payments.map((p) => h('div', { class: 'list-row' }, h('div', { class: 'grow' }, dateShort(p.at)), h('div', {}, money(p.amount_paise), ' ', ownPaymentPill(t, p)), p.status === 'failed' && p.fail_reason ? h('div', { class: 'small muted' }, t('mt.failedWhy', { reason: p.fail_reason })) : null)));
+}
+export const dueShare = (ctx, d) => ({ title: ctx.t('share.fee', { title: clip(d.title, 60) }), path: entityPath('/money/fees', d.id) });
+function dueSheet(ctx, d) {
+  const { t } = ctx;
+  openSheet({ title: d.title, actions: [{ label: t('share.button'), onClick: () => shareEntity(ctx, dueShare(ctx, d)), keepOpen: true }, { label: t('common.close') }], body: dueBody(ctx, d) });
 }
 
 function committee(ctx) {

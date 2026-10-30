@@ -15,11 +15,13 @@ export default function render(ctx) {
   const root = h('div', { class: 'page stack' }, h('h1', { style: 'margin:0' }, t('ledger.title')), h('p', { class: 'muted', 'data-tour': 'lg-intro' }, t('ledger.intro')), body);
   const admin = can('roles_config', 'u');
 
+  // An expense entry opens that expense; a payment reference has no screen of its own and stays as text.
+  const refLink = (ref) => (/^expenses\//.test(ref) ? h('a', { href: `#/money/expense/${encodeURIComponent(ref.slice(9))}` }, ref) : ref);
   const entry = (x) => {
     const credit = x.direction === 'credit';
     return h('div', { class: 'list-row', 'data-direction': x.direction },
       h('div', { class: 'grow' }, h('div', {}, x.description, x.count > 1 ? ` (${t('ledger.count', { n: x.count })})` : ''),
-        h('div', { class: 'small muted' }, `${dateShort(x.date)} · ${t(`ledger.type.${x.type}`)}${x.reference ? ` · ${x.reference}` : ''}`)),
+        h('div', { class: 'small muted' }, h('span', {}, `${dateShort(x.date)} · ${t(`ledger.type.${x.type}`)}`), ...(x.reference ? [' · ', refLink(x.reference)] : []))),
       h('div', { style: 'text-align:end' }, h('div', { class: `amount${credit ? '' : ' neg'}`, 'aria-label': t(credit ? 'ledger.credit' : 'ledger.debit') }, `${credit ? '+' : '−'}${money(x.amount_paise)}`),
         h('div', { class: 'small muted' }, t('ledger.balanceAfter', { amount: money(x.balance_after_paise) }))));
   };

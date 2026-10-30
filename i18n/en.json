@@ -1969,5 +1969,21 @@
  "tour.guide.s3.title": "A section",
  "tour.guide.s3": "Each section explains one area in numbered steps, with screenshots where they help. A round arrow button appears when you scroll down; it takes you back to the top.",
  "tour.pick": "Choose a screen",
- "tour.go": "Start the tour"
+ "tour.go": "Start the tour",
+ "share.button": "Share",
+ "share.copied": "Link copied",
+ "share.meeting": "Meeting: {title}, {when}",
+ "share.event": "Event: {title}, {when}",
+ "share.poll": "Poll: {title}",
+ "share.expense": "Expense: {title}",
+ "share.issue": "Issue: {title}",
+ "share.maint": "Maintenance due, {month}",
+ "share.fee": "Fee: {title}",
+ "mt.dueNotFound": "This month is not on your maintenance list.",
+ "fee.dueNotFound": "This fee was not found. It may not be yours.",
+ "tour.share": "Send a link to this to someone. It opens in the app if they have it installed, otherwise in the browser. They need to sign in, and only see what their role allows.",
+ "tour.maintDue.welcome.title": "Maintenance for one month",
+ "tour.maintDue.welcome": "Your maintenance for this month: the amount, what is paid and the payments. A link to it shows each person their own month.",
+ "tour.feeDue.welcome.title": "One fee",
+ "tour.feeDue.welcome": "One fee you have to pay: the amount, what is paid, the deadline and the payments."
 }

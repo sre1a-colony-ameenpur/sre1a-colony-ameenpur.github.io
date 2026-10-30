@@ -1,5 +1,6 @@
 // S3.3 Expense detail: amount, status, proof screenshot, timeline, approve/reject/reverse by role.
 import { h, card, button, field, statusPill, errorState, loadingRegion, openSheet, toast, icon, toastError } from '../ui.js';
+import { shareHead, entityPath, clip } from '../share.js';
 import { friendly } from '../api.js';
 import { money, dateShort } from '../fmt.js';
 import { can, hasModule } from '../store.js';
@@ -31,7 +32,7 @@ export default async function render(ctx) {
       if (x.status === 'approved') actions.push(h('p', { class: 'small muted' }, icon('lock', 'sm'), ' ', t('exp.locked')));
       if (reversed) actions.push(h('p', { class: 'small muted' }, t('exp.alreadyReversed')));
       root.replaceChildren(card(null, null, h('div', { class: 'amount big' }, money(x.amount_paise)), statusPill(x.status, statusLabel(t, x.status)),
-          h('h2', {}, x.reason), h('p', { class: 'muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`),
+          shareHead(ctx, h('h2', {}, x.reason), { title: t('share.expense', { title: clip(x.reason) }), path: entityPath('/money/expense', x.id) }), h('p', { class: 'muted' }, `${t(`exp.cat.${x.category}`)} · ${dateShort(x.date)}`),
           x.event_id && x.event_title ? h('p', {}, icon('celebration', 'sm'), ' ', t('exp.forEvent'), ': ', hasModule('events') ? h('a', { href: `#/community/events/${x.event_id}` }, x.event_title) : x.event_title) : null,
           isReversal ? h('p', { class: 'small' }, t('exp.reversalOf', { id: x.reverses_id })) : null),
         x.has_proof ? card(t('exp.proof'), 'image', proof) : null,

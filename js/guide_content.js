@@ -13,6 +13,7 @@ export const SECTIONS = [
       ['Updates.', 'The app checks for new versions by itself. Help has Check for updates if you want to look now.'],
       ['This guide.', 'Help in the menu, then User guide. The role list at the top shows the guide for one role. The President and Developers can pick any role to see what that role sees; everyone else sees their own.'],
       ['Tours.', 'A tour walks you through a screen and points at each part. Open Help, choose a screen, then press Start the tour; or open your menu on any screen and choose Tour of this screen. Press Next and Back to move, or the cross to stop.'],
+      ['Share a link.', 'A meeting, event, poll, expense, complaint, a month of your maintenance and one of your fees each have a Share icon next to the title (a Share button in the sheet for a month or a fee). It sends a short title and a link. Whoever opens the link needs to be signed in; they land on that record, in the app if it is installed (on Android Chrome) or in the browser, and see only what their role allows. The link of a month or fee shows each person their own.'],
     ] },
   { id: 'home', shots: [{ id: 'home-member', after: 0, caption: 'Home for a member' }, { id: 'home-president', after: 2, caption: 'Home with the "Needs your action" box' }], icon: 'home', title: 'Home', intro: 'Home shows what needs you today. A card appears only when it has something to show, so an empty Home means nothing is waiting.',
     steps: [
