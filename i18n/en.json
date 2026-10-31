@@ -78,6 +78,7 @@
  "menu.signOut": "Sign out",
  "menu.viewOnly": "View only",
  "signin.subtitle": "Colony app for residents",
+ "signin.about": "SRE 1A Colony is the app of the Sai Ram Enclave (SRE 1A) residents' association, Ameenpur, Hyderabad. Registered members use it to see and manage colony records: maintenance dues and payments, expenses, complaints, meetings, polls, events and the colony map. Google sign-in is used only to confirm that you are a registered member.",
  "signin.hint": "Use the Gmail address the colony has registered for you.",
  "signin.help": "Need help? Ask the committee.",
  "signin.mock": "Sign in (test mode)",

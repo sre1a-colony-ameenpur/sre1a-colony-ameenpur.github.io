@@ -16,6 +16,7 @@ export default function render(ctx) {
       crest(),
       h('h1', {}, CONFIG.appName),
       h('p', { class: 'muted' }, t('signin.subtitle')),
+      h('p', { class: 'small muted' }, t('signin.about')),
       s.notice ? h('p', { class: 'small', role: 'alert' }, t(s.notice)) : null,
       ctx.mock ? button(t('signin.mock'), { kind: 'primary', block: true, icon: 'login', onClick: () => ctx.mockSignIn('member') }) : slot,
       h('p', { class: 'small muted' }, t('signin.hint'))),
