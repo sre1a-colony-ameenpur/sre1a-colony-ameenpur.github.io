@@ -7,3 +7,6 @@
 .legal ul { padding-left: var(--s4); margin: 0 0 var(--s2); }
 .legal .muted { color: var(--c-muted); font-size: var(--fs-small); }
 .legal footer { margin-top: var(--s5); padding-top: var(--s3); border-top: 1px solid var(--c-border); }
+/* Two languages in one page: the chosen one shows (set by legal.js on <html data-l>). */
+html[data-l="en"] :not(button)[lang="te"], html[data-l="te"] :not(button)[lang="en"] { display: none; }
+.legal .lang-bar { display: flex; justify-content: flex-end; margin-bottom: var(--s3); }
