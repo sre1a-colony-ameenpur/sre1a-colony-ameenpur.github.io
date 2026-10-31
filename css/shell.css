@@ -60,6 +60,7 @@
 .bare .bare-top { display: flex; justify-content: flex-end; padding: var(--s2) var(--gutter); }
 .bare .bare-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s3); padding: var(--s3) var(--gutter); text-align: center; max-width: 440px; width: 100%; margin: 0 auto; }
 .bare .bare-foot { padding: var(--s3) var(--gutter); text-align: center; }
+.bare .bare-foot .legal-links { margin-top: var(--s2); }
 .gsi-slot { display: flex; justify-content: center; min-height: 48px; width: 100%; }
 
 main:focus { outline: none; }

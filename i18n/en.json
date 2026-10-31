@@ -82,6 +82,8 @@
  "signin.help": "Need help? Ask the committee.",
  "signin.mock": "Sign in (test mode)",
  "signin.expired": "Your sign-in has ended. Please sign in again.",
+ "signin.privacy": "Privacy Policy",
+ "signin.terms": "Terms & Conditions",
  "noaccess.title": "No access yet",
  "noaccess.text": "This Gmail is not on the colony members list. Please ask the President or Secretary to add you.",
  "noaccess.tried": "Gmail used",

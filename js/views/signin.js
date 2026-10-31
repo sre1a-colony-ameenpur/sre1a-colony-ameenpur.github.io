@@ -19,7 +19,11 @@ export default function render(ctx) {
       s.notice ? h('p', { class: 'small', role: 'alert' }, t(s.notice)) : null,
       ctx.mock ? button(t('signin.mock'), { kind: 'primary', block: true, icon: 'login', onClick: () => ctx.mockSignIn('member') }) : slot,
       h('p', { class: 'small muted' }, t('signin.hint'))),
-    h('p', { class: 'bare-foot small muted' }, t('signin.help')));
+    h('div', { class: 'bare-foot small muted' },
+      h('p', {}, t('signin.help')),
+      h('p', { class: 'legal-links' },
+        h('a', { href: 'privacy/', target: '_blank', rel: 'noopener' }, t('signin.privacy')), ' · ',
+        h('a', { href: 'tnc/', target: '_blank', rel: 'noopener' }, t('signin.terms')))));
   if (!ctx.mock) queueMicrotask(() => ctx.auth.renderButton(slot, ctx.lang));
   return el;
 }
